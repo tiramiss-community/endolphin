@@ -1,0 +1,12 @@
+{
+	"name": "endolphin",
+	"description": "A lightweight Misskey fork for small communities (dolphin + endorphin).",
+	"repository": "https://github.com/tiramiss-community/endolphin.git",
+	"version": "0.0.0",
+	"upstream": {
+		"repository": "https://github.com/misskey-dev/misskey.git",
+		"remote": "upstream",
+		"branch": "develop",
+		"basedOn": "2026.6.0-beta.0"
+	}
+}
