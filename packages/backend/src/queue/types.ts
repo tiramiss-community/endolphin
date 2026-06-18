@@ -47,7 +47,6 @@ export type DbJobMap = {
 	exportCustomEmojis: DbJobDataWithUser;
 	exportAntennas: DBExportAntennasData;
 	exportNotes: DbJobDataWithUser;
-	exportFavorites: DbJobDataWithUser;
 	exportFollowing: DbExportFollowingData;
 	exportMuting: DbJobDataWithUser;
 	exportBlocking: DbJobDataWithUser;

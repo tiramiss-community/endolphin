@@ -5,17 +5,9 @@
 
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/endpoint-base.js';
-import { ReversiService } from '@/core/ReversiService.js';
-import { ReversiGameEntityService } from '@/core/entities/ReversiGameEntityService.js';
-import { ApiError } from '../../error.js';
 
 export const meta = {
 	errors: {
-		noSuchGame: {
-			message: 'No such game.',
-			code: 'NO_SUCH_GAME',
-			id: '8fb05624-b525-43dd-90f7-511852bdfeee',
-		},
 	},
 
 	res: {
@@ -43,22 +35,12 @@ export const paramDef = {
 
 @Injectable()
 export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-disable-line import/no-default-export
-	constructor(
-		private reversiService: ReversiService,
-		private reversiGameEntityService: ReversiGameEntityService,
-	) {
-		super(meta, paramDef, async (ps, me) => {
-			const game = await this.reversiService.checkCrc(ps.gameId, ps.crc32);
-			if (game) {
-				return {
-					desynced: true,
-					game: await this.reversiGameEntityService.packDetail(game),
-				};
-			} else {
-				return {
-					desynced: false,
-				};
-			}
+	constructor() {
+		// endolphin: Games 機能は削除済み。登録・型は互換のため維持し、常に desynced=false を返す。
+		super(meta, paramDef, async () => {
+			return {
+				desynced: false,
+			};
 		});
 	}
 }

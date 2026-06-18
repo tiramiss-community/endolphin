@@ -41,7 +41,6 @@ import { ImportAntennasProcessorService } from './processors/ImportAntennasProce
 import { ResyncChartsProcessorService } from './processors/ResyncChartsProcessorService.js';
 import { TickChartsProcessorService } from './processors/TickChartsProcessorService.js';
 import { AggregateRetentionProcessorService } from './processors/AggregateRetentionProcessorService.js';
-import { ExportFavoritesProcessorService } from './processors/ExportFavoritesProcessorService.js';
 import { RelationshipProcessorService } from './processors/RelationshipProcessorService.js';
 
 @Module({
@@ -61,7 +60,6 @@ import { RelationshipProcessorService } from './processors/RelationshipProcessor
 		ExportCustomEmojisProcessorService,
 		ExportNotesProcessorService,
 		ExportClipsProcessorService,
-		ExportFavoritesProcessorService,
 		ExportFollowingProcessorService,
 		ExportMutingProcessorService,
 		ExportBlockingProcessorService,

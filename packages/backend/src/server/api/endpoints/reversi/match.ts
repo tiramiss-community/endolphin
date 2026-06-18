@@ -5,27 +5,20 @@
 
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/endpoint-base.js';
-import { ReversiService } from '@/core/ReversiService.js';
-import { ReversiGameEntityService } from '@/core/entities/ReversiGameEntityService.js';
 import { ApiError } from '../../error.js';
-import { GetterService } from '../../GetterService.js';
 
 export const meta = {
 	requireCredential: true,
 
 	kind: 'write:account',
 
+	// endolphin: Games 機能は削除済み。登録・型は互換のため維持し、呼び出されたらエラーを返す。
 	errors: {
-		noSuchUser: {
-			message: 'No such user.',
-			code: 'NO_SUCH_USER',
-			id: '0b4f0559-b484-4e31-9581-3f73cee89b28',
-		},
-
-		isYourself: {
-			message: 'Target user is yourself.',
-			code: 'TARGET_IS_YOURSELF',
-			id: '96fd7bd6-d2bc-426c-a865-d055dcd2828e',
+		featureRemoved: {
+			message: 'This feature has been removed.',
+			code: 'FEATURE_REMOVED',
+			id: '7d36feea-8a24-4b71-8253-8f622bfe0f7d',
+			httpStatusCode: 410,
 		},
 	},
 
@@ -48,26 +41,9 @@ export const paramDef = {
 
 @Injectable()
 export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-disable-line import/no-default-export
-	constructor(
-		private getterService: GetterService,
-		private reversiService: ReversiService,
-		private reversiGameEntityService: ReversiGameEntityService,
-	) {
-		super(meta, paramDef, async (ps, me) => {
-			if (ps.userId === me.id) throw new ApiError(meta.errors.isYourself);
-
-			const target = ps.userId ? await this.getterService.getUser(ps.userId).catch(err => {
-				if (err.id === '15348ddd-432d-49c2-8a5a-8069753becff') throw new ApiError(meta.errors.noSuchUser);
-				throw err;
-			}) : null;
-
-			const game = target
-				? await this.reversiService.matchSpecificUser(me, target, ps.multiple)
-				: await this.reversiService.matchAnyUser(me, { noIrregularRules: ps.noIrregularRules }, ps.multiple);
-
-			if (game == null) return;
-
-			return await this.reversiGameEntityService.packDetail(game);
+	constructor() {
+		super(meta, paramDef, async () => {
+			throw new ApiError(meta.errors.featureRemoved);
 		});
 	}
 }

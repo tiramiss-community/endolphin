@@ -21,7 +21,6 @@ import { AccountUpdateService } from './AccountUpdateService.js';
 import { AiService } from './AiService.js';
 import { AnnouncementService } from './AnnouncementService.js';
 import { AntennaService } from './AntennaService.js';
-import { AchievementService } from './AchievementService.js';
 import { AvatarDecorationService } from './AvatarDecorationService.js';
 import { CaptchaService } from './CaptchaService.js';
 import { CustomEmojiService } from './CustomEmojiService.js';
@@ -77,8 +76,6 @@ import { FanoutTimelineService } from './FanoutTimelineService.js';
 import { ChannelFollowingService } from './ChannelFollowingService.js';
 import { ChatService } from './ChatService.js';
 import { RegistryApiService } from './RegistryApiService.js';
-import { ReversiService } from './ReversiService.js';
-import { PageService } from './PageService.js';
 
 import { ChartLoggerService } from './chart/ChartLoggerService.js';
 import FederationChart from './chart/charts/federation.js';
@@ -109,8 +106,6 @@ import { DriveFolderEntityService } from './entities/DriveFolderEntityService.js
 import { EmojiEntityService } from './entities/EmojiEntityService.js';
 import { FollowingEntityService } from './entities/FollowingEntityService.js';
 import { FollowRequestEntityService } from './entities/FollowRequestEntityService.js';
-import { GalleryLikeEntityService } from './entities/GalleryLikeEntityService.js';
-import { GalleryPostEntityService } from './entities/GalleryPostEntityService.js';
 import { HashtagEntityService } from './entities/HashtagEntityService.js';
 import { InstanceEntityService } from './entities/InstanceEntityService.js';
 import { InviteCodeEntityService } from './entities/InviteCodeEntityService.js';
@@ -118,19 +113,16 @@ import { ModerationLogEntityService } from './entities/ModerationLogEntityServic
 import { MutingEntityService } from './entities/MutingEntityService.js';
 import { RenoteMutingEntityService } from './entities/RenoteMutingEntityService.js';
 import { NoteEntityService } from './entities/NoteEntityService.js';
-import { NoteFavoriteEntityService } from './entities/NoteFavoriteEntityService.js';
 import { NoteReactionEntityService } from './entities/NoteReactionEntityService.js';
 import { NoteDraftEntityService } from './entities/NoteDraftEntityService.js';
 import { NotificationEntityService } from './entities/NotificationEntityService.js';
 import { PageEntityService } from './entities/PageEntityService.js';
-import { PageLikeEntityService } from './entities/PageLikeEntityService.js';
 import { SigninEntityService } from './entities/SigninEntityService.js';
 import { UserEntityService } from './entities/UserEntityService.js';
 import { UserListEntityService } from './entities/UserListEntityService.js';
 import { FlashEntityService } from './entities/FlashEntityService.js';
 import { FlashLikeEntityService } from './entities/FlashLikeEntityService.js';
 import { RoleEntityService } from './entities/RoleEntityService.js';
-import { ReversiGameEntityService } from './entities/ReversiGameEntityService.js';
 import { MetaEntityService } from './entities/MetaEntityService.js';
 
 import { ApAudienceService } from './activitypub/ApAudienceService.js';
@@ -165,7 +157,6 @@ const $AccountUpdateService: Provider = { provide: 'AccountUpdateService', useEx
 const $AiService: Provider = { provide: 'AiService', useExisting: AiService };
 const $AnnouncementService: Provider = { provide: 'AnnouncementService', useExisting: AnnouncementService };
 const $AntennaService: Provider = { provide: 'AntennaService', useExisting: AntennaService };
-const $AchievementService: Provider = { provide: 'AchievementService', useExisting: AchievementService };
 const $AvatarDecorationService: Provider = { provide: 'AvatarDecorationService', useExisting: AvatarDecorationService };
 const $CaptchaService: Provider = { provide: 'CaptchaService', useExisting: CaptchaService };
 const $CustomEmojiService: Provider = { provide: 'CustomEmojiService', useExisting: CustomEmojiService };
@@ -227,8 +218,6 @@ const $ChannelFollowingService: Provider = { provide: 'ChannelFollowingService',
 const $ChannelMutingService: Provider = { provide: 'ChannelMutingService', useExisting: ChannelMutingService };
 const $ChatService: Provider = { provide: 'ChatService', useExisting: ChatService };
 const $RegistryApiService: Provider = { provide: 'RegistryApiService', useExisting: RegistryApiService };
-const $ReversiService: Provider = { provide: 'ReversiService', useExisting: ReversiService };
-const $PageService: Provider = { provide: 'PageService', useExisting: PageService };
 
 const $ChartLoggerService: Provider = { provide: 'ChartLoggerService', useExisting: ChartLoggerService };
 const $FederationChart: Provider = { provide: 'FederationChart', useExisting: FederationChart };
@@ -260,8 +249,6 @@ const $DriveFolderEntityService: Provider = { provide: 'DriveFolderEntityService
 const $EmojiEntityService: Provider = { provide: 'EmojiEntityService', useExisting: EmojiEntityService };
 const $FollowingEntityService: Provider = { provide: 'FollowingEntityService', useExisting: FollowingEntityService };
 const $FollowRequestEntityService: Provider = { provide: 'FollowRequestEntityService', useExisting: FollowRequestEntityService };
-const $GalleryLikeEntityService: Provider = { provide: 'GalleryLikeEntityService', useExisting: GalleryLikeEntityService };
-const $GalleryPostEntityService: Provider = { provide: 'GalleryPostEntityService', useExisting: GalleryPostEntityService };
 const $HashtagEntityService: Provider = { provide: 'HashtagEntityService', useExisting: HashtagEntityService };
 const $InstanceEntityService: Provider = { provide: 'InstanceEntityService', useExisting: InstanceEntityService };
 const $InviteCodeEntityService: Provider = { provide: 'InviteCodeEntityService', useExisting: InviteCodeEntityService };
@@ -269,19 +256,16 @@ const $ModerationLogEntityService: Provider = { provide: 'ModerationLogEntitySer
 const $MutingEntityService: Provider = { provide: 'MutingEntityService', useExisting: MutingEntityService };
 const $RenoteMutingEntityService: Provider = { provide: 'RenoteMutingEntityService', useExisting: RenoteMutingEntityService };
 const $NoteEntityService: Provider = { provide: 'NoteEntityService', useExisting: NoteEntityService };
-const $NoteFavoriteEntityService: Provider = { provide: 'NoteFavoriteEntityService', useExisting: NoteFavoriteEntityService };
 const $NoteReactionEntityService: Provider = { provide: 'NoteReactionEntityService', useExisting: NoteReactionEntityService };
 const $NoteDraftEntityService: Provider = { provide: 'NoteDraftEntityService', useExisting: NoteDraftEntityService };
 const $NotificationEntityService: Provider = { provide: 'NotificationEntityService', useExisting: NotificationEntityService };
 const $PageEntityService: Provider = { provide: 'PageEntityService', useExisting: PageEntityService };
-const $PageLikeEntityService: Provider = { provide: 'PageLikeEntityService', useExisting: PageLikeEntityService };
 const $SigninEntityService: Provider = { provide: 'SigninEntityService', useExisting: SigninEntityService };
 const $UserEntityService: Provider = { provide: 'UserEntityService', useExisting: UserEntityService };
 const $UserListEntityService: Provider = { provide: 'UserListEntityService', useExisting: UserListEntityService };
 const $FlashEntityService: Provider = { provide: 'FlashEntityService', useExisting: FlashEntityService };
 const $FlashLikeEntityService: Provider = { provide: 'FlashLikeEntityService', useExisting: FlashLikeEntityService };
 const $RoleEntityService: Provider = { provide: 'RoleEntityService', useExisting: RoleEntityService };
-const $ReversiGameEntityService: Provider = { provide: 'ReversiGameEntityService', useExisting: ReversiGameEntityService };
 const $MetaEntityService: Provider = { provide: 'MetaEntityService', useExisting: MetaEntityService };
 const $SystemWebhookEntityService: Provider = { provide: 'SystemWebhookEntityService', useExisting: SystemWebhookEntityService };
 
@@ -318,7 +302,6 @@ const $ApQuestionService: Provider = { provide: 'ApQuestionService', useExisting
 		AiService,
 		AnnouncementService,
 		AntennaService,
-		AchievementService,
 		AvatarDecorationService,
 		CaptchaService,
 		CustomEmojiService,
@@ -380,8 +363,6 @@ const $ApQuestionService: Provider = { provide: 'ApQuestionService', useExisting
 		ChannelMutingService,
 		ChatService,
 		RegistryApiService,
-		ReversiService,
-		PageService,
 
 		ChartLoggerService,
 		FederationChart,
@@ -413,8 +394,6 @@ const $ApQuestionService: Provider = { provide: 'ApQuestionService', useExisting
 		EmojiEntityService,
 		FollowingEntityService,
 		FollowRequestEntityService,
-		GalleryLikeEntityService,
-		GalleryPostEntityService,
 		HashtagEntityService,
 		InstanceEntityService,
 		InviteCodeEntityService,
@@ -422,19 +401,16 @@ const $ApQuestionService: Provider = { provide: 'ApQuestionService', useExisting
 		MutingEntityService,
 		RenoteMutingEntityService,
 		NoteEntityService,
-		NoteFavoriteEntityService,
 		NoteReactionEntityService,
 		NoteDraftEntityService,
 		NotificationEntityService,
 		PageEntityService,
-		PageLikeEntityService,
 		SigninEntityService,
 		UserEntityService,
 		UserListEntityService,
 		FlashEntityService,
 		FlashLikeEntityService,
 		RoleEntityService,
-		ReversiGameEntityService,
 		MetaEntityService,
 		SystemWebhookEntityService,
 
@@ -468,7 +444,6 @@ const $ApQuestionService: Provider = { provide: 'ApQuestionService', useExisting
 		$AiService,
 		$AnnouncementService,
 		$AntennaService,
-		$AchievementService,
 		$AvatarDecorationService,
 		$CaptchaService,
 		$CustomEmojiService,
@@ -530,8 +505,6 @@ const $ApQuestionService: Provider = { provide: 'ApQuestionService', useExisting
 		$ChannelMutingService,
 		$ChatService,
 		$RegistryApiService,
-		$ReversiService,
-		$PageService,
 
 		$ChartLoggerService,
 		$FederationChart,
@@ -563,8 +536,6 @@ const $ApQuestionService: Provider = { provide: 'ApQuestionService', useExisting
 		$EmojiEntityService,
 		$FollowingEntityService,
 		$FollowRequestEntityService,
-		$GalleryLikeEntityService,
-		$GalleryPostEntityService,
 		$HashtagEntityService,
 		$InstanceEntityService,
 		$InviteCodeEntityService,
@@ -572,19 +543,16 @@ const $ApQuestionService: Provider = { provide: 'ApQuestionService', useExisting
 		$MutingEntityService,
 		$RenoteMutingEntityService,
 		$NoteEntityService,
-		$NoteFavoriteEntityService,
 		$NoteReactionEntityService,
 		$NoteDraftEntityService,
 		$NotificationEntityService,
 		$PageEntityService,
-		$PageLikeEntityService,
 		$SigninEntityService,
 		$UserEntityService,
 		$UserListEntityService,
 		$FlashEntityService,
 		$FlashLikeEntityService,
 		$RoleEntityService,
-		$ReversiGameEntityService,
 		$MetaEntityService,
 		$SystemWebhookEntityService,
 
@@ -618,7 +586,6 @@ const $ApQuestionService: Provider = { provide: 'ApQuestionService', useExisting
 		AiService,
 		AnnouncementService,
 		AntennaService,
-		AchievementService,
 		AvatarDecorationService,
 		CaptchaService,
 		CustomEmojiService,
@@ -680,8 +647,6 @@ const $ApQuestionService: Provider = { provide: 'ApQuestionService', useExisting
 		ChannelMutingService,
 		ChatService,
 		RegistryApiService,
-		ReversiService,
-		PageService,
 
 		FederationChart,
 		NotesChart,
@@ -712,8 +677,6 @@ const $ApQuestionService: Provider = { provide: 'ApQuestionService', useExisting
 		EmojiEntityService,
 		FollowingEntityService,
 		FollowRequestEntityService,
-		GalleryLikeEntityService,
-		GalleryPostEntityService,
 		HashtagEntityService,
 		InstanceEntityService,
 		InviteCodeEntityService,
@@ -721,19 +684,16 @@ const $ApQuestionService: Provider = { provide: 'ApQuestionService', useExisting
 		MutingEntityService,
 		RenoteMutingEntityService,
 		NoteEntityService,
-		NoteFavoriteEntityService,
 		NoteReactionEntityService,
 		NoteDraftEntityService,
 		NotificationEntityService,
 		PageEntityService,
-		PageLikeEntityService,
 		SigninEntityService,
 		UserEntityService,
 		UserListEntityService,
 		FlashEntityService,
 		FlashLikeEntityService,
 		RoleEntityService,
-		ReversiGameEntityService,
 		MetaEntityService,
 		SystemWebhookEntityService,
 
@@ -767,7 +727,6 @@ const $ApQuestionService: Provider = { provide: 'ApQuestionService', useExisting
 		$AiService,
 		$AnnouncementService,
 		$AntennaService,
-		$AchievementService,
 		$AvatarDecorationService,
 		$CaptchaService,
 		$CustomEmojiService,
@@ -828,8 +787,6 @@ const $ApQuestionService: Provider = { provide: 'ApQuestionService', useExisting
 		$ChannelMutingService,
 		$ChatService,
 		$RegistryApiService,
-		$ReversiService,
-		$PageService,
 
 		$FederationChart,
 		$NotesChart,
@@ -860,8 +817,6 @@ const $ApQuestionService: Provider = { provide: 'ApQuestionService', useExisting
 		$EmojiEntityService,
 		$FollowingEntityService,
 		$FollowRequestEntityService,
-		$GalleryLikeEntityService,
-		$GalleryPostEntityService,
 		$HashtagEntityService,
 		$InstanceEntityService,
 		$InviteCodeEntityService,
@@ -869,19 +824,16 @@ const $ApQuestionService: Provider = { provide: 'ApQuestionService', useExisting
 		$MutingEntityService,
 		$RenoteMutingEntityService,
 		$NoteEntityService,
-		$NoteFavoriteEntityService,
 		$NoteReactionEntityService,
 		$NoteDraftEntityService,
 		$NotificationEntityService,
 		$PageEntityService,
-		$PageLikeEntityService,
 		$SigninEntityService,
 		$UserEntityService,
 		$UserListEntityService,
 		$FlashEntityService,
 		$FlashLikeEntityService,
 		$RoleEntityService,
-		$ReversiGameEntityService,
 		$MetaEntityService,
 		$SystemWebhookEntityService,
 

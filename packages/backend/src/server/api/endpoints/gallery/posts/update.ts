@@ -3,13 +3,9 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  */
 
-import ms from 'ms';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/endpoint-base.js';
-import type { DriveFilesRepository, GalleryPostsRepository } from '@/models/_.js';
-import type { MiDriveFile } from '@/models/DriveFile.js';
-import { GalleryPostEntityService } from '@/core/entities/GalleryPostEntityService.js';
-import { DI } from '@/di-symbols.js';
+import { ApiError } from '../../../error.js';
 
 export const meta = {
 	tags: ['gallery'],
@@ -20,19 +16,20 @@ export const meta = {
 
 	kind: 'write:gallery',
 
-	limit: {
-		duration: ms('1hour'),
-		max: 300,
-	},
-
 	res: {
 		type: 'object',
 		optional: false, nullable: false,
 		ref: 'GalleryPost',
 	},
 
+	// endolphin: ギャラリー機能は削除済み。登録・型は互換のため維持し、呼び出されたらエラーを返す。
 	errors: {
-
+		featureRemoved: {
+			message: 'This feature has been removed.',
+			code: 'FEATURE_REMOVED',
+			id: '7708ffcc-8e36-4cd8-aa58-b82955d39d7f',
+			httpStatusCode: 410,
+		},
 	},
 } as const;
 
@@ -52,45 +49,9 @@ export const paramDef = {
 
 @Injectable()
 export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-disable-line import/no-default-export
-	constructor(
-		@Inject(DI.galleryPostsRepository)
-		private galleryPostsRepository: GalleryPostsRepository,
-
-		@Inject(DI.driveFilesRepository)
-		private driveFilesRepository: DriveFilesRepository,
-
-		private galleryPostEntityService: GalleryPostEntityService,
-	) {
-		super(meta, paramDef, async (ps, me) => {
-			let files: Array<MiDriveFile> | undefined;
-
-			if (ps.fileIds) {
-				files = (await Promise.all(ps.fileIds.map(fileId =>
-					this.driveFilesRepository.findOneBy({
-						id: fileId,
-						userId: me.id,
-					}),
-				))).filter(x => x != null);
-
-				if (files.length === 0) {
-					throw new Error();
-				}
-			}
-
-			await this.galleryPostsRepository.update({
-				id: ps.postId,
-				userId: me.id,
-			}, {
-				updatedAt: new Date(),
-				title: ps.title,
-				description: ps.description,
-				isSensitive: ps.isSensitive,
-				fileIds: files ? files.map(file => file.id) : undefined,
-			});
-
-			const post = await this.galleryPostsRepository.findOneByOrFail({ id: ps.postId });
-
-			return await this.galleryPostEntityService.pack(post, me);
+	constructor() {
+		super(meta, paramDef, async () => {
+			throw new ApiError(meta.errors.featureRemoved);
 		});
 	}
 }

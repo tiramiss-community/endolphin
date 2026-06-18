@@ -1545,10 +1545,6 @@ export interface Locale extends ILocale {
      */
     "yearX": ParameterizedString<"year">;
     /**
-     * ページ
-     */
-    "pages": string;
-    /**
      * 連携
      */
     "integration": string;
@@ -2481,10 +2477,6 @@ export interface Locale extends ILocale {
      */
     "script": string;
     /**
-     * Pagesのスクリプトを無効にする
-     */
-    "disablePagesScript": string;
-    /**
      * リモートユーザー情報の更新
      */
     "updateRemoteUser": string;
@@ -3161,14 +3153,6 @@ export interface Locale extends ILocale {
      */
     "noteFavoritesCount": string;
     /**
-     * Pageにいいねした数
-     */
-    "pageLikesCount": string;
-    /**
-     * Pageにいいねされた数
-     */
-    "pageLikedCount": string;
-    /**
      * 連絡先
      */
     "contact": string;
@@ -3529,25 +3513,13 @@ export interface Locale extends ILocale {
      */
     "configure": string;
     /**
-     * ギャラリーへ投稿
-     */
-    "postToGallery": string;
-    /**
      * このハッシュタグで投稿
      */
     "postToHashtag": string;
     /**
-     * ギャラリー
-     */
-    "gallery": string;
-    /**
      * 最近の投稿
      */
     "recentPosts": string;
-    /**
-     * 人気の投稿
-     */
-    "popularPosts": string;
     /**
      * ノートで共有
      */
@@ -4284,10 +4256,6 @@ export interface Locale extends ILocale {
      * カスタム
      */
     "custom": string;
-    /**
-     * 実績
-     */
-    "achievements": string;
     /**
      * サーバーの応答が無効です
      */
@@ -5097,10 +5065,6 @@ export interface Locale extends ILocale {
      */
     "enableQuickAddMfmFunction": string;
     /**
-     * バブルゲーム
-     */
-    "bubbleGame": string;
-    /**
      * 効果音
      */
     "sfx": string;
@@ -5480,10 +5444,6 @@ export interface Locale extends ILocale {
      * 上
      */
     "top": string;
-    /**
-     * 埋め込み
-     */
-    "embed": string;
     /**
      * 設定を移行しています。しばらくお待ちください... (後ほど、設定→その他→旧設定情報を移行 で手動で移行することもできます)
      */
@@ -6447,60 +6407,6 @@ export interface Locale extends ILocale {
              * 配信停止中のソフトウェアであるため停止中
              */
             "softwareSuspended": string;
-        };
-    };
-    "_bubbleGame": {
-        /**
-         * 遊び方
-         */
-        "howToPlay": string;
-        /**
-         * ホールド
-         */
-        "hold": string;
-        "_score": {
-            /**
-             * スコア
-             */
-            "score": string;
-            /**
-             * 稼いだ金額
-             */
-            "scoreYen": string;
-            /**
-             * ハイスコア
-             */
-            "highScore": string;
-            /**
-             * 最大チェーン数
-             */
-            "maxChain": string;
-            /**
-             * {yen}円
-             */
-            "yen": ParameterizedString<"yen">;
-            /**
-             * {qty}個分
-             */
-            "estimatedQty": ParameterizedString<"qty">;
-            /**
-             * おにぎり {onigiriQtyWithUnit}
-             */
-            "scoreSweets": ParameterizedString<"onigiriQtyWithUnit">;
-        };
-        "_howToPlay": {
-            /**
-             * 位置を調整してハコにモノを落とします。
-             */
-            "section1": string;
-            /**
-             * 同じ種類のモノがくっつくと別のモノに変化して、スコアが得られます。
-             */
-            "section2": string;
-            /**
-             * モノがハコからあふれるとゲームオーバーです。ハコからあふれないようにしつつモノを融合させてハイスコアを目指そう！
-             */
-            "section3": string;
         };
     };
     "_announcement": {
@@ -8519,24 +8425,6 @@ export interface Locale extends ILocale {
          */
         "contactAdmin": string;
     };
-    "_gallery": {
-        /**
-         * 自分の投稿
-         */
-        "my": string;
-        /**
-         * いいねした投稿
-         */
-        "liked": string;
-        /**
-         * いいね！
-         */
-        "like": string;
-        /**
-         * いいね解除
-         */
-        "unlike": string;
-    };
     "_email": {
         "_follow": {
             /**
@@ -10411,10 +10299,6 @@ export interface Locale extends ILocale {
          */
         "allNotes": string;
         /**
-         * お気に入りにしたノート
-         */
-        "favoritedNotes": string;
-        /**
          * クリップ
          */
         "clips": string;
@@ -10626,196 +10510,6 @@ export interface Locale extends ILocale {
          * 非公開に設定するとプロフィールに表示されなくなりますが、URLを知っている人は引き続きアクセスできます。
          */
         "visibilityDescription": string;
-    };
-    "_pages": {
-        /**
-         * ページの作成
-         */
-        "newPage": string;
-        /**
-         * ページの編集
-         */
-        "editPage": string;
-        /**
-         * ソースを表示中
-         */
-        "readPage": string;
-        /**
-         * ページ設定
-         */
-        "pageSetting": string;
-        /**
-         * 指定されたページURLは既に存在しています
-         */
-        "nameAlreadyExists": string;
-        /**
-         * 不正なページURLです
-         */
-        "invalidNameTitle": string;
-        /**
-         * 空白でないか確認してください
-         */
-        "invalidNameText": string;
-        /**
-         * このページを編集
-         */
-        "editThisPage": string;
-        /**
-         * ソースを表示
-         */
-        "viewSource": string;
-        /**
-         * ページを見る
-         */
-        "viewPage": string;
-        /**
-         * いいね
-         */
-        "like": string;
-        /**
-         * いいね解除
-         */
-        "unlike": string;
-        /**
-         * 自分のページ
-         */
-        "my": string;
-        /**
-         * いいねしたページ
-         */
-        "liked": string;
-        /**
-         * 人気
-         */
-        "featured": string;
-        /**
-         * インスペクター
-         */
-        "inspector": string;
-        /**
-         * コンテンツ
-         */
-        "contents": string;
-        /**
-         * ページブロック
-         */
-        "content": string;
-        /**
-         * 変数
-         */
-        "variables": string;
-        /**
-         * タイトル
-         */
-        "title": string;
-        /**
-         * ページURL
-         */
-        "url": string;
-        /**
-         * ページの要約
-         */
-        "summary": string;
-        /**
-         * 中央寄せ
-         */
-        "alignCenter": string;
-        /**
-         * ピン留めされているときにタイトルを非表示
-         */
-        "hideTitleWhenPinned": string;
-        /**
-         * フォント
-         */
-        "font": string;
-        /**
-         * セリフ
-         */
-        "fontSerif": string;
-        /**
-         * サンセリフ
-         */
-        "fontSansSerif": string;
-        /**
-         * アイキャッチ画像を設定
-         */
-        "eyeCatchingImageSet": string;
-        /**
-         * アイキャッチ画像を削除
-         */
-        "eyeCatchingImageRemove": string;
-        /**
-         * ブロックを追加
-         */
-        "chooseBlock": string;
-        /**
-         * セクションタイトルを入力
-         */
-        "enterSectionTitle": string;
-        /**
-         * 種類を選択
-         */
-        "selectType": string;
-        /**
-         * コンテンツ
-         */
-        "contentBlocks": string;
-        /**
-         * 入力
-         */
-        "inputBlocks": string;
-        /**
-         * 特殊
-         */
-        "specialBlocks": string;
-        "blocks": {
-            /**
-             * テキスト
-             */
-            "text": string;
-            /**
-             * テキストエリア
-             */
-            "textarea": string;
-            /**
-             * セクション
-             */
-            "section": string;
-            /**
-             * 画像
-             */
-            "image": string;
-            /**
-             * ボタン
-             */
-            "button": string;
-            /**
-             * 動的ブロック
-             */
-            "dynamic": string;
-            /**
-             * このブロックは廃止されています。今後は{play}を利用してください。
-             */
-            "dynamicDescription": ParameterizedString<"play">;
-            /**
-             * ノート埋め込み
-             */
-            "note": string;
-            "_note": {
-                /**
-                 * ノートID
-                 */
-                "id": string;
-                /**
-                 * ノートURLをペーストして設定することもできます。
-                 */
-                "idDescription": string;
-                /**
-                 * 詳細な表示
-                 */
-                "detailed": string;
-            };
-        };
     };
     "_relayStatus": {
         /**
@@ -11833,180 +11527,6 @@ export interface Locale extends ILocale {
          */
         "caption": string;
     };
-    "_reversi": {
-        /**
-         * リバーシ
-         */
-        "reversi": string;
-        /**
-         * 対局の設定
-         */
-        "gameSettings": string;
-        /**
-         * ボードを選択
-         */
-        "chooseBoard": string;
-        /**
-         * 先行/後攻
-         */
-        "blackOrWhite": string;
-        /**
-         * {name}が黒(先行)
-         */
-        "blackIs": ParameterizedString<"name">;
-        /**
-         * ルール
-         */
-        "rules": string;
-        /**
-         * 対局はまもなく開始されます
-         */
-        "thisGameIsStartedSoon": string;
-        /**
-         * 相手の準備が完了するのを待っています
-         */
-        "waitingForOther": string;
-        /**
-         * あなたの準備が完了するのを待っています
-         */
-        "waitingForMe": string;
-        /**
-         * 準備してください
-         */
-        "waitingBoth": string;
-        /**
-         * 準備完了
-         */
-        "ready": string;
-        /**
-         * 準備を再開
-         */
-        "cancelReady": string;
-        /**
-         * 相手のターンです
-         */
-        "opponentTurn": string;
-        /**
-         * あなたのターンです
-         */
-        "myTurn": string;
-        /**
-         * {name}のターンです
-         */
-        "turnOf": ParameterizedString<"name">;
-        /**
-         * {name}のターン
-         */
-        "pastTurnOf": ParameterizedString<"name">;
-        /**
-         * 投了
-         */
-        "surrender": string;
-        /**
-         * 投了により
-         */
-        "surrendered": string;
-        /**
-         * 時間切れ
-         */
-        "timeout": string;
-        /**
-         * 引き分け
-         */
-        "drawn": string;
-        /**
-         * {name}の勝ち
-         */
-        "won": ParameterizedString<"name">;
-        /**
-         * 黒
-         */
-        "black": string;
-        /**
-         * 白
-         */
-        "white": string;
-        /**
-         * 合計
-         */
-        "total": string;
-        /**
-         * {count}ターン目
-         */
-        "turnCount": ParameterizedString<"count">;
-        /**
-         * 自分の対局
-         */
-        "myGames": string;
-        /**
-         * みんなの対局
-         */
-        "allGames": string;
-        /**
-         * 終了
-         */
-        "ended": string;
-        /**
-         * 対局中
-         */
-        "playing": string;
-        /**
-         * 石の少ない方が勝ち(ロセオ)
-         */
-        "isLlotheo": string;
-        /**
-         * ループマップ
-         */
-        "loopedMap": string;
-        /**
-         * どこでも置けるモード
-         */
-        "canPutEverywhere": string;
-        /**
-         * 1ターンの時間制限
-         */
-        "timeLimitForEachTurn": string;
-        /**
-         * フリーマッチ
-         */
-        "freeMatch": string;
-        /**
-         * 対戦相手を探しています
-         */
-        "lookingForPlayer": string;
-        /**
-         * 対局がキャンセルされました
-         */
-        "gameCanceled": string;
-        /**
-         * 開始時に対局をタイムラインに投稿
-         */
-        "shareToTlTheGameWhenStart": string;
-        /**
-         * 対局を開始しました！ #MisskeyReversi
-         */
-        "iStartedAGame": string;
-        /**
-         * 相手が設定を変更しました
-         */
-        "opponentHasSettingsChanged": string;
-        /**
-         * 変則許可 (完全フリー)
-         */
-        "allowIrregularRules": string;
-        /**
-         * 変則なし
-         */
-        "disallowIrregularRules": string;
-        /**
-         * 盤面に行・列番号を表示
-         */
-        "showBoardLabels": string;
-        /**
-         * 石をアイコンにする
-         */
-        "useAvatarAsStone": string;
-    };
     "_offlineScreen": {
         /**
          * オフライン - サーバーに接続できません
@@ -12315,60 +11835,6 @@ export interface Locale extends ILocale {
                 "confirmUploadEmojisDescription": ParameterizedString<"count">;
             };
         };
-    };
-    "_embedCodeGen": {
-        /**
-         * 埋め込みコードをカスタマイズ
-         */
-        "title": string;
-        /**
-         * ヘッダーを表示
-         */
-        "header": string;
-        /**
-         * 自動で続きを読み込む（非推奨）
-         */
-        "autoload": string;
-        /**
-         * 高さの最大値
-         */
-        "maxHeight": string;
-        /**
-         * 0で最大値の設定が無効になります。ウィジェットが縦に伸び続けるのを防ぐために、何らかの値に指定してください。
-         */
-        "maxHeightDescription": string;
-        /**
-         * 高さの最大値制限が無効（0）になっています。これが意図した変更ではない場合は、高さの最大値を何らかの値に設定してください。
-         */
-        "maxHeightWarn": string;
-        /**
-         * プレビュー画面で表示可能な範囲を超えたため、実際に埋め込んだ際とは表示が異なります。
-         */
-        "previewIsNotActual": string;
-        /**
-         * 角丸にする
-         */
-        "rounded": string;
-        /**
-         * 外枠に枠線をつける
-         */
-        "border": string;
-        /**
-         * プレビューに反映
-         */
-        "applyToPreview": string;
-        /**
-         * 埋め込みコードを作成
-         */
-        "generateCode": string;
-        /**
-         * コードが生成されました
-         */
-        "codeGenerated": string;
-        /**
-         * 生成されたコードをウェブサイトに貼り付けてご利用ください。
-         */
-        "codeGeneratedDescription": string;
     };
     "_selfXssPrevention": {
         /**

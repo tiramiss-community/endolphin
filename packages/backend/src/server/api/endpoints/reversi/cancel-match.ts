@@ -5,14 +5,21 @@
 
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/endpoint-base.js';
-import { ReversiService } from '@/core/ReversiService.js';
+import { ApiError } from '../../error.js';
 
 export const meta = {
 	requireCredential: true,
 
 	kind: 'write:account',
 
+	// endolphin: Games 機能は削除済み。登録・型は互換のため維持し、呼び出されたらエラーを返す。
 	errors: {
+		featureRemoved: {
+			message: 'This feature has been removed.',
+			code: 'FEATURE_REMOVED',
+			id: 'd768fbff-16d7-409c-9387-ea3ee7e1358c',
+			httpStatusCode: 410,
+		},
 	},
 } as const;
 
@@ -26,16 +33,9 @@ export const paramDef = {
 
 @Injectable()
 export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-disable-line import/no-default-export
-	constructor(
-		private reversiService: ReversiService,
-	) {
-		super(meta, paramDef, async (ps, me) => {
-			if (ps.userId) {
-				await this.reversiService.matchSpecificUserCancel(me, ps.userId);
-				return;
-			} else {
-				await this.reversiService.matchAnyUserCancel(me);
-			}
+	constructor() {
+		super(meta, paramDef, async () => {
+			throw new ApiError(meta.errors.featureRemoved);
 		});
 	}
 }

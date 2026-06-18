@@ -5,8 +5,6 @@
 
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/endpoint-base.js';
-import { ReversiService } from '@/core/ReversiService.js';
-import { ReversiGameEntityService } from '@/core/entities/ReversiGameEntityService.js';
 import { ApiError } from '../../error.js';
 
 export const meta = {
@@ -37,18 +35,10 @@ export const paramDef = {
 
 @Injectable()
 export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-disable-line import/no-default-export
-	constructor(
-		private reversiService: ReversiService,
-		private reversiGameEntityService: ReversiGameEntityService,
-	) {
-		super(meta, paramDef, async (ps, me) => {
-			const game = await this.reversiService.get(ps.gameId);
-
-			if (game == null) {
-				throw new ApiError(meta.errors.noSuchGame);
-			}
-
-			return await this.reversiGameEntityService.packDetail(game);
+	constructor() {
+		// endolphin: Games 機能は削除済み。登録・型は互換のため維持し、常に該当なしを返す。
+		super(meta, paramDef, async () => {
+			throw new ApiError(meta.errors.noSuchGame);
 		});
 	}
 }

@@ -3,15 +3,9 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  */
 
-import ms from 'ms';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/endpoint-base.js';
-import type { DriveFilesRepository, GalleryPostsRepository } from '@/models/_.js';
-import { MiGalleryPost } from '@/models/GalleryPost.js';
-import type { MiDriveFile } from '@/models/DriveFile.js';
-import { IdService } from '@/core/IdService.js';
-import { GalleryPostEntityService } from '@/core/entities/GalleryPostEntityService.js';
-import { DI } from '@/di-symbols.js';
+import { ApiError } from '../../../error.js';
 
 export const meta = {
 	tags: ['gallery'],
@@ -22,19 +16,20 @@ export const meta = {
 
 	kind: 'write:gallery',
 
-	limit: {
-		duration: ms('1hour'),
-		max: 20,
-	},
-
 	res: {
 		type: 'object',
 		optional: false, nullable: false,
 		ref: 'GalleryPost',
 	},
 
+	// endolphin: ギャラリー機能は削除済み。登録・型は互換のため維持し、呼び出されたらエラーを返す。
 	errors: {
-
+		featureRemoved: {
+			message: 'This feature has been removed.',
+			code: 'FEATURE_REMOVED',
+			id: '1488466a-e76e-4410-b33f-7b9dc21f0797',
+			httpStatusCode: 410,
+		},
 	},
 } as const;
 
@@ -53,39 +48,9 @@ export const paramDef = {
 
 @Injectable()
 export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-disable-line import/no-default-export
-	constructor(
-		@Inject(DI.galleryPostsRepository)
-		private galleryPostsRepository: GalleryPostsRepository,
-
-		@Inject(DI.driveFilesRepository)
-		private driveFilesRepository: DriveFilesRepository,
-
-		private galleryPostEntityService: GalleryPostEntityService,
-		private idService: IdService,
-	) {
-		super(meta, paramDef, async (ps, me) => {
-			const files = (await Promise.all(ps.fileIds.map(fileId =>
-				this.driveFilesRepository.findOneBy({
-					id: fileId,
-					userId: me.id,
-				}),
-			))).filter(x => x != null);
-
-			if (files.length === 0) {
-				throw new Error();
-			}
-
-			const post = await this.galleryPostsRepository.insertOne(new MiGalleryPost({
-				id: this.idService.gen(),
-				updatedAt: new Date(),
-				title: ps.title,
-				description: ps.description,
-				userId: me.id,
-				isSensitive: ps.isSensitive,
-				fileIds: files.map(file => file.id),
-			}));
-
-			return await this.galleryPostEntityService.pack(post, me);
+	constructor() {
+		super(meta, paramDef, async () => {
+			throw new ApiError(meta.errors.featureRemoved);
 		});
 	}
 }

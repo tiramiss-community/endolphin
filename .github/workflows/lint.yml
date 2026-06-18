@@ -10,7 +10,6 @@ on:
       - packages/frontend/**
       - packages/frontend-shared/**
       - packages/frontend-builder/**
-      - packages/frontend-embed/**
       - packages/icons-subsetter/**
       - packages/sw/**
       - packages/misskey-js/**
@@ -24,7 +23,6 @@ on:
       - packages/frontend/**
       - packages/frontend-shared/**
       - packages/frontend-builder/**
-      - packages/frontend-embed/**
       - packages/icons-subsetter/**
       - packages/sw/**
       - packages/misskey-js/**
@@ -59,7 +57,6 @@ jobs:
         - frontend
         - frontend-shared
         - frontend-builder
-        - frontend-embed
         - icons-subsetter
         - sw
         - misskey-js

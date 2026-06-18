@@ -5,7 +5,6 @@
 
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/endpoint-base.js';
-import { ReversiService } from '@/core/ReversiService.js';
 import { ApiError } from '../../error.js';
 
 export const meta = {
@@ -13,23 +12,13 @@ export const meta = {
 
 	kind: 'write:account',
 
+	// endolphin: Games 機能は削除済み。登録・型は互換のため維持し、呼び出されたらエラーを返す。
 	errors: {
-		noSuchGame: {
-			message: 'No such game.',
-			code: 'NO_SUCH_GAME',
-			id: 'ace0b11f-e0a6-4076-a30d-e8284c81b2df',
-		},
-
-		alreadyEnded: {
-			message: 'That game has already ended.',
-			code: 'ALREADY_ENDED',
-			id: '6c2ad4a6-cbf1-4a5b-b187-b772826cfc6d',
-		},
-
-		accessDenied: {
-			message: 'Access denied.',
-			code: 'ACCESS_DENIED',
-			id: '6e04164b-a992-4c93-8489-2123069973e1',
+		featureRemoved: {
+			message: 'This feature has been removed.',
+			code: 'FEATURE_REMOVED',
+			id: '02615eef-32da-4abf-8423-8ba55a08b7fa',
+			httpStatusCode: 410,
 		},
 	},
 } as const;
@@ -44,25 +33,9 @@ export const paramDef = {
 
 @Injectable()
 export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-disable-line import/no-default-export
-	constructor(
-		private reversiService: ReversiService,
-	) {
-		super(meta, paramDef, async (ps, me) => {
-			const game = await this.reversiService.get(ps.gameId);
-
-			if (game == null) {
-				throw new ApiError(meta.errors.noSuchGame);
-			}
-
-			if (game.isEnded) {
-				throw new ApiError(meta.errors.alreadyEnded);
-			}
-
-			if ((game.user1Id !== me.id) && (game.user2Id !== me.id)) {
-				throw new ApiError(meta.errors.accessDenied);
-			}
-
-			await this.reversiService.surrender(game.id, me);
+	constructor() {
+		super(meta, paramDef, async () => {
+			throw new ApiError(meta.errors.featureRemoved);
 		});
 	}
 }

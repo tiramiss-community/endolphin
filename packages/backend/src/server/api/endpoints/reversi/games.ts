@@ -3,13 +3,8 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  */
 
-import { Inject, Injectable } from '@nestjs/common';
-import { Brackets } from 'typeorm';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/endpoint-base.js';
-import { ReversiGameEntityService } from '@/core/entities/ReversiGameEntityService.js';
-import { DI } from '@/di-symbols.js';
-import type { ReversiGamesRepository } from '@/models/_.js';
-import { QueryService } from '@/core/QueryService.js';
 
 export const meta = {
 	requireCredential: false,
@@ -36,31 +31,10 @@ export const paramDef = {
 
 @Injectable()
 export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-disable-line import/no-default-export
-	constructor(
-		@Inject(DI.reversiGamesRepository)
-		private reversiGamesRepository: ReversiGamesRepository,
-
-		private reversiGameEntityService: ReversiGameEntityService,
-		private queryService: QueryService,
-	) {
-		super(meta, paramDef, async (ps, me) => {
-			const query = this.queryService.makePaginationQuery(this.reversiGamesRepository.createQueryBuilder('game'), ps.sinceId, ps.untilId, ps.sinceDate, ps.untilDate)
-				.innerJoinAndSelect('game.user1', 'user1')
-				.innerJoinAndSelect('game.user2', 'user2');
-
-			if (ps.my && me) {
-				query.andWhere(new Brackets(qb => {
-					qb
-						.where('game.user1Id = :userId', { userId: me.id })
-						.orWhere('game.user2Id = :userId', { userId: me.id });
-				}));
-			} else {
-				query.andWhere('game.isStarted = TRUE');
-			}
-
-			const games = await query.take(ps.limit).getMany();
-
-			return await this.reversiGameEntityService.packLiteMany(games);
+	constructor() {
+		// endolphin: Games 機能は削除済み。登録・型は互換のため維持し、常に空を返す。
+		super(meta, paramDef, async () => {
+			return [];
 		});
 	}
 }

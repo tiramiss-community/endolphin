@@ -3,12 +3,8 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  */
 
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/endpoint-base.js';
-import type { PagesRepository } from '@/models/_.js';
-import { QueryService } from '@/core/QueryService.js';
-import { PageEntityService } from '@/core/entities/PageEntityService.js';
-import { DI } from '@/di-symbols.js';
 
 export const meta = {
 	tags: ['account', 'pages'],
@@ -42,22 +38,10 @@ export const paramDef = {
 
 @Injectable()
 export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-disable-line import/no-default-export
-	constructor(
-		@Inject(DI.pagesRepository)
-		private pagesRepository: PagesRepository,
-
-		private pageEntityService: PageEntityService,
-		private queryService: QueryService,
-	) {
-		super(meta, paramDef, async (ps, me) => {
-			const query = this.queryService.makePaginationQuery(this.pagesRepository.createQueryBuilder('page'), ps.sinceId, ps.untilId, ps.sinceDate, ps.untilDate)
-				.andWhere('page.userId = :meId', { meId: me.id });
-
-			const pages = await query
-				.limit(ps.limit)
-				.getMany();
-
-			return await this.pageEntityService.packMany(pages);
+	constructor() {
+		// endolphin: ページ機能は削除済み。登録・型は互換のため維持し、常に空を返す。
+		super(meta, paramDef, async () => {
+			return [];
 		});
 	}
 }

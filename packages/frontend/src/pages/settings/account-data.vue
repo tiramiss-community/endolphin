@@ -23,18 +23,6 @@ SPDX-License-Identifier: AGPL-3.0-only
 				</MkFolder>
 			</SearchMarker>
 
-			<SearchMarker :keywords="['favorite', 'notes']">
-				<MkFolder>
-					<template #icon><i class="ti ti-star"></i></template>
-					<template #label><SearchLabel>{{ i18n.ts._exportOrImport.favoritedNotes }}</SearchLabel></template>
-					<MkFolder :defaultOpen="true">
-						<template #label>{{ i18n.ts.export }}</template>
-						<template #icon><i class="ti ti-download"></i></template>
-						<MkButton primary :class="$style.button" inline @click="exportFavorites()"><i class="ti ti-download"></i> {{ i18n.ts.export }}</MkButton>
-					</MkFolder>
-				</MkFolder>
-			</SearchMarker>
-
 			<SearchMarker :keywords="['clip', 'notes']">
 				<MkFolder>
 					<template #icon><i class="ti ti-star"></i></template>
@@ -198,10 +186,6 @@ const onError = (ev: Error) => {
 
 const exportNotes = () => {
 	misskeyApi('i/export-notes', {}).then(onExportSuccess).catch(onError);
-};
-
-const exportFavorites = () => {
-	misskeyApi('i/export-favorites', {}).then(onExportSuccess).catch(onError);
 };
 
 const exportClips = () => {

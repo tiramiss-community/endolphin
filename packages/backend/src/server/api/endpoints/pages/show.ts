@@ -3,13 +3,8 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  */
 
-import { IsNull } from 'typeorm';
-import { Inject, Injectable } from '@nestjs/common';
-import type { UsersRepository, PagesRepository } from '@/models/_.js';
-import type { MiPage } from '@/models/Page.js';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/endpoint-base.js';
-import { PageEntityService } from '@/core/entities/PageEntityService.js';
-import { DI } from '@/di-symbols.js';
 import { ApiError } from '../../error.js';
 
 export const meta = {
@@ -54,38 +49,10 @@ export const paramDef = {
 
 @Injectable()
 export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-disable-line import/no-default-export
-	constructor(
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		@Inject(DI.pagesRepository)
-		private pagesRepository: PagesRepository,
-
-		private pageEntityService: PageEntityService,
-	) {
-		super(meta, paramDef, async (ps, me) => {
-			let page: MiPage | null = null;
-
-			if ('pageId' in ps) {
-				page = await this.pagesRepository.findOneBy({ id: ps.pageId });
-			} else {
-				const author = await this.usersRepository.findOneBy({
-					host: IsNull(),
-					usernameLower: ps.username.toLowerCase(),
-				});
-				if (author) {
-					page = await this.pagesRepository.findOneBy({
-						name: ps.name,
-						userId: author.id,
-					});
-				}
-			}
-
-			if (page == null) {
-				throw new ApiError(meta.errors.noSuchPage);
-			}
-
-			return await this.pageEntityService.pack(page, me);
+	constructor() {
+		// endolphin: ページ機能は削除済み。登録・型は互換のため維持し、常に noSuchPage を返す。
+		super(meta, paramDef, async () => {
+			throw new ApiError(meta.errors.noSuchPage);
 		});
 	}
 }
