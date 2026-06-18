@@ -4,14 +4,9 @@
  */
 
 import ms from 'ms';
-import { Inject, Injectable } from '@nestjs/common';
-import type { DriveFilesRepository, MiDriveFile, PagesRepository } from '@/models/_.js';
+import { Injectable } from '@nestjs/common';
 import { pageNameSchema } from '@/models/Page.js';
 import { Endpoint } from '@/server/api/endpoint-base.js';
-import { PageEntityService } from '@/core/entities/PageEntityService.js';
-import { DI } from '@/di-symbols.js';
-import { PageService } from '@/core/PageService.js';
-import { IdentifiableError } from '@/misc/identifiable-error.js';
 import { ApiError } from '../../error.js';
 
 export const meta = {
@@ -34,16 +29,13 @@ export const meta = {
 		ref: 'Page',
 	},
 
+	// endolphin: ページ機能は削除済み。登録・型は互換のため維持し、呼び出されたらエラーを返す。
 	errors: {
-		noSuchFile: {
-			message: 'No such file.',
-			code: 'NO_SUCH_FILE',
-			id: 'b7b97489-0f66-4b12-a5ff-b21bd63f6e1c',
-		},
-		nameAlreadyExists: {
-			message: 'Specified name already exists.',
-			code: 'NAME_ALREADY_EXISTS',
-			id: '4650348e-301c-499a-83c9-6aa988c66bc1',
+		featureRemoved: {
+			message: 'This feature has been removed.',
+			code: 'FEATURE_REMOVED',
+			id: '5405b17a-10e0-4e46-8e14-b87ca69515a0',
+			httpStatusCode: 410,
 		},
 	},
 } as const;
@@ -71,52 +63,9 @@ export const paramDef = {
 
 @Injectable()
 export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-disable-line import/no-default-export
-	constructor(
-		@Inject(DI.pagesRepository)
-		private pagesRepository: PagesRepository,
-
-		@Inject(DI.driveFilesRepository)
-		private driveFilesRepository: DriveFilesRepository,
-
-		private pageService: PageService,
-		private pageEntityService: PageEntityService,
-	) {
-		super(meta, paramDef, async (ps, me) => {
-			let eyeCatchingImage: MiDriveFile | null = null;
-			if (ps.eyeCatchingImageId != null) {
-				eyeCatchingImage = await this.driveFilesRepository.findOneBy({
-					id: ps.eyeCatchingImageId,
-					userId: me.id,
-				});
-
-				if (eyeCatchingImage == null) {
-					throw new ApiError(meta.errors.noSuchFile);
-				}
-			}
-
-			await this.pagesRepository.findBy({
-				userId: me.id,
-				name: ps.name,
-			}).then(result => {
-				if (result.length > 0) {
-					throw new ApiError(meta.errors.nameAlreadyExists);
-				}
-			});
-
-			try {
-				const page = await this.pageService.create(me, {
-					...ps,
-					eyeCatchingImage,
-					summary: ps.summary ?? null,
-				});
-
-				return await this.pageEntityService.pack(page);
-			} catch (err) {
-				if (err instanceof IdentifiableError && err.id === '1a79e38e-3d83-4423-845b-a9d83ff93b61') {
-					throw new ApiError(meta.errors.nameAlreadyExists);
-				}
-				throw err;
-			}
+	constructor() {
+		super(meta, paramDef, async () => {
+			throw new ApiError(meta.errors.featureRemoved);
 		});
 	}
 }

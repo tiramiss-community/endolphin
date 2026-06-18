@@ -3,10 +3,8 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  */
 
-import { Inject, Injectable } from '@nestjs/common';
-import type { PagesRepository, PageLikesRepository } from '@/models/_.js';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/endpoint-base.js';
-import { DI } from '@/di-symbols.js';
 import { ApiError } from '../../error.js';
 
 export const meta = {
@@ -18,17 +16,13 @@ export const meta = {
 
 	kind: 'write:page-likes',
 
+	// endolphin: ページ機能は削除済み。登録・型は互換のため維持し、呼び出されたらエラーを返す。
 	errors: {
-		noSuchPage: {
-			message: 'No such page.',
-			code: 'NO_SUCH_PAGE',
-			id: 'a0d41e20-1993-40bd-890e-f6e560ae648e',
-		},
-
-		notLiked: {
-			message: 'You have not liked that page.',
-			code: 'NOT_LIKED',
-			id: 'f5e586b0-ce93-4050-b0e3-7f31af5259ee',
+		featureRemoved: {
+			message: 'This feature has been removed.',
+			code: 'FEATURE_REMOVED',
+			id: 'da352ef7-ab1b-4755-b9ec-2eeda203f969',
+			httpStatusCode: 410,
 		},
 	},
 } as const;
@@ -43,32 +37,9 @@ export const paramDef = {
 
 @Injectable()
 export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-disable-line import/no-default-export
-	constructor(
-		@Inject(DI.pagesRepository)
-		private pagesRepository: PagesRepository,
-
-		@Inject(DI.pageLikesRepository)
-		private pageLikesRepository: PageLikesRepository,
-	) {
-		super(meta, paramDef, async (ps, me) => {
-			const page = await this.pagesRepository.findOneBy({ id: ps.pageId });
-			if (page == null) {
-				throw new ApiError(meta.errors.noSuchPage);
-			}
-
-			const exist = await this.pageLikesRepository.findOneBy({
-				pageId: page.id,
-				userId: me.id,
-			});
-
-			if (exist == null) {
-				throw new ApiError(meta.errors.notLiked);
-			}
-
-			// Delete like
-			await this.pageLikesRepository.delete(exist.id);
-
-			this.pagesRepository.decrement({ id: page.id }, 'likedCount', 1);
+	constructor() {
+		super(meta, paramDef, async () => {
+			throw new ApiError(meta.errors.featureRemoved);
 		});
 	}
 }

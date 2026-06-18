@@ -3,7 +3,6 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  */
 
-import { misskeyApi } from '@/utility/misskey-api.js';
 import { $i } from '@/i.js';
 
 export const ACHIEVEMENT_TYPES = [
@@ -489,19 +488,9 @@ export const ACHIEVEMENT_BADGES = {
 
 export const claimedAchievements: typeof ACHIEVEMENT_TYPES[number][] = ($i && $i.achievements) ? $i.achievements.map(x => x.name) : [];
 
-const claimingQueue = new Set<string>();
-
+// endolphin: 実績機能は削除済み。呼び出し元は多数の高churnファイルに散在するため、ここで no-op 化する。
 export async function claimAchievement(type: typeof ACHIEVEMENT_TYPES[number]) {
-	if ($i == null) return;
-	if ($i.movedTo) return;
-	if (claimedAchievements.includes(type)) return;
-	claimingQueue.add(type);
-	claimedAchievements.push(type);
-	await new Promise(resolve => window.setTimeout(resolve, (claimingQueue.size - 1) * 500));
-	window.setTimeout(() => {
-		claimingQueue.delete(type);
-	}, 500);
-	misskeyApi('i/claim-achievement', { name: type });
+	return;
 }
 
 if (_DEV_) {

@@ -57,8 +57,6 @@ jobs:
             "packages/frontend/public"
             "packages/frontend/src"
             "packages/frontend/test"
-            "packages/frontend-embed/@types"
-            "packages/frontend-embed/src"
             "packages/icons-subsetter/src"
             "packages/misskey-bubble-game/src"
             "packages/misskey-reversi/src"

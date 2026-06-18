@@ -4,16 +4,21 @@
  */
 
 import { Injectable } from '@nestjs/common';
-import ms from 'ms';
 import { Endpoint } from '@/server/api/endpoint-base.js';
-import { QueueService } from '@/core/QueueService.js';
+import { ApiError } from '../../error.js';
 
 export const meta = {
 	secure: true,
 	requireCredential: true,
-	limit: {
-		duration: ms('1day'),
-		max: 1,
+
+	// endolphin: お気に入り機能は削除済み。登録・型は互換のため維持し、呼び出されたらエラーを返す。
+	errors: {
+		featureRemoved: {
+			message: 'This feature has been removed.',
+			code: 'FEATURE_REMOVED',
+			id: '7ae0b398-d501-48ae-a67d-b241b8837172',
+			httpStatusCode: 410,
+		},
 	},
 } as const;
 
@@ -25,11 +30,9 @@ export const paramDef = {
 
 @Injectable()
 export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-disable-line import/no-default-export
-	constructor(
-		private queueService: QueueService,
-	) {
-		super(meta, paramDef, async (ps, me) => {
-			this.queueService.createExportFavoritesJob(me);
+	constructor() {
+		super(meta, paramDef, async () => {
+			throw new ApiError(meta.errors.featureRemoved);
 		});
 	}
 }

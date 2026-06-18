@@ -32,7 +32,6 @@ import { ImportUserListsProcessorService } from './processors/ImportUserListsPro
 import { ImportCustomEmojisProcessorService } from './processors/ImportCustomEmojisProcessorService.js';
 import { ImportAntennasProcessorService } from './processors/ImportAntennasProcessorService.js';
 import { DeleteAccountProcessorService } from './processors/DeleteAccountProcessorService.js';
-import { ExportFavoritesProcessorService } from './processors/ExportFavoritesProcessorService.js';
 import { CleanRemoteFilesProcessorService } from './processors/CleanRemoteFilesProcessorService.js';
 import { DeleteFileProcessorService } from './processors/DeleteFileProcessorService.js';
 import { RelationshipProcessorService } from './processors/RelationshipProcessorService.js';
@@ -102,7 +101,6 @@ export class QueueProcessorService implements OnApplicationShutdown {
 		private exportCustomEmojisProcessorService: ExportCustomEmojisProcessorService,
 		private exportNotesProcessorService: ExportNotesProcessorService,
 		private exportClipsProcessorService: ExportClipsProcessorService,
-		private exportFavoritesProcessorService: ExportFavoritesProcessorService,
 		private exportFollowingProcessorService: ExportFollowingProcessorService,
 		private exportMutingProcessorService: ExportMutingProcessorService,
 		private exportBlockingProcessorService: ExportBlockingProcessorService,
@@ -218,7 +216,6 @@ export class QueueProcessorService implements OnApplicationShutdown {
 					case 'exportCustomEmojis': return this.exportCustomEmojisProcessorService.process(job);
 					case 'exportNotes': return this.exportNotesProcessorService.process(job);
 					case 'exportClips': return this.exportClipsProcessorService.process(job);
-					case 'exportFavorites': return this.exportFavoritesProcessorService.process(job);
 					case 'exportFollowing': return this.exportFollowingProcessorService.process(job);
 					case 'exportMuting': return this.exportMutingProcessorService.process(job);
 					case 'exportBlocking': return this.exportBlockingProcessorService.process(job);

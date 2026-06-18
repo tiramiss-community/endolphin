@@ -47,8 +47,6 @@ import { UserListChannel } from './api/stream/channels/user-list.js';
 import { RoleTimelineChannel } from './api/stream/channels/role-timeline.js';
 import { ChatUserChannel } from './api/stream/channels/chat-user.js';
 import { ChatRoomChannel } from './api/stream/channels/chat-room.js';
-import { ReversiChannel } from './api/stream/channels/reversi.js';
-import { ReversiGameChannel } from './api/stream/channels/reversi-game.js';
 import { NoteStreamingHidingService } from './api/stream/NoteStreamingHidingService.js';
 import { SigninWithPasskeyApiService } from './api/SigninWithPasskeyApiService.js';
 
@@ -91,8 +89,6 @@ import { SigninWithPasskeyApiService } from './api/SigninWithPasskeyApiService.j
 		RoleTimelineChannel,
 		ChatUserChannel,
 		ChatRoomChannel,
-		ReversiChannel,
-		ReversiGameChannel,
 		HomeTimelineChannel,
 		HybridTimelineChannel,
 		LocalTimelineChannel,

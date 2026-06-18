@@ -21,7 +21,6 @@ import { clipsCache, favoritedChannelsCache } from '@/cache.js';
 import MkRippleEffect from '@/components/MkRippleEffect.vue';
 import { isSupportShare } from '@/utility/navigator.js';
 import { getAppearNote } from '@/utility/get-appear-note.js';
-import { genEmbedCode } from '@/utility/get-embed-code.js';
 import { prefer } from '@/preferences.js';
 import { getPluginHandlers } from '@/plugin.js';
 import { globalEvents } from '@/events.js';
@@ -164,19 +163,6 @@ export function getCopyNoteLinkMenu(note: Misskey.entities.Note, text: string): 
 	};
 }
 
-function getNoteEmbedCodeMenu(note: Misskey.entities.Note, text: string): MenuItem | undefined {
-	if (note.url != null || note.uri != null) return undefined;
-	if (['specified', 'followers'].includes(note.visibility)) return undefined;
-
-	return {
-		icon: 'ti ti-code',
-		text,
-		action: (): void => {
-			genEmbedCode('notes', note.id);
-		},
-	};
-}
-
 export function getNoteMenu(props: {
 	note: Misskey.entities.Note;
 	translation: Ref<Misskey.entities.NotesTranslateResponse | null>;
@@ -228,13 +214,6 @@ export function getNoteMenu(props: {
 			if (Date.now() - new Date(appearNote.createdAt).getTime() < 1000 * 60 && appearNote.userId === $i.id) {
 				claimAchievement('noteDeletedWithin1min');
 			}
-		});
-	}
-
-	function toggleFavorite(favorite: boolean): void {
-		claimAchievement('noteFavorited1');
-		os.apiWithDialog(favorite ? 'notes/favorites/create' : 'notes/favorites/delete', {
-			noteId: appearNote.id,
 		});
 	}
 
@@ -387,11 +366,6 @@ export function getNoteMenu(props: {
 					window.open(link, '_blank', 'noopener');
 				},
 			});
-		} else {
-			const embedMenu = getNoteEmbedCodeMenu(appearNote, i18n.ts.embed);
-			if (embedMenu != null) {
-				menuItems.push(embedMenu);
-			}
 		}
 
 		if (isSupportShare()) {
@@ -411,16 +385,6 @@ export function getNoteMenu(props: {
 		}
 
 		menuItems.push({ type: 'divider' });
-
-		menuItems.push(statePromise.then(state => state.isFavorited ? {
-			icon: 'ti ti-star-off',
-			text: i18n.ts.unfavorite,
-			action: () => toggleFavorite(false),
-		} : {
-			icon: 'ti ti-star',
-			text: i18n.ts.favorite,
-			action: () => toggleFavorite(true),
-		}));
 
 		menuItems.push({
 			type: 'parent',
@@ -564,11 +528,6 @@ export function getNoteMenu(props: {
 					window.open(link, '_blank', 'noopener');
 				},
 			});
-		} else {
-			const embedMenu = getNoteEmbedCodeMenu(appearNote, i18n.ts.embed);
-			if (embedMenu != null) {
-				menuItems.push(embedMenu);
-			}
 		}
 	}
 

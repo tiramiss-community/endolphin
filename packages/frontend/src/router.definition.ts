@@ -29,9 +29,6 @@ export const ROUTE_DEF = [{
 	path: '/timeline',
 	component: PageTimeline,
 }, {
-	path: '/@:username/pages/:pageName(*)',
-	component: page(() => import('@/pages/page.vue')),
-}, {
 	path: '/@:acct/following',
 	component: page(() => import('@/pages/user/following.vue')),
 }, {
@@ -301,17 +298,6 @@ export const ROUTE_DEF = [{
 	path: '/tags/:tag',
 	component: page(() => import('@/pages/tag.vue')),
 }, {
-	path: '/pages/new',
-	component: page(() => import('@/pages/page-editor/page-editor.vue')),
-	loginRequired: true,
-}, {
-	path: '/pages/edit/:initPageId',
-	component: page(() => import('@/pages/page-editor/page-editor.vue')),
-	loginRequired: true,
-}, {
-	path: '/pages',
-	component: page(() => import('@/pages/pages.vue')),
-}, {
 	path: '/play/:id/edit',
 	component: page(() => import('@/pages/flash/flash-edit.vue')),
 	loginRequired: true,
@@ -325,20 +311,6 @@ export const ROUTE_DEF = [{
 }, {
 	path: '/play',
 	component: page(() => import('@/pages/flash/flash-index.vue')),
-}, {
-	path: '/gallery/:postId/edit',
-	component: page(() => import('@/pages/gallery/edit.vue')),
-	loginRequired: true,
-}, {
-	path: '/gallery/new',
-	component: page(() => import('@/pages/gallery/edit.vue')),
-	loginRequired: true,
-}, {
-	path: '/gallery/:postId',
-	component: page(() => import('@/pages/gallery/post.vue')),
-}, {
-	path: '/gallery',
-	component: page(() => import('@/pages/gallery/index.vue')),
 }, {
 	path: '/channels/:channelId/edit',
 	component: page(() => import('@/pages/channel-editor.vue')),
@@ -515,14 +487,6 @@ export const ROUTE_DEF = [{
 	component: page(() => import('@/pages/notifications.vue')),
 	loginRequired: true,
 }, {
-	path: '/my/favorites',
-	component: page(() => import('@/pages/favorites.vue')),
-	loginRequired: true,
-}, {
-	path: '/my/achievements',
-	component: page(() => import('@/pages/achievements.vue')),
-	loginRequired: true,
-}, {
 	path: '/my/drive/folder/:folder',
 	component: page(() => import('@/pages/drive.vue')),
 	loginRequired: true,
@@ -570,26 +534,6 @@ export const ROUTE_DEF = [{
 	path: '/timeline/antenna/:antennaId',
 	component: page(() => import('@/pages/antenna-timeline.vue')),
 	loginRequired: true,
-}, {
-	path: '/clicker',
-	component: page(() => import('@/pages/clicker.vue')),
-	loginRequired: true,
-}, {
-	path: '/games',
-	component: page(() => import('@/pages/games.vue')),
-	loginRequired: false,
-}, {
-	path: '/bubble-game',
-	component: page(() => import('@/pages/drop-and-fusion.vue')),
-	loginRequired: true,
-}, {
-	path: '/reversi',
-	component: page(() => import('@/pages/reversi/index.vue')),
-	loginRequired: false,
-}, {
-	path: '/reversi/g/:gameId',
-	component: page(() => import('@/pages/reversi/game.vue')),
-	loginRequired: false,
 }, {
 	path: '/qr',
 	component: page(() => import('@/pages/qr.vue')),
