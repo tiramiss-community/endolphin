@@ -14,9 +14,6 @@ import { FederatedInstanceService } from '@/core/FederatedInstanceService.js';
 import { FetchInstanceMetadataService } from '@/core/FetchInstanceMetadataService.js';
 import { MemorySingleCache } from '@/misc/cache.js';
 import type { MiInstance } from '@/models/Instance.js';
-import InstanceChart from '@/core/chart/charts/instance.js';
-import ApRequestChart from '@/core/chart/charts/ap-request.js';
-import FederationChart from '@/core/chart/charts/federation.js';
 import { StatusError } from '@/misc/status-error.js';
 import { UtilityService } from '@/core/UtilityService.js';
 import { bindThis } from '@/decorators.js';
@@ -40,9 +37,6 @@ export class DeliverProcessorService {
 		private federatedInstanceService: FederatedInstanceService,
 		private fetchInstanceMetadataService: FetchInstanceMetadataService,
 		private apRequestService: ApRequestService,
-		private instanceChart: InstanceChart,
-		private apRequestChart: ApRequestChart,
-		private federationChart: FederationChart,
 		private queueLoggerService: QueueLoggerService,
 	) {
 		this.logger = this.queueLoggerService.logger.createSubLogger('deliver');
@@ -83,8 +77,7 @@ export class DeliverProcessorService {
 		try {
 			await this.apRequestService.signedPost(job.data.user, job.data.to, job.data.content, job.data.digest);
 
-			this.apRequestChart.deliverSucc();
-			this.federationChart.deliverd(host, true);
+			// endolphin: チャート集計フックを撤去（チャート機能は削除済み）。
 
 			// Update instance stats
 			process.nextTick(async () => {
@@ -100,16 +93,11 @@ export class DeliverProcessorService {
 				if (this.meta.enableStatsForFederatedInstances) {
 					this.fetchInstanceMetadataService.fetchInstanceMetadata(i);
 				}
-
-				if (this.meta.enableChartsForFederatedInstances) {
-					this.instanceChart.requestSent(i.host, true);
-				}
 			});
 
 			return 'Success';
 		} catch (res) {
-			this.apRequestChart.deliverFail();
-			this.federationChart.deliverd(host, false);
+			// endolphin: チャート集計フックを撤去（チャート機能は削除済み）。
 
 			// Update instance stats
 			this.federatedInstanceService.fetchOrRegister(host).then(i => {
@@ -131,10 +119,6 @@ export class DeliverProcessorService {
 					this.federatedInstanceService.update(i.id, {
 						notRespondingSince: new Date(),
 					});
-				}
-
-				if (this.meta.enableChartsForFederatedInstances) {
-					this.instanceChart.requestSent(i.host, false);
 				}
 			});
 

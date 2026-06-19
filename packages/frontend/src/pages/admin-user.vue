@@ -179,21 +179,6 @@ SPDX-License-Identifier: AGPL-3.0-only
 			<MkFileListForAdmin :paginator="filesPaginator" viewMode="grid"/>
 		</div>
 
-		<div v-else-if="tab === 'chart'" class="_gaps_m">
-			<div class="cmhjzshm">
-				<div class="selects">
-					<MkSelect v-model="chartSrc" :items="chartSrcDef" style="margin: 0 10px 0 0; flex: 1;">
-					</MkSelect>
-				</div>
-				<div class="charts">
-					<div class="label">{{ i18n.tsx.recentNHours({ n: 90 }) }}</div>
-					<MkChart class="chart" :src="chartSrc" span="hour" :limit="90" :args="{ user, withoutAll: true }" :detailed="true"></MkChart>
-					<div class="label">{{ i18n.tsx.recentNDays({ n: 90 }) }}</div>
-					<MkChart class="chart" :src="chartSrc" span="day" :limit="90" :args="{ user, withoutAll: true }" :detailed="true"></MkChart>
-				</div>
-			</div>
-		</div>
-
 		<div v-else-if="tab === 'raw'" class="_gaps_m">
 			<MkObjectView v-if="info && $i.isAdmin" tall :value="info">
 			</MkObjectView>
@@ -209,8 +194,6 @@ SPDX-License-Identifier: AGPL-3.0-only
 import { computed, defineAsyncComponent, watch, ref, markRaw } from 'vue';
 import * as Misskey from 'misskey-js';
 import { url } from '@@/js/config.js';
-import type { ChartSrc } from '@/components/MkChart.vue';
-import MkChart from '@/components/MkChart.vue';
 import MkObjectView from '@/components/MkObjectView.vue';
 import MkTextarea from '@/components/MkTextarea.vue';
 import MkSwitch from '@/components/MkSwitch.vue';
@@ -245,15 +228,6 @@ const props = withDefaults(defineProps<{
 const result = await _fetch_();
 
 const tab = ref(props.initialTab);
-const {
-	model: chartSrc,
-	def: chartSrcDef,
-} = useMkSelect({
-	items: [
-		{ label: i18n.ts.notes, value: 'per-user-notes' },
-	],
-	initialValue: 'per-user-notes',
-});
 const user = ref(result.user);
 const info = ref(result.info);
 const ips = ref(result.ips);
@@ -547,10 +521,6 @@ const headerTabs = computed(() => isSystem.value ? [{
 	title: i18n.ts.drive,
 	icon: 'ti ti-cloud',
 }, {
-	key: 'chart',
-	title: i18n.ts.charts,
-	icon: 'ti ti-chart-line',
-}, {
 	key: 'raw',
 	title: 'Raw',
 	icon: 'ti ti-code',
@@ -632,19 +602,6 @@ definePage(() => ({
 	}
 }
 
-.cmhjzshm {
-	> .selects {
-		display: flex;
-		margin: 0 0 16px 0;
-	}
-
-	> .charts {
-		> .label {
-			margin-bottom: 12px;
-			font-weight: bold;
-		}
-	}
-}
 </style>
 
 <style lang="scss" module>

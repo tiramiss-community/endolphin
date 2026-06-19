@@ -9,11 +9,9 @@ import { Brackets, IsNull } from 'typeorm';
 import type { MiLocalUser, MiPartialLocalUser, MiPartialRemoteUser, MiRemoteUser, MiUser } from '@/models/User.js';
 import { IdentifiableError } from '@/misc/identifiable-error.js';
 import { QueueService } from '@/core/QueueService.js';
-import PerUserFollowingChart from '@/core/chart/charts/per-user-following.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { IdService } from '@/core/IdService.js';
 import { isDuplicateKeyValueError } from '@/misc/is-duplicate-key-value-error.js';
-import InstanceChart from '@/core/chart/charts/instance.js';
 import { FederatedInstanceService } from '@/core/FederatedInstanceService.js';
 import { UserWebhookService } from '@/core/UserWebhookService.js';
 import { NotificationService } from '@/core/NotificationService.js';
@@ -84,8 +82,6 @@ export class UserFollowingService implements OnModuleInit {
 		private webhookService: UserWebhookService,
 		private apRendererService: ApRendererService,
 		private accountMoveService: AccountMoveService,
-		private perUserFollowingChart: PerUserFollowingChart,
-		private instanceChart: InstanceChart,
 	) {
 	}
 
@@ -309,22 +305,16 @@ export class UserFollowingService implements OnModuleInit {
 				if (this.userEntityService.isRemoteUser(follower) && this.userEntityService.isLocalUser(followee)) {
 					this.federatedInstanceService.fetchOrRegister(follower.host).then(async i => {
 						this.instancesRepository.increment({ id: i.id }, 'followingCount', 1);
-						if (this.meta.enableChartsForFederatedInstances) {
-							this.instanceChart.updateFollowing(i.host, true);
-						}
 					});
 				} else if (this.userEntityService.isLocalUser(follower) && this.userEntityService.isRemoteUser(followee)) {
 					this.federatedInstanceService.fetchOrRegister(followee.host).then(async i => {
 						this.instancesRepository.increment({ id: i.id }, 'followersCount', 1);
-						if (this.meta.enableChartsForFederatedInstances) {
-							this.instanceChart.updateFollowers(i.host, true);
-						}
 					});
 				}
 			}
 			//#endregion
 
-			this.perUserFollowingChart.update(follower, followee, true);
+			// endolphin: チャート集計フックを撤去（チャート機能は削除済み）。
 		}
 
 		if (this.userEntityService.isLocalUser(follower) && !silent) {
@@ -425,22 +415,16 @@ export class UserFollowingService implements OnModuleInit {
 				if (this.userEntityService.isRemoteUser(follower) && this.userEntityService.isLocalUser(followee)) {
 					this.federatedInstanceService.fetchOrRegister(follower.host).then(async i => {
 						this.instancesRepository.decrement({ id: i.id }, 'followingCount', 1);
-						if (this.meta.enableChartsForFederatedInstances) {
-							this.instanceChart.updateFollowing(i.host, false);
-						}
 					});
 				} else if (this.userEntityService.isLocalUser(follower) && this.userEntityService.isRemoteUser(followee)) {
 					this.federatedInstanceService.fetchOrRegister(followee.host).then(async i => {
 						this.instancesRepository.decrement({ id: i.id }, 'followersCount', 1);
-						if (this.meta.enableChartsForFederatedInstances) {
-							this.instanceChart.updateFollowers(i.host, false);
-						}
 					});
 				}
 			}
 			//#endregion
 
-			this.perUserFollowingChart.update(follower, followee, false);
+			// endolphin: チャート集計フックを撤去（チャート機能は削除済み）。
 		} else {
 			// Adjust following/followers counts
 			for (const user of [follower, followee]) {

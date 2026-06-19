@@ -35,9 +35,7 @@ import { DeleteAccountProcessorService } from './processors/DeleteAccountProcess
 import { CleanRemoteFilesProcessorService } from './processors/CleanRemoteFilesProcessorService.js';
 import { DeleteFileProcessorService } from './processors/DeleteFileProcessorService.js';
 import { RelationshipProcessorService } from './processors/RelationshipProcessorService.js';
-import { TickChartsProcessorService } from './processors/TickChartsProcessorService.js';
-import { ResyncChartsProcessorService } from './processors/ResyncChartsProcessorService.js';
-import { CleanChartsProcessorService } from './processors/CleanChartsProcessorService.js';
+// endolphin: チャート機能は削除済み。tick/resync/clean Charts processor の import を撤去。
 import { CheckExpiredMutingsProcessorService } from './processors/CheckExpiredMutingsProcessorService.js';
 import { BakeBufferedReactionsProcessorService } from './processors/BakeBufferedReactionsProcessorService.js';
 import { CleanProcessorService } from './processors/CleanProcessorService.js';
@@ -116,9 +114,7 @@ export class QueueProcessorService implements OnApplicationShutdown {
 		private deleteFileProcessorService: DeleteFileProcessorService,
 		private cleanRemoteFilesProcessorService: CleanRemoteFilesProcessorService,
 		private relationshipProcessorService: RelationshipProcessorService,
-		private tickChartsProcessorService: TickChartsProcessorService,
-		private resyncChartsProcessorService: ResyncChartsProcessorService,
-		private cleanChartsProcessorService: CleanChartsProcessorService,
+		// endolphin: チャート機能は削除済み。tick/resync/clean Charts processor の注入を撤去。
 		private aggregateRetentionProcessorService: AggregateRetentionProcessorService,
 		private checkExpiredMutingsProcessorService: CheckExpiredMutingsProcessorService,
 		private bakeBufferedReactionsProcessorService: BakeBufferedReactionsProcessorService,
@@ -165,9 +161,7 @@ export class QueueProcessorService implements OnApplicationShutdown {
 		{
 			const processer = (job: Bull.Job) => {
 				switch (job.name) {
-					case 'tickCharts': return this.tickChartsProcessorService.process();
-					case 'resyncCharts': return this.resyncChartsProcessorService.process();
-					case 'cleanCharts': return this.cleanChartsProcessorService.process();
+					// endolphin: チャート機能は削除済み。tickCharts / resyncCharts / cleanCharts の case を撤去。
 					case 'aggregateRetention': return this.aggregateRetentionProcessorService.process();
 					case 'checkExpiredMutings': return this.checkExpiredMutingsProcessorService.process();
 					case 'bakeBufferedReactions': return this.bakeBufferedReactionsProcessorService.process();

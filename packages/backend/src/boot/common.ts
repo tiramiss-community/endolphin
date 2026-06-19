@@ -32,11 +32,10 @@ export async function server() {
 	await serverService.launch();
 
 	if (process.env.NODE_ENV !== 'test') {
-		const { ChartManagementService } = await import('../core/chart/ChartManagementService.js');
+		// endolphin: チャート機能は削除済み。ChartManagementService の起動を撤去。
 		const { QueueStatsService } = await import('../daemons/QueueStatsService.js');
 		const { ServerStatsService } = await import('../daemons/ServerStatsService.js');
 
-		app.get(ChartManagementService).start();
 		app.get(QueueStatsService).start();
 		app.get(ServerStatsService).start();
 	}
@@ -47,14 +46,13 @@ export async function server() {
 export async function jobQueue() {
 	const { QueueProcessorModule } = await import('../queue/QueueProcessorModule.js');
 	const { QueueProcessorService } = await import('../queue/QueueProcessorService.js');
-	const { ChartManagementService } = await import('../core/chart/ChartManagementService.js');
+	// endolphin: チャート機能は削除済み。ChartManagementService の起動を撤去。
 
 	const jobQueue = await NestFactory.createApplicationContext(QueueProcessorModule, {
 		logger: new NestLogger(),
 	});
 
 	jobQueue.get(QueueProcessorService).start();
-	jobQueue.get(ChartManagementService).start();
 
 	return jobQueue;
 }

@@ -21,8 +21,6 @@ import { ApDeliverManagerService } from '@/core/activitypub/ApDeliverManagerServ
 import { ApRendererService } from '@/core/activitypub/ApRendererService.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { FederatedInstanceService } from '@/core/FederatedInstanceService.js';
-import InstanceChart from '@/core/chart/charts/instance.js';
-import PerUserFollowingChart from '@/core/chart/charts/per-user-following.js';
 import { SystemAccountService } from '@/core/SystemAccountService.js';
 import { RoleService } from '@/core/RoleService.js';
 import { AntennaService } from '@/core/AntennaService.js';
@@ -57,9 +55,7 @@ export class AccountMoveService {
 		private apRendererService: ApRendererService,
 		private apDeliverManagerService: ApDeliverManagerService,
 		private globalEventService: GlobalEventService,
-		private perUserFollowingChart: PerUserFollowingChart,
 		private federatedInstanceService: FederatedInstanceService,
-		private instanceChart: InstanceChart,
 		private relayService: RelayService,
 		private queueService: QueueService,
 		private systemAccountService: SystemAccountService,
@@ -308,17 +304,11 @@ export class AccountMoveService {
 			if (this.userEntityService.isRemoteUser(oldAccount)) {
 				this.federatedInstanceService.fetchOrRegister(oldAccount.host).then(async i => {
 					this.instancesRepository.decrement({ id: i.id }, 'followersCount', localFollowerIds.length);
-					if (this.meta.enableChartsForFederatedInstances) {
-						this.instanceChart.updateFollowers(i.host, false);
-					}
 				});
 			}
 		}
 
-		// FIXME: expensive?
-		for (const followerId of localFollowerIds) {
-			this.perUserFollowingChart.update({ id: followerId, host: null }, oldAccount, false);
-		}
+		// endolphin: チャート集計フックを撤去（チャート機能は削除済み）。
 	}
 
 	/**

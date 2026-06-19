@@ -4,14 +4,14 @@
  */
 
 import { Inject, Injectable } from '@nestjs/common';
+import { IsNull } from 'typeorm';
 import { DI } from '@/di-symbols.js';
 import type { Config } from '@/config.js';
+import type { NotesRepository, UsersRepository } from '@/models/_.js';
 import { MetaService } from '@/core/MetaService.js';
 import { MAX_NOTE_TEXT_LENGTH } from '@/const.js';
 import { MemorySingleCache } from '@/misc/cache.js';
 import { bindThis } from '@/decorators.js';
-import NotesChart from '@/core/chart/charts/notes.js';
-import UsersChart from '@/core/chart/charts/users.js';
 import { DEFAULT_POLICIES } from '@/core/RoleService.js';
 import { SystemAccountService } from '@/core/SystemAccountService.js';
 import type { FastifyInstance, FastifyPluginOptions } from 'fastify';
@@ -26,10 +26,14 @@ export class NodeinfoServerService {
 		@Inject(DI.config)
 		private config: Config,
 
+		@Inject(DI.notesRepository)
+		private notesRepository: NotesRepository,
+
+		@Inject(DI.usersRepository)
+		private usersRepository: UsersRepository,
+
 		private systemAccountService: SystemAccountService,
 		private metaService: MetaService,
-		private notesChart: NotesChart,
-		private usersChart: UsersChart,
 	) {
 		//this.createServer = this.createServer.bind(this);
 	}
@@ -48,11 +52,9 @@ export class NodeinfoServerService {
 	@bindThis
 	public createServer(fastify: FastifyInstance, options: FastifyPluginOptions, done: (err?: Error) => void) {
 		const nodeinfo2 = async (version: number) => {
-			const notesChart = await this.notesChart.getChart('hour', 1, null);
-			const localPosts = notesChart.local.total[0];
-
-			const usersChart = await this.usersChart.getChart('hour', 1, null);
-			const total = usersChart.local.total[0];
+			// endolphin: チャート機能は削除済み。チャート由来の集計を DB の直接カウントに置換（10分キャッシュ配下）。
+			const localPosts = await this.notesRepository.count({ where: { userHost: IsNull() }, cache: 3600000 });
+			const total = await this.usersRepository.count({ where: { host: IsNull() }, cache: 3600000 });
 
 			const [
 				meta,

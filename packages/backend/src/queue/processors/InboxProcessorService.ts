@@ -10,9 +10,6 @@ import * as Bull from 'bullmq';
 import type Logger from '@/logger.js';
 import { FederatedInstanceService } from '@/core/FederatedInstanceService.js';
 import { FetchInstanceMetadataService } from '@/core/FetchInstanceMetadataService.js';
-import InstanceChart from '@/core/chart/charts/instance.js';
-import ApRequestChart from '@/core/chart/charts/ap-request.js';
-import FederationChart from '@/core/chart/charts/federation.js';
 import { getApId, isActor, isDelete } from '@/core/activitypub/type.js';
 import type { IActivity } from '@/core/activitypub/type.js';
 import type { MiRemoteUser } from '@/models/User.js';
@@ -53,9 +50,6 @@ export class InboxProcessorService implements OnApplicationShutdown {
 		private jsonLdService: JsonLdService,
 		private apPersonService: ApPersonService,
 		private apDbResolverService: ApDbResolverService,
-		private instanceChart: InstanceChart,
-		private apRequestChart: ApRequestChart,
-		private federationChart: FederationChart,
 		private queueLoggerService: QueueLoggerService,
 	) {
 		this.logger = this.queueLoggerService.logger.createSubLogger('inbox');
@@ -225,8 +219,7 @@ export class InboxProcessorService implements OnApplicationShutdown {
 			throw new Bull.UnrecoverableError('skip: activity id is not a string');
 		}
 
-		this.apRequestChart.inbox();
-		this.federationChart.inbox(authUser.user.host);
+		// endolphin: チャート集計フックを撤去（チャート機能は削除済み）。
 
 		// Update instance stats
 		process.nextTick(async () => {
@@ -240,10 +233,6 @@ export class InboxProcessorService implements OnApplicationShutdown {
 				latestRequestReceivedAt: new Date(),
 				shouldUnsuspend: i.suspensionState === 'autoSuspendedForNotResponding',
 			});
-
-			if (this.meta.enableChartsForFederatedInstances) {
-				this.instanceChart.requestReceived(i.host);
-			}
 
 			this.fetchInstanceMetadataService.fetchInstanceMetadata(i);
 		});

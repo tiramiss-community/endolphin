@@ -17,7 +17,6 @@ import { MiUsedUsername } from '@/models/UsedUsername.js';
 import { generateNativeUserToken } from '@/misc/token.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { bindThis } from '@/decorators.js';
-import UsersChart from '@/core/chart/charts/users.js';
 import { UtilityService } from '@/core/UtilityService.js';
 import { UserService } from '@/core/UserService.js';
 import { SystemAccountService } from '@/core/SystemAccountService.js';
@@ -44,7 +43,6 @@ export class SignupService {
 		private idService: IdService,
 		private systemAccountService: SystemAccountService,
 		private metaService: MetaService,
-		private usersChart: UsersChart,
 	) {
 	}
 
@@ -154,7 +152,7 @@ export class SignupService {
 			}));
 		});
 
-		this.usersChart.update(account, true);
+		// endolphin: チャート集計フックを撤去（チャート機能は削除済み）。
 		this.userService.notifySystemWebhook(account, 'userCreated');
 
 		if (this.meta.rootUserId == null) {

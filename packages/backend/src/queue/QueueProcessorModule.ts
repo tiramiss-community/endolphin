@@ -16,7 +16,6 @@ import { UserWebhookDeliverProcessorService } from './processors/UserWebhookDeli
 import { SystemWebhookDeliverProcessorService } from './processors/SystemWebhookDeliverProcessorService.js';
 import { CheckExpiredMutingsProcessorService } from './processors/CheckExpiredMutingsProcessorService.js';
 import { BakeBufferedReactionsProcessorService } from './processors/BakeBufferedReactionsProcessorService.js';
-import { CleanChartsProcessorService } from './processors/CleanChartsProcessorService.js';
 import { CleanProcessorService } from './processors/CleanProcessorService.js';
 import { CheckModeratorsActivityProcessorService } from './processors/CheckModeratorsActivityProcessorService.js';
 import { CleanRemoteNotesProcessorService } from './processors/CleanRemoteNotesProcessorService.js';
@@ -38,8 +37,7 @@ import { ImportFollowingProcessorService } from './processors/ImportFollowingPro
 import { ImportMutingProcessorService } from './processors/ImportMutingProcessorService.js';
 import { ImportUserListsProcessorService } from './processors/ImportUserListsProcessorService.js';
 import { ImportAntennasProcessorService } from './processors/ImportAntennasProcessorService.js';
-import { ResyncChartsProcessorService } from './processors/ResyncChartsProcessorService.js';
-import { TickChartsProcessorService } from './processors/TickChartsProcessorService.js';
+// endolphin: チャート機能は削除済み。tick/resync/clean Charts processor の import を撤去。
 import { AggregateRetentionProcessorService } from './processors/AggregateRetentionProcessorService.js';
 import { RelationshipProcessorService } from './processors/RelationshipProcessorService.js';
 
@@ -50,9 +48,7 @@ import { RelationshipProcessorService } from './processors/RelationshipProcessor
 	],
 	providers: [
 		QueueLoggerService,
-		TickChartsProcessorService,
-		ResyncChartsProcessorService,
-		CleanChartsProcessorService,
+		// endolphin: チャート機能は削除済み。tick/resync/clean Charts processor の provider を撤去。
 		CheckExpiredMutingsProcessorService,
 		BakeBufferedReactionsProcessorService,
 		CleanProcessorService,

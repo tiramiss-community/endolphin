@@ -12,9 +12,6 @@ import { RelayService } from '@/core/RelayService.js';
 import { FederatedInstanceService } from '@/core/FederatedInstanceService.js';
 import { DI } from '@/di-symbols.js';
 import type { Config } from '@/config.js';
-import NotesChart from '@/core/chart/charts/notes.js';
-import PerUserNotesChart from '@/core/chart/charts/per-user-notes.js';
-import InstanceChart from '@/core/chart/charts/instance.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { ApRendererService } from '@/core/activitypub/ApRendererService.js';
 import { ApDeliverManagerService } from '@/core/activitypub/ApDeliverManagerService.js';
@@ -50,9 +47,6 @@ export class NoteDeleteService {
 		private apDeliverManagerService: ApDeliverManagerService,
 		private searchService: SearchService,
 		private moderationLogService: ModerationLogService,
-		private notesChart: NotesChart,
-		private perUserNotesChart: PerUserNotesChart,
-		private instanceChart: InstanceChart,
 	) {}
 
 	/**
@@ -91,18 +85,12 @@ export class NoteDeleteService {
 			}
 			//#endregion
 
-			this.notesChart.update(note, false);
-			if (this.meta.enableChartsForRemoteUser || (user.host == null)) {
-				this.perUserNotesChart.update(user, note, false);
-			}
+			// endolphin: チャート集計フックを撤去（チャート機能は削除済み）。
 
 			if (this.meta.enableStatsForFederatedInstances) {
 				if (this.userEntityService.isRemoteUser(user)) {
 					this.federatedInstanceService.fetchOrRegister(user.host).then(async i => {
 						this.instancesRepository.decrement({ id: i.id }, 'notesCount', 1);
-						if (this.meta.enableChartsForFederatedInstances) {
-							this.instanceChart.updateNote(i.host, note, false);
-						}
 					});
 				}
 			}

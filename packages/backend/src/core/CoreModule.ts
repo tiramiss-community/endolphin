@@ -77,20 +77,7 @@ import { ChannelFollowingService } from './ChannelFollowingService.js';
 import { ChatService } from './ChatService.js';
 import { RegistryApiService } from './RegistryApiService.js';
 
-import { ChartLoggerService } from './chart/ChartLoggerService.js';
-import FederationChart from './chart/charts/federation.js';
-import NotesChart from './chart/charts/notes.js';
-import UsersChart from './chart/charts/users.js';
-import ActiveUsersChart from './chart/charts/active-users.js';
-import InstanceChart from './chart/charts/instance.js';
-import PerUserNotesChart from './chart/charts/per-user-notes.js';
-import PerUserPvChart from './chart/charts/per-user-pv.js';
-import DriveChart from './chart/charts/drive.js';
-import PerUserReactionsChart from './chart/charts/per-user-reactions.js';
-import PerUserFollowingChart from './chart/charts/per-user-following.js';
-import PerUserDriveChart from './chart/charts/per-user-drive.js';
-import ApRequestChart from './chart/charts/ap-request.js';
-import { ChartManagementService } from './chart/ChartManagementService.js';
+// endolphin: チャート機能は削除済み。チャートサービス群・管理サービスの import を撤去（entity 定義と core.ts は温存）。
 
 import { AbuseUserReportEntityService } from './entities/AbuseUserReportEntityService.js';
 import { AnnouncementEntityService } from './entities/AnnouncementEntityService.js';
@@ -219,20 +206,7 @@ const $ChannelMutingService: Provider = { provide: 'ChannelMutingService', useEx
 const $ChatService: Provider = { provide: 'ChatService', useExisting: ChatService };
 const $RegistryApiService: Provider = { provide: 'RegistryApiService', useExisting: RegistryApiService };
 
-const $ChartLoggerService: Provider = { provide: 'ChartLoggerService', useExisting: ChartLoggerService };
-const $FederationChart: Provider = { provide: 'FederationChart', useExisting: FederationChart };
-const $NotesChart: Provider = { provide: 'NotesChart', useExisting: NotesChart };
-const $UsersChart: Provider = { provide: 'UsersChart', useExisting: UsersChart };
-const $ActiveUsersChart: Provider = { provide: 'ActiveUsersChart', useExisting: ActiveUsersChart };
-const $InstanceChart: Provider = { provide: 'InstanceChart', useExisting: InstanceChart };
-const $PerUserNotesChart: Provider = { provide: 'PerUserNotesChart', useExisting: PerUserNotesChart };
-const $PerUserPvChart: Provider = { provide: 'PerUserPvChart', useExisting: PerUserPvChart };
-const $DriveChart: Provider = { provide: 'DriveChart', useExisting: DriveChart };
-const $PerUserReactionsChart: Provider = { provide: 'PerUserReactionsChart', useExisting: PerUserReactionsChart };
-const $PerUserFollowingChart: Provider = { provide: 'PerUserFollowingChart', useExisting: PerUserFollowingChart };
-const $PerUserDriveChart: Provider = { provide: 'PerUserDriveChart', useExisting: PerUserDriveChart };
-const $ApRequestChart: Provider = { provide: 'ApRequestChart', useExisting: ApRequestChart };
-const $ChartManagementService: Provider = { provide: 'ChartManagementService', useExisting: ChartManagementService };
+// endolphin: チャート機能は削除済み。チャート関連 provider 定義を撤去。
 
 const $AbuseUserReportEntityService: Provider = { provide: 'AbuseUserReportEntityService', useExisting: AbuseUserReportEntityService };
 const $AnnouncementEntityService: Provider = { provide: 'AnnouncementEntityService', useExisting: AnnouncementEntityService };
@@ -364,20 +338,7 @@ const $ApQuestionService: Provider = { provide: 'ApQuestionService', useExisting
 		ChatService,
 		RegistryApiService,
 
-		ChartLoggerService,
-		FederationChart,
-		NotesChart,
-		UsersChart,
-		ActiveUsersChart,
-		InstanceChart,
-		PerUserNotesChart,
-		PerUserPvChart,
-		DriveChart,
-		PerUserReactionsChart,
-		PerUserFollowingChart,
-		PerUserDriveChart,
-		ApRequestChart,
-		ChartManagementService,
+		// endolphin: チャート関連 provider を撤去（チャート機能は削除済み）。
 
 		AbuseUserReportEntityService,
 		AnnouncementEntityService,
@@ -506,20 +467,7 @@ const $ApQuestionService: Provider = { provide: 'ApQuestionService', useExisting
 		$ChatService,
 		$RegistryApiService,
 
-		$ChartLoggerService,
-		$FederationChart,
-		$NotesChart,
-		$UsersChart,
-		$ActiveUsersChart,
-		$InstanceChart,
-		$PerUserNotesChart,
-		$PerUserPvChart,
-		$DriveChart,
-		$PerUserReactionsChart,
-		$PerUserFollowingChart,
-		$PerUserDriveChart,
-		$ApRequestChart,
-		$ChartManagementService,
+		// endolphin: チャート関連 provider を撤去（チャート機能は削除済み）。
 
 		$AbuseUserReportEntityService,
 		$AnnouncementEntityService,
@@ -648,19 +596,7 @@ const $ApQuestionService: Provider = { provide: 'ApQuestionService', useExisting
 		ChatService,
 		RegistryApiService,
 
-		FederationChart,
-		NotesChart,
-		UsersChart,
-		ActiveUsersChart,
-		InstanceChart,
-		PerUserNotesChart,
-		PerUserPvChart,
-		DriveChart,
-		PerUserReactionsChart,
-		PerUserFollowingChart,
-		PerUserDriveChart,
-		ApRequestChart,
-		ChartManagementService,
+		// endolphin: チャート関連 export を撤去（チャート機能は削除済み）。
 
 		AbuseUserReportEntityService,
 		AnnouncementEntityService,
@@ -788,19 +724,7 @@ const $ApQuestionService: Provider = { provide: 'ApQuestionService', useExisting
 		$ChatService,
 		$RegistryApiService,
 
-		$FederationChart,
-		$NotesChart,
-		$UsersChart,
-		$ActiveUsersChart,
-		$InstanceChart,
-		$PerUserNotesChart,
-		$PerUserPvChart,
-		$DriveChart,
-		$PerUserReactionsChart,
-		$PerUserFollowingChart,
-		$PerUserDriveChart,
-		$ApRequestChart,
-		$ChartManagementService,
+		// endolphin: チャート関連 export を撤去（チャート機能は削除済み）。
 
 		$AbuseUserReportEntityService,
 		$AnnouncementEntityService,
