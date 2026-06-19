@@ -43,9 +43,7 @@ import { ApImageService } from '@/core/activitypub/models/ApImageService.js';
 import { ApMfmService } from '@/core/activitypub/ApMfmService.js';
 import { MfmService } from '@/core/MfmService.js';
 import { HashtagService } from '@/core/HashtagService.js';
-import UsersChart from '@/core/chart/charts/users.js';
-import { ChartLoggerService } from '@/core/chart/ChartLoggerService.js';
-import InstanceChart from '@/core/chart/charts/instance.js';
+// endolphin: チャート機能は削除済み。UsersChart / InstanceChart / ChartLoggerService の import を撤去。
 import { ApLoggerService } from '@/core/activitypub/ApLoggerService.js';
 import { AccountMoveService } from '@/core/AccountMoveService.js';
 import { ReactionService } from '@/core/ReactionService.js';
@@ -166,9 +164,6 @@ describe('UserEntityService', () => {
 				ApMfmService,
 				MfmService,
 				HashtagService,
-				UsersChart,
-				ChartLoggerService,
-				InstanceChart,
 				ApLoggerService,
 				AccountMoveService,
 				ReactionService,

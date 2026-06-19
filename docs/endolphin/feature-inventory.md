@@ -40,14 +40,14 @@ spec §6 Phase 1 で「葉機能のハード削除」とされる 6 機能:
 | 5 | お気に入り | `favorites` | ノートのお気に入り（`notes/favorites/*`, `i/favorites`, `i/export-favorites`）。クリップ（clips）は **残す**。 |
 | 6 | 埋め込み | `embed` | `packages/frontend-embed` 別パッケージ + フロントの埋め込みコード生成ダイアログ。**REST endpoint は持たない**（endpoint-list に embed エントリ無し）ため endpoint 表には現れない。 |
 
-### Phase 2（本ファイルでは keep-for-now）
+### Phase 2
 
-spec §6 Phase 2 はコア絡みの削除。本 Phase 1 インベントリでは **削除しない**（keep-for-now / Phase 2 マーク）。
+spec §6 Phase 2 はコア絡みの削除。**チャートのみ削除し、チャンネルは残す**（2026-06-19 方針変更）。
 
 | 機能 | feature タグ | 扱い |
 |---|---|---|
-| チャンネル | `channels(Phase2)` | keep-for-now。ノート生成 / ストリーミング / TL に統合されているため Phase 2 で依存切り後に削除。 |
-| チャート | `charts(Phase2)` | keep-for-now。集計フックが各サービスに散在。Phase 2 でフック除去後にエンジン削除 or no-op 化。 |
+| チャンネル | `channels` | **keep(core)（残す確定）**。ノート生成 / ストリーミング / TL に深く統合された最ホットコアであり、削除は追従コスト（P2）と衝突。小規模コミュニティの話題整理機能として価値があり残す（spec §4）。 |
+| チャート | `charts(Phase2)` | **Phase 2 で削除**。集計フックを各サービスから除去 → エンジン実行部（12 チャートクラス・ChartManagementService・3 processor）を削除。`getJsonSchema`/entity 定義は型・DB 互換のため温存し、read endpoint は空チャートを返す。 |
 
 ## カウント整合性（実測値）
 
@@ -299,14 +299,14 @@ spec §9.2（最小モデレーション）/ §9.3（最小ロール）で線引
 | `admin/system-webhook/*`（create / delete / list / show / test / update） | read / write | keep(core) — review §9.4 | システム Webhook。 |
 | `auth/accept` | write | keep(core) | OAuth 互換。 |
 
-### charts（Phase 2; feature: charts(Phase2)）— keep-for-now
+### charts（feature: charts）— Phase 2 で削除（read endpoint は空チャートを返す no-op スタブ。下表の「keep(core) — Phase 2」は削除前の記録）
 
 | endpoint | rw | decision | notes |
 |---|---|---|---|
 | `charts/active-users` / `charts/ap-request` / `charts/drive` / `charts/federation` / `charts/instance` / `charts/notes` / `charts/users` | read | keep(core) — Phase 2 | インスタンスチャート。Phase 2 でフック除去後に削除 or no-op 化。 |
 | `charts/user/drive` / `charts/user/following` / `charts/user/notes` / `charts/user/pv` / `charts/user/reactions` | read | keep(core) — Phase 2 | ユーザーチャート。 |
 
-### channels（Phase 2; feature: channels(Phase2)）— keep-for-now
+### channels（feature: channels）— **残す（keep(core)）**。下表は全 endpoint を本家のまま維持
 
 | endpoint | rw | decision | notes |
 |---|---|---|---|
@@ -316,7 +316,7 @@ spec §9.2（最小モデレーション）/ §9.3（最小ロール）で線引
 | `channels/mute/create` / `channels/mute/delete` | write | keep(core) — Phase 2 | |
 | `channels/mute/list` | read | keep(core) — Phase 2 | |
 
-> Phase 2 でノート生成 / ストリーミング / TL 統合を依存切りした後に削除。本 Phase 1 では一切手を付けない。
+> **2026-06-19 方針変更: チャンネルは残す**（spec §4）。ノート生成 / ストリーミング / TL に深く統合された最ホットコアであり、削除は追従コスト（P2）と衝突する。小規模コミュニティの話題整理機能として価値があるため本家のまま維持し、endpoint・service・streaming・UI いずれも一切手を付けない。
 
 ---
 

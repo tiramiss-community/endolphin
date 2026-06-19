@@ -89,20 +89,6 @@ SPDX-License-Identifier: AGPL-3.0-only
 				<FormLink :to="`https://${host}/manifest.json`" external style="margin-bottom: 8px;">manifest.json</FormLink>
 			</FormSection>
 		</div>
-		<div v-else-if="tab === 'chart'" class="_gaps_m">
-			<div>
-				<div :class="$style.selects">
-					<MkSelect v-model="chartSrc" :items="chartSrcDef" style="margin: 0 10px 0 0; flex: 1;">
-					</MkSelect>
-				</div>
-				<div>
-					<div :class="$style.label">{{ i18n.tsx.recentNHours({ n: 90 }) }}</div>
-					<MkChart :src="chartSrc" span="hour" :limit="90" :args="{ host: host }" :detailed="true"></MkChart>
-					<div :class="$style.label">{{ i18n.tsx.recentNDays({ n: 90 }) }}</div>
-					<MkChart :src="chartSrc" span="day" :limit="90" :args="{ host: host }" :detailed="true"></MkChart>
-				</div>
-			</div>
-		</div>
 		<div v-else-if="tab === 'users'" class="_gaps_m">
 			<MkPagination v-slot="{ items }" :paginator="usersPaginator">
 				<div :class="$style.users">
@@ -123,15 +109,12 @@ SPDX-License-Identifier: AGPL-3.0-only
 <script lang="ts" setup>
 import { ref, computed, watch, markRaw } from 'vue';
 import * as Misskey from 'misskey-js';
-import type { ChartSrc } from '@/components/MkChart.vue';
-import MkChart from '@/components/MkChart.vue';
 import MkObjectView from '@/components/MkObjectView.vue';
 import FormLink from '@/components/form/link.vue';
 import MkLink from '@/components/MkLink.vue';
 import MkButton from '@/components/MkButton.vue';
 import FormSection from '@/components/form/section.vue';
 import MkKeyValue from '@/components/MkKeyValue.vue';
-import MkSelect from '@/components/MkSelect.vue';
 import MkSwitch from '@/components/MkSwitch.vue';
 import * as os from '@/os.js';
 import { misskeyApi } from '@/utility/misskey-api.js';
@@ -143,7 +126,6 @@ import MkUserCardMini from '@/components/MkUserCardMini.vue';
 import MkPagination from '@/components/MkPagination.vue';
 import { getProxiedImageUrlNullable } from '@/utility/media-proxy.js';
 import { dateString } from '@/filters/date.js';
-import { useMkSelect } from '@/composables/use-mkselect.js';
 import MkTextarea from '@/components/MkTextarea.vue';
 import { Paginator } from '@/utility/paginator.js';
 
@@ -153,25 +135,6 @@ const props = defineProps<{
 
 const tab = ref('overview');
 
-const {
-	model: chartSrc,
-	def: chartSrcDef,
-} = useMkSelect({
-	items: [
-		{ label: i18n.ts._instanceCharts.requests, value: 'instance-requests' },
-		{ label: i18n.ts._instanceCharts.users, value: 'instance-users' },
-		{ label: i18n.ts._instanceCharts.usersTotal, value: 'instance-users-total' },
-		{ label: i18n.ts._instanceCharts.notes, value: 'instance-notes' },
-		{ label: i18n.ts._instanceCharts.notesTotal, value: 'instance-notes-total' },
-		{ label: i18n.ts._instanceCharts.ff, value: 'instance-ff' },
-		{ label: i18n.ts._instanceCharts.ffTotal, value: 'instance-ff-total' },
-		{ label: i18n.ts._instanceCharts.cacheSize, value: 'instance-drive-usage' },
-		{ label: i18n.ts._instanceCharts.cacheSizeTotal, value: 'instance-drive-usage-total' },
-		{ label: i18n.ts._instanceCharts.files, value: 'instance-drive-files' },
-		{ label: i18n.ts._instanceCharts.filesTotal, value: 'instance-drive-files-total' },
-	],
-	initialValue: 'instance-requests',
-});
 const meta = ref<Misskey.entities.AdminMetaResponse | null>(null);
 const instance = ref<Misskey.entities.FederationInstance | null>(null);
 const suspensionState = ref<'none' | 'manuallySuspended' | 'goneSuspended' | 'autoSuspendedForNotResponding' | 'softwareSuspended'>('none');
@@ -299,10 +262,6 @@ const headerTabs = computed(() => [{
 	title: i18n.ts.overview,
 	icon: 'ti ti-info-circle',
 }, ...(iAmModerator ? [{
-	key: 'chart',
-	title: i18n.ts.charts,
-	icon: 'ti ti-chart-line',
-}, {
 	key: 'users',
 	title: i18n.ts.users,
 	icon: 'ti ti-users',
@@ -331,14 +290,6 @@ definePage(() => ({
 }
 .name {
 	word-break: break-all;
-}
-.selects {
-	display: flex;
-	margin: 0 0 16px 0;
-}
-.label {
-	margin-bottom: 12px;
-	font-weight: bold;
 }
 .users {
 	display: grid;

@@ -8,7 +8,6 @@ import { Inject, Injectable } from '@nestjs/common';
 import type { MiMeta, NotesRepository } from '@/models/_.js';
 import { Endpoint } from '@/server/api/endpoint-base.js';
 import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
-import ActiveUsersChart from '@/core/chart/charts/active-users.js';
 import { DI } from '@/di-symbols.js';
 import { RoleService } from '@/core/RoleService.js';
 import { IdService } from '@/core/IdService.js';
@@ -73,7 +72,6 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 
 		private noteEntityService: NoteEntityService,
 		private roleService: RoleService,
-		private activeUsersChart: ActiveUsersChart,
 		private idService: IdService,
 		private fanoutTimelineEndpointService: FanoutTimelineEndpointService,
 		private queryService: QueryService,
@@ -99,12 +97,6 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 					withReplies: ps.withReplies,
 				}, me);
 
-				process.nextTick(() => {
-					if (me) {
-						this.activeUsersChart.read(me);
-					}
-				});
-
 				return await this.noteEntityService.packMany(timeline, me);
 			}
 
@@ -129,12 +121,6 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 					withFiles: ps.withFiles,
 					withReplies: ps.withReplies,
 				}, me),
-			});
-
-			process.nextTick(() => {
-				if (me) {
-					this.activeUsersChart.read(me);
-				}
 			});
 
 			return timeline;

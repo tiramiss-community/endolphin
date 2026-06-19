@@ -14,23 +14,18 @@ SPDX-License-Identifier: AGPL-3.0-only
 	<div v-else-if="instance.federation !== 'none' && tab === 'federation'" class="_spacer" style="--MI_SPACER-w: 1000px; --MI_SPACER-min: 20px;">
 		<XFederation/>
 	</div>
-	<div v-else-if="tab === 'charts'" class="_spacer" style="--MI_SPACER-w: 1000px; --MI_SPACER-min: 20px;">
-		<MkInstanceStats/>
-	</div>
 </PageWithHeader>
 </template>
 
 <script lang="ts" setup>
-import { computed, defineAsyncComponent, ref, watch } from 'vue';
+import { computed, defineAsyncComponent, ref } from 'vue';
 import { instance } from '@/instance.js';
 import { i18n } from '@/i18n.js';
-import { claimAchievement } from '@/utility/achievements.js';
 import { definePage } from '@/page.js';
 
 const XOverview = defineAsyncComponent(() => import('@/pages/about.overview.vue'));
 const XEmojis = defineAsyncComponent(() => import('@/pages/about.emojis.vue'));
 const XFederation = defineAsyncComponent(() => import('@/pages/about.federation.vue'));
-const MkInstanceStats = defineAsyncComponent(() => import('@/components/MkInstanceStats.vue'));
 
 const props = withDefaults(defineProps<{
 	initialTab?: string;
@@ -39,12 +34,6 @@ const props = withDefaults(defineProps<{
 });
 
 const tab = ref(props.initialTab);
-
-watch(tab, () => {
-	if (tab.value === 'charts') {
-		claimAchievement('viewInstanceChart');
-	}
-});
 
 const headerActions = computed(() => []);
 
@@ -59,11 +48,7 @@ const headerTabs = computed(() => [{
 	key: 'federation',
 	title: i18n.ts.federation,
 	icon: 'ti ti-whirl',
-}] : []), {
-	key: 'charts',
-	title: i18n.ts.charts,
-	icon: 'ti ti-chart-line',
-}]);
+}] : [])]);
 
 definePage(() => ({
 	title: i18n.ts.instanceInfo,

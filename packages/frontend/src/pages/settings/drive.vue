@@ -32,13 +32,6 @@ SPDX-License-Identifier: AGPL-3.0-only
 			</FormSection>
 		</SearchMarker>
 
-		<SearchMarker :keywords="['statistics', 'usage']">
-			<FormSection>
-				<template #label><SearchLabel>{{ i18n.ts.statistics }}</SearchLabel></template>
-				<MkChart src="per-user-drive" :args="{ user: $i }" span="day" :limit="7 * 5" :bar="true" :stacked="true" :detailed="false" :aspectRatio="6"/>
-			</FormSection>
-		</SearchMarker>
-
 		<SearchMarker :keywords="['general']">
 			<FormSection>
 				<template #label><SearchLabel>{{ i18n.ts.general }}</SearchLabel></template>
@@ -215,7 +208,6 @@ import FormSplit from '@/components/form/split.vue';
 import * as os from '@/os.js';
 import { misskeyApi } from '@/utility/misskey-api.js';
 import bytes from '@/filters/bytes.js';
-import MkChart from '@/components/MkChart.vue';
 import { i18n } from '@/i18n.js';
 import { definePage } from '@/page.js';
 import { ensureSignin } from '@/i.js';

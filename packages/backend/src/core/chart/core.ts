@@ -132,6 +132,18 @@ export function getJsonSchema<S extends Schema>(schema: S): ToJsonSchema<Unflatt
 }
 
 /**
+ * endolphin: チャート機能は削除済み。チャート read endpoint が `getChart()` の代わりに使う、
+ * schema と同形でゼロ埋めした空チャートを返す純粋関数。DB / チャートインスタンス非依存。
+ */
+export function getEmptyChart<S extends Schema>(schema: S, amount: number): Unflatten<ChartResult<S>> {
+	const res = {} as Record<string, unknown>;
+	for (const k in schema) {
+		nestedProperty.set(res, k, new Array(amount).fill(0));
+	}
+	return res as Unflatten<ChartResult<S>>;
+}
+
+/**
  * 様々なチャートの管理を司るクラス
  */
 // eslint-disable-next-line import/no-default-export

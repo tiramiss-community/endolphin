@@ -4,9 +4,8 @@
  */
 
 import { Injectable } from '@nestjs/common';
-import { getJsonSchema } from '@/core/chart/core.js';
+import { getJsonSchema, getEmptyChart } from '@/core/chart/core.js';
 import { Endpoint } from '@/server/api/endpoint-base.js';
-import ActiveUsersChart from '@/core/chart/charts/active-users.js';
 import { schema } from '@/core/chart/charts/entities/active-users.js';
 
 export const meta = {
@@ -30,11 +29,10 @@ export const paramDef = {
 
 @Injectable()
 export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-disable-line import/no-default-export
-	constructor(
-		private activeUsersChart: ActiveUsersChart,
-	) {
-		super(meta, paramDef, async (ps, me) => {
-			return await this.activeUsersChart.getChart(ps.span, ps.limit, ps.offset ? new Date(ps.offset) : null);
+	constructor() {
+		// endolphin: チャート機能は削除済み。登録・型は互換のため維持し、常に空チャートを返す。
+		super(meta, paramDef, async (ps) => {
+			return getEmptyChart(schema, ps.limit);
 		});
 	}
 }

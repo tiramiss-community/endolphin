@@ -28,9 +28,6 @@ import type { IImage } from '@/core/ImageProcessingService.js';
 import { QueueService } from '@/core/QueueService.js';
 import type { MiDriveFolder } from '@/models/DriveFolder.js';
 import { createTemp } from '@/misc/create-temp.js';
-import DriveChart from '@/core/chart/charts/drive.js';
-import PerUserDriveChart from '@/core/chart/charts/per-user-drive.js';
-import InstanceChart from '@/core/chart/charts/instance.js';
 import { DownloadService } from '@/core/DownloadService.js';
 import { S3Service } from '@/core/S3Service.js';
 import { InternalStorageService } from '@/core/InternalStorageService.js';
@@ -126,9 +123,6 @@ export class DriveService {
 		private queueService: QueueService,
 		private roleService: RoleService,
 		private moderationLogService: ModerationLogService,
-		private driveChart: DriveChart,
-		private perUserDriveChart: PerUserDriveChart,
-		private instanceChart: InstanceChart,
 		private utilityService: UtilityService,
 	) {
 		const logger = new Logger('drive', 'blue');
@@ -667,15 +661,7 @@ export class DriveService {
 			});
 		}
 
-		this.driveChart.update(file, true);
-		if (file.userHost == null) {
-			// ローカルユーザーのみ
-			this.perUserDriveChart.update(file, true);
-		} else {
-			if (this.meta.enableChartsForFederatedInstances) {
-				this.instanceChart.updateDrive(file, true);
-			}
-		}
+		// endolphin: チャート集計フックを撤去（チャート機能は削除済み）。
 
 		return file;
 	}
@@ -828,15 +814,7 @@ export class DriveService {
 			await this.driveFilesRepository.delete(file.id);
 		}
 
-		this.driveChart.update(file, false);
-		if (file.userHost == null) {
-			// ローカルユーザーのみ
-			this.perUserDriveChart.update(file, false);
-		} else {
-			if (this.meta.enableChartsForFederatedInstances) {
-				this.instanceChart.updateDrive(file, false);
-			}
-		}
+		// endolphin: チャート集計フックを撤去（チャート機能は削除済み）。
 
 		if (file.userId) {
 			this.globalEventService.publishDriveStream(file.userId, 'fileDeleted', file.id);

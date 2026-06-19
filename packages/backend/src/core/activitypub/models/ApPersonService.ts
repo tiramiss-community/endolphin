@@ -26,8 +26,7 @@ import type { FederatedInstanceService } from '@/core/FederatedInstanceService.j
 import type { FetchInstanceMetadataService } from '@/core/FetchInstanceMetadataService.js';
 import { MiUserProfile } from '@/models/UserProfile.js';
 import { MiUserPublickey } from '@/models/UserPublickey.js';
-import type UsersChart from '@/core/chart/charts/users.js';
-import type InstanceChart from '@/core/chart/charts/instance.js';
+// endolphin: チャート機能は削除済み。UsersChart / InstanceChart の import を撤去。
 import type { HashtagService } from '@/core/HashtagService.js';
 import { MiUserNotePining } from '@/models/UserNotePining.js';
 import { StatusError } from '@/misc/status-error.js';
@@ -70,8 +69,6 @@ export class ApPersonService implements OnModuleInit {
 	private apMfmService: ApMfmService;
 	private mfmService: MfmService;
 	private hashtagService: HashtagService;
-	private usersChart: UsersChart;
-	private instanceChart: InstanceChart;
 	private apLoggerService: ApLoggerService;
 	private accountMoveService: AccountMoveService;
 	private logger: Logger;
@@ -122,8 +119,6 @@ export class ApPersonService implements OnModuleInit {
 		this.apMfmService = this.moduleRef.get('ApMfmService');
 		this.mfmService = this.moduleRef.get('MfmService');
 		this.hashtagService = this.moduleRef.get('HashtagService');
-		this.usersChart = this.moduleRef.get('UsersChart');
-		this.instanceChart = this.moduleRef.get('InstanceChart');
 		this.apLoggerService = this.moduleRef.get('ApLoggerService');
 		this.accountMoveService = this.moduleRef.get('AccountMoveService');
 		this.logger = this.apLoggerService.logger;
@@ -447,14 +442,11 @@ export class ApPersonService implements OnModuleInit {
 		if (this.meta.enableStatsForFederatedInstances) {
 			this.federatedInstanceService.fetchOrRegister(host).then(i => {
 				this.instancesRepository.increment({ id: i.id }, 'usersCount', 1);
-				if (this.meta.enableChartsForFederatedInstances) {
-					this.instanceChart.newUser(i.host);
-				}
 				this.fetchInstanceMetadataService.fetchInstanceMetadata(i);
 			});
 		}
 
-		this.usersChart.update(user, true);
+		// endolphin: チャート集計フックを撤去（チャート機能は削除済み）。
 
 		// ハッシュタグ更新
 		this.hashtagService.updateUsertags(user, tags);

@@ -7,16 +7,6 @@ SPDX-License-Identifier: AGPL-3.0-only
 <div class="_spacer" style="--MI_SPACER-w: 1000px;">
 	<div ref="rootEl" :class="$style.root">
 		<MkFoldableSection class="item">
-			<template #header>Stats</template>
-			<XStats/>
-		</MkFoldableSection>
-
-		<MkFoldableSection class="item">
-			<template #header>Active users</template>
-			<XActiveUsers/>
-		</MkFoldableSection>
-
-		<MkFoldableSection class="item">
 			<template #header>Heatmap</template>
 			<XHeatmap/>
 		</MkFoldableSection>
@@ -32,23 +22,8 @@ SPDX-License-Identifier: AGPL-3.0-only
 		</MkFoldableSection>
 
 		<MkFoldableSection class="item">
-			<template #header>Federation</template>
-			<XFederation/>
-		</MkFoldableSection>
-
-		<MkFoldableSection class="item">
 			<template #header>Instances</template>
 			<XInstances/>
-		</MkFoldableSection>
-
-		<MkFoldableSection class="item">
-			<template #header>Ap requests</template>
-			<XApRequests/>
-		</MkFoldableSection>
-
-		<MkFoldableSection class="item">
-			<template #header>New users</template>
-			<XUsers/>
 		</MkFoldableSection>
 
 		<MkFoldableSection class="item">
@@ -67,13 +42,8 @@ SPDX-License-Identifier: AGPL-3.0-only
 <script lang="ts" setup>
 import { markRaw, onMounted, onBeforeUnmount, nextTick, shallowRef, ref, computed, useTemplateRef } from 'vue';
 import * as Misskey from 'misskey-js';
-import XFederation from './overview.federation.vue';
 import XInstances from './overview.instances.vue';
 import XQueue from './overview.queue.vue';
-import XApRequests from './overview.ap-requests.vue';
-import XUsers from './overview.users.vue';
-import XActiveUsers from './overview.active-users.vue';
-import XStats from './overview.stats.vue';
 import XRetention from './overview.retention.vue';
 import XModerators from './overview.moderators.vue';
 import XHeatmap from './overview.heatmap.vue';

@@ -17,7 +17,6 @@ export default function(app: App) {
 	app.component('WidgetRssTicker', defineAsyncComponent(() => import('./WidgetRssTicker.vue')));
 	app.component('WidgetTrends', defineAsyncComponent(() => import('./WidgetTrends.vue')));
 	app.component('WidgetClock', defineAsyncComponent(() => import('./WidgetClock.vue')));
-	app.component('WidgetActivity', defineAsyncComponent(() => import('./WidgetActivity.vue')));
 	app.component('WidgetPhotos', defineAsyncComponent(() => import('./WidgetPhotos.vue')));
 	app.component('WidgetDigitalClock', defineAsyncComponent(() => import('./WidgetDigitalClock.vue')));
 	app.component('WidgetUnixClock', defineAsyncComponent(() => import('./WidgetUnixClock.vue')));
@@ -54,7 +53,6 @@ export const widgets = [
 	'rssTicker',
 	'trends',
 	'clock',
-	'activity',
 	'photos',
 	'digitalClock',
 	'unixClock',
