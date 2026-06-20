@@ -18,6 +18,9 @@ endolphin 固有の変更を記録する。本家 Misskey 由来の変更は ups
 - Remove: 実績 (achievements) 機能の UI（実績ページ / ナビ項目 / プロフィールタブ）を削除し、実績獲得処理を無効化（通知の表示互換は維持）
 - Remove: 埋め込みコード生成 UI（ノート/ユーザー/クリップ/タグの「埋め込み」メニューとコード生成ダイアログ）を削除
 - Remove: チャート (charts) 機能の UI（`MkChart` / インスタンス統計 `MkInstanceStats` / About のチャートタブ / インスタンス情報のチャートタブ / 管理ダッシュボードのチャートセクション（Stats・Active users・Federation・Ap requests・New users）/ 管理ユーザー詳細のチャート / ユーザーのアクティビティチャート / アクティビティウィジェット / 訪問者ダッシュボードのアクティブユーザーチャート / ドライブ設定のチャート）を削除（ヒートマップ / リテンション / キュー監視チャート / ミニチャート等の Chart.js 共有部品は維持）
+- Remove: 初回チュートリアル（タイムラインチュートリアル）を削除（`MkTutorialDialog` 一式 / インスタンスメニューの起動項目）
+- Enhance: 初期設定ウィザードをフォロー提案・プッシュ通知許可のみに簡素化（プロフィール / プライバシー編集ステップとチュートリアル誘導を撤去し 6 → 4 ページに）
+- Fix: チャート削除後に残っていたインスタンスメニューの「チャート」項目（`/about#charts` への dead link）を除去
 
 ### Server
 - Remove: お気に入り (favorites) 機能の write API を無効化し read API は空を返すよう変更（`notes/favorites/create`・`notes/favorites/delete`・`i/export-favorites` は `FEATURE_REMOVED` を返却、`i/favorites` は空配列を返却。endpoint 登録と型は互換のため維持）。関連の `NoteFavoriteEntityService` / お気に入りエクスポート処理を削除

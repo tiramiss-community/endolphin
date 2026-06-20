@@ -72,12 +72,7 @@ export function openInstanceMenu(ev: PointerEvent) {
 		});
 	}
 
-	menuItems.push({
-		type: 'link',
-		text: i18n.ts.charts,
-		icon: 'ti ti-chart-line',
-		to: '/about#charts',
-	}, { type: 'divider' }, {
+	menuItems.push({ type: 'divider' }, {
 		type: 'link',
 		text: i18n.ts.ads,
 		icon: 'ti ti-ad',
@@ -146,18 +141,6 @@ export function openInstanceMenu(ev: PointerEvent) {
 		href: 'https://misskey-hub.net/docs/for-users/',
 		target: '_blank',
 	});
-
-	if ($i) {
-		menuItems.push({
-			text: i18n.ts._initialTutorial.launchTutorial,
-			icon: 'ti ti-presentation',
-			action: async () => {
-				const { dispose } = await os.popupAsyncWithDialog(import('@/components/MkTutorialDialog.vue').then(x => x.default), {}, {
-					closed: () => dispose(),
-				});
-			},
-		});
-	}
 
 	menuItems.push({
 		type: 'link',
