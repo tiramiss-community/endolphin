@@ -72,13 +72,6 @@ export function openInstanceMenu(ev: PointerEvent) {
 		});
 	}
 
-	menuItems.push({ type: 'divider' }, {
-		type: 'link',
-		text: i18n.ts.ads,
-		icon: 'ti ti-ad',
-		to: '/ads',
-	});
-
 	if ($i && ($i.isAdmin || $i.policies.canInvite) && instance.disableRegistration) {
 		menuItems.push({
 			type: 'link',

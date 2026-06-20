@@ -3,10 +3,8 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  */
 
-import { Inject, Injectable } from '@nestjs/common';
-import { DataSource } from 'typeorm';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/endpoint-base.js';
-import { DI } from '@/di-symbols.js';
 
 export const meta = {
 	requireCredential: true,
@@ -47,29 +45,10 @@ export const paramDef = {
 
 @Injectable()
 export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-disable-line import/no-default-export
-	constructor(
-		@Inject(DI.db)
-		private db: DataSource,
-	) {
+	constructor() {
+		// endolphin: 管理 DB 統計は削除済み。登録・型は互換のため維持し、空オブジェクトを返す。
 		super(meta, paramDef, async () => {
-			const sizes = await this.db.query(`
-			SELECT relname AS "table", reltuples as "count", pg_total_relation_size(C.oid) AS "size"
-			FROM pg_class C LEFT JOIN pg_namespace N ON (N.oid = C.relnamespace)
-			WHERE nspname NOT IN ('pg_catalog', 'information_schema')
-				AND C.relkind <> 'i'
-				AND nspname !~ '^pg_toast';`)
-				.then(recs => {
-					const res = {} as Record<string, { count: number; size: number; }>;
-					for (const rec of recs) {
-						res[rec.table] = {
-							count: parseInt(rec.count, 10),
-							size: parseInt(rec.size, 10),
-						};
-					}
-					return res;
-				});
-
-			return sizes;
+			return {};
 		});
 	}
 }

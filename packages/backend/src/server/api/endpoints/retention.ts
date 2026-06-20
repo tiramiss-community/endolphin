@@ -3,10 +3,8 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  */
 
-import { Inject, Injectable } from '@nestjs/common';
-import type { RetentionAggregationsRepository } from '@/models/_.js';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/endpoint-base.js';
-import { DI } from '@/di-symbols.js';
 
 export const meta = {
 	tags: ['users'],
@@ -54,23 +52,10 @@ export const paramDef = {
 
 @Injectable()
 export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-disable-line import/no-default-export
-	constructor(
-		@Inject(DI.retentionAggregationsRepository)
-		private retentionAggregationsRepository: RetentionAggregationsRepository,
-	) {
-		super(meta, paramDef, async (ps, me) => {
-			const records = await this.retentionAggregationsRepository.find({
-				order: {
-					id: 'DESC',
-				},
-				take: 30,
-			});
-
-			return records.map(record => ({
-				createdAt: record.createdAt.toISOString(),
-				users: record.usersCount,
-				data: record.data,
-			}));
+	constructor() {
+		// endolphin: リテンション分析は削除済み。登録・型は互換のため維持し、空配列を返す。
+		super(meta, paramDef, async () => {
+			return [];
 		});
 	}
 }

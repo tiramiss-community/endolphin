@@ -54,12 +54,9 @@ export const QUEUE_TYPES = [
 	'systemWebhookDeliver',
 ] as const;
 
-// endolphin: チャート機能は削除済み。tickCharts / resyncCharts / cleanCharts の定期ジョブ定義を撤去
-// （古いスケジューラは下の getJobSchedulers クリーンアップで自動削除される）。
+// endolphin: チャート / リテンション分析は削除済み。tickCharts / resyncCharts / cleanCharts /
+// aggregateRetention の定期ジョブ定義を撤去（古いスケジューラは下の getJobSchedulers クリーンアップで自動削除される）。
 const REPEATABLE_SYSTEM_JOB_DEF = [{
-	name: 'aggregateRetention',
-	pattern: '0 0 * * *',
-}, {
 	name: 'clean',
 	pattern: '0 0 * * *',
 }, {

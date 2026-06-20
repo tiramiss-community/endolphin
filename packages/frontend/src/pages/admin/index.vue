@@ -162,11 +162,6 @@ const menuDef = computed<SuperMenuDef[]>(() => [{
 		to: '/admin/announcements',
 		active: currentPage.value?.route.name === 'announcements',
 	}, {
-		icon: 'ti ti-ad',
-		text: i18n.ts.ads,
-		to: '/admin/ads',
-		active: currentPage.value?.route.name === 'ads',
-	}, {
 		icon: 'ti ti-exclamation-circle',
 		text: i18n.ts.abuseReports,
 		to: '/admin/abuses',
@@ -229,14 +224,6 @@ const menuDef = computed<SuperMenuDef[]>(() => [{
 		text: i18n.ts.performance,
 		to: '/admin/performance',
 		active: currentPage.value?.route.name === 'performance',
-	}],
-}, {
-	title: i18n.ts.info,
-	items: [{
-		icon: 'ti ti-database',
-		text: i18n.ts.database,
-		to: '/admin/database',
-		active: currentPage.value?.route.name === 'database',
 	}],
 }]);
 

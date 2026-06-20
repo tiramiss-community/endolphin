@@ -223,9 +223,6 @@ export const ROUTE_DEF = [{
 	name: 'invite',
 	component: page(() => import('@/pages/invite.vue')),
 }, {
-	path: '/ads',
-	component: page(() => import('@/pages/ads.vue')),
-}, {
 	path: '/theme-editor',
 	component: page(() => import('@/pages/theme-editor.vue')),
 	loginRequired: true,
@@ -399,10 +396,6 @@ export const ROUTE_DEF = [{
 		name: 'announcements',
 		component: page(() => import('@/pages/admin/announcements.vue')),
 	}, {
-		path: '/ads',
-		name: 'ads',
-		component: page(() => import('@/pages/admin/ads.vue')),
-	}, {
 		path: '/roles/:id/edit',
 		name: 'roles',
 		component: page(() => import('@/pages/admin/roles.edit.vue')),
@@ -418,10 +411,6 @@ export const ROUTE_DEF = [{
 		path: '/roles',
 		name: 'roles',
 		component: page(() => import('@/pages/admin/roles.vue')),
-	}, {
-		path: '/database',
-		name: 'database',
-		component: page(() => import('@/pages/admin/database.vue')),
 	}, {
 		path: '/abuses',
 		name: 'abuses',

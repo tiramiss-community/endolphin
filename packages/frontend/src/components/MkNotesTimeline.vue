@@ -21,15 +21,6 @@ SPDX-License-Identifier: AGPL-3.0-only
 						<span>{{ getSeparatorInfo(paginator.items.value[i - 1].createdAt, note.createdAt)?.nextText }} <i class="ti ti-chevron-down"></i></span>
 					</div>
 					<MkNote :class="$style.note" :note="note" :withHardMute="true"/>
-					<div v-if="note._shouldInsertAd_" :class="$style.ad">
-						<MkAd :preferForms="['horizontal', 'horizontal-big']"/>
-					</div>
-				</div>
-				<div v-else-if="note._shouldInsertAd_" :class="{ '_gaps': !noGap }" :data-scroll-anchor="note.id">
-					<MkNote :class="$style.note" :note="note" :withHardMute="true"/>
-					<div :class="$style.ad">
-						<MkAd :preferForms="['horizontal', 'horizontal-big']"/>
-					</div>
 				</div>
 				<MkNote v-else :class="$style.note" :note="note" :withHardMute="true" :data-scroll-anchor="note.id"/>
 			</template>
@@ -82,13 +73,6 @@ defineExpose({
 		.note {
 			border-bottom: solid 0.5px var(--MI_THEME-divider);
 		}
-
-		.ad {
-			padding: 8px;
-			background-size: auto auto;
-			background-image: repeating-linear-gradient(45deg, transparent, transparent 8px, var(--MI_THEME-bg) 8px, var(--MI_THEME-bg) 14px);
-			border-bottom: solid 0.5px var(--MI_THEME-divider);
-		}
 	}
 
 	&:not(.noGap) {
@@ -114,9 +98,5 @@ defineExpose({
 	&.noGap {
 		border-bottom: solid 0.5px var(--MI_THEME-divider);
 	}
-}
-
-.ad:empty {
-	display: none;
 }
 </style>

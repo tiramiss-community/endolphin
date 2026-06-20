@@ -146,31 +146,6 @@ SPDX-License-Identifier: AGPL-3.0-only
 					</MkFolder>
 				</SearchMarker>
 
-				<SearchMarker v-slot="slotProps" :keywords="['ads']">
-					<MkFolder :defaultOpen="slotProps.isParentOfTarget">
-						<template #icon><SearchIcon><i class="ti ti-ad"></i></SearchIcon></template>
-						<template #label><SearchLabel>{{ i18n.ts._ad.adsSettings }}</SearchLabel></template>
-						<template v-if="adForm.modified.value" #footer>
-							<MkFormFooter :form="adForm"/>
-						</template>
-
-						<div class="_gaps">
-							<div class="_gaps_s">
-								<SearchMarker>
-									<MkInput v-model="adForm.state.notesPerOneAd" :min="0" type="number">
-										<template #label><SearchLabel>{{ i18n.ts._ad.notesPerOneAd }}</SearchLabel><span v-if="adForm.modifiedStates.notesPerOneAd" class="_modified">{{ i18n.ts.modified }}</span></template>
-										<template #caption>{{ i18n.ts._ad.setZeroToDisable }}</template>
-									</MkInput>
-								</SearchMarker>
-
-								<MkInfo v-if="adForm.state.notesPerOneAd > 0 && adForm.state.notesPerOneAd < 20" :warn="true">
-									{{ i18n.ts._ad.adsTooClose }}
-								</MkInfo>
-							</div>
-						</div>
-					</MkFolder>
-				</SearchMarker>
-
 				<SearchMarker v-slot="slotProps" :keywords="['url', 'preview']">
 					<MkFolder :defaultOpen="slotProps.isParentOfTarget">
 						<template #icon><SearchIcon><i class="ti ti-world-search"></i></SearchIcon></template>
@@ -444,15 +419,6 @@ const serviceWorkerForm = useForm({
 		enableServiceWorker: state.enableServiceWorker,
 		swPublicKey: state.swPublicKey,
 		swPrivateKey: state.swPrivateKey,
-	});
-	fetchInstance(true);
-});
-
-const adForm = useForm({
-	notesPerOneAd: meta.notesPerOneAd,
-}, async (state) => {
-	await os.apiWithDialog('admin/update-meta', {
-		notesPerOneAd: state.notesPerOneAd,
 	});
 	fetchInstance(true);
 });

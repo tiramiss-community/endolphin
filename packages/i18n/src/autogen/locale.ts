@@ -3525,10 +3525,6 @@ export interface Locale extends ILocale {
      */
     "shareWithNote": string;
     /**
-     * 広告
-     */
-    "ads": string;
-    /**
      * 期限
      */
     "expiration": string;
@@ -8376,40 +8372,6 @@ export interface Locale extends ILocale {
          * 削除が進行中
          */
         "inProgress": string;
-    };
-    "_ad": {
-        /**
-         * 戻る
-         */
-        "back": string;
-        /**
-         * この広告の表示頻度を下げる
-         */
-        "reduceFrequencyOfThisAd": string;
-        /**
-         * 表示しない
-         */
-        "hide": string;
-        /**
-         * 曜日はサーバーのタイムゾーンを元に指定されます。
-         */
-        "timezoneinfo": string;
-        /**
-         * 広告配信設定
-         */
-        "adsSettings": string;
-        /**
-         * リアルタイム更新中に広告を配信する間隔（ノートの個数）
-         */
-        "notesPerOneAd": string;
-        /**
-         * 0でリアルタイム更新時の広告配信を無効
-         */
-        "setZeroToDisable": string;
-        /**
-         * 広告の配信間隔が極めて短いため、ユーザー体験が著しく損われる可能性があります。
-         */
-        "adsTooClose": string;
     };
     "_forgotPassword": {
         /**

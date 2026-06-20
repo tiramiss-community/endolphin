@@ -3,12 +3,10 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  */
 
-import { Brackets } from 'typeorm';
 import { Inject, Injectable } from '@nestjs/common';
 import JSON5 from 'json5';
 import type { Packed } from '@/misc/json-schema.js';
 import type { MiMeta } from '@/models/Meta.js';
-import type { AdsRepository } from '@/models/_.js';
 import { MAX_NOTE_TEXT_LENGTH } from '@/const.js';
 import { bindThis } from '@/decorators.js';
 import { SystemAccountService } from '@/core/SystemAccountService.js';
@@ -25,9 +23,6 @@ export class MetaEntityService {
 		@Inject(DI.meta)
 		private meta: MiMeta,
 
-		@Inject(DI.adsRepository)
-		private adsRepository: AdsRepository,
-
 		private systemAccountService: SystemAccountService,
 	) { }
 
@@ -39,15 +34,8 @@ export class MetaEntityService {
 			instance = this.meta;
 		}
 
-		const ads = await this.adsRepository.createQueryBuilder('ads')
-			.where('ads.expiresAt > :now', { now: new Date() })
-			.andWhere('ads.startsAt <= :now', { now: new Date() })
-			.andWhere(new Brackets(qb => {
-				// 曜日のビットフラグを確認する
-				qb.where('ads.dayOfWeek & :dayOfWeek > 0', { dayOfWeek: 1 << new Date().getDay() })
-					.orWhere('ads.dayOfWeek = 0');
-			}))
-			.getMany();
+		// endolphin: 広告機能は削除済み。ads フィールドは互換のため維持し、常に空配列を返す。
+		const ads: { id: string; url: string; place: string; ratio: number; imageUrl: string; dayOfWeek: number; isSensitive: boolean; }[] = [];
 
 		// クライアントの手間を減らすためあらかじめJSONに変換しておく
 		let defaultLightTheme = null;

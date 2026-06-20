@@ -3,12 +3,9 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  */
 
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/endpoint-base.js';
-import type { AdsRepository } from '@/models/_.js';
-import { IdService } from '@/core/IdService.js';
-import { DI } from '@/di-symbols.js';
-import { ModerationLogService } from '@/core/ModerationLogService.js';
+import { ApiError } from '../../../error.js';
 
 export const meta = {
 	tags: ['admin'],
@@ -21,6 +18,16 @@ export const meta = {
 		optional: false,
 		nullable: false,
 		ref: 'Ad',
+	},
+
+	// endolphin: 広告機能は削除済み。登録・型は互換のため維持し、呼び出されたらエラーを返す。
+	errors: {
+		featureRemoved: {
+			message: 'This feature has been removed.',
+			code: 'FEATURE_REMOVED',
+			id: 'c90445e6-01db-46d9-82ea-6bedc99fd59c',
+			httpStatusCode: 410,
+		},
 	},
 } as const;
 
@@ -43,46 +50,9 @@ export const paramDef = {
 
 @Injectable()
 export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-disable-line import/no-default-export
-	constructor(
-		@Inject(DI.adsRepository)
-		private adsRepository: AdsRepository,
-
-		private idService: IdService,
-		private moderationLogService: ModerationLogService,
-	) {
-		super(meta, paramDef, async (ps, me) => {
-			const ad = await this.adsRepository.insertOne({
-				id: this.idService.gen(),
-				expiresAt: new Date(ps.expiresAt),
-				startsAt: new Date(ps.startsAt),
-				dayOfWeek: ps.dayOfWeek,
-				isSensitive: ps.isSensitive,
-				url: ps.url,
-				imageUrl: ps.imageUrl,
-				priority: ps.priority,
-				ratio: ps.ratio,
-				place: ps.place,
-				memo: ps.memo,
-			});
-
-			this.moderationLogService.log(me, 'createAd', {
-				adId: ad.id,
-				ad: ad,
-			});
-
-			return {
-				id: ad.id,
-				expiresAt: ad.expiresAt.toISOString(),
-				startsAt: ad.startsAt.toISOString(),
-				dayOfWeek: ad.dayOfWeek,
-				isSensitive: ad.isSensitive,
-				url: ad.url,
-				imageUrl: ad.imageUrl,
-				priority: ad.priority,
-				ratio: ad.ratio,
-				place: ad.place,
-				memo: ad.memo,
-			};
+	constructor() {
+		super(meta, paramDef, async () => {
+			throw new ApiError(meta.errors.featureRemoved);
 		});
 	}
 }
