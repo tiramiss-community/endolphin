@@ -1229,17 +1229,9 @@ export interface Locale extends ILocale {
      */
     "messageRead": string;
     /**
-     * すべてのメッセージを既読にする
-     */
-    "readAllChatMessages": string;
-    /**
      * これより過去の履歴はありません
      */
     "noMoreHistory": string;
-    /**
-     * メッセージを送る
-     */
-    "startChat": string;
     /**
      * {n}人が読みました
      */
@@ -5405,18 +5397,6 @@ export interface Locale extends ILocale {
      */
     "information": string;
     /**
-     * チャット
-     */
-    "chat": string;
-    /**
-     * ダイレクトメッセージ
-     */
-    "directMessage": string;
-    /**
-     * メッセージ
-     */
-    "directMessage_short": string;
-    /**
      * 旧設定情報を移行
      */
     "migrateOldSettings": string;
@@ -5845,199 +5825,6 @@ export interface Locale extends ILocale {
          */
         "oldest": string;
     };
-    "_chat": {
-        /**
-         * メッセージ
-         */
-        "messages": string;
-        /**
-         * まだメッセージはありません
-         */
-        "noMessagesYet": string;
-        /**
-         * 新しいメッセージ
-         */
-        "newMessage": string;
-        /**
-         * 個別
-         */
-        "individualChat": string;
-        /**
-         * 特定ユーザーと個別にメッセージのやりとりができます。
-         */
-        "individualChat_description": string;
-        /**
-         * グループ
-         */
-        "roomChat": string;
-        /**
-         * 複数人でメッセージのやりとりができます。
-         * また、個別のメッセージを許可していないユーザーとでも、相手が受け入れればやりとりできます。
-         */
-        "roomChat_description": string;
-        /**
-         * グループを作成
-         */
-        "createRoom": string;
-        /**
-         * ユーザーを招待してメッセージを送信しましょう
-         */
-        "inviteUserToChat": string;
-        /**
-         * 作成したグループ
-         */
-        "yourRooms": string;
-        /**
-         * 参加中のグループ
-         */
-        "joiningRooms": string;
-        /**
-         * 招待
-         */
-        "invitations": string;
-        /**
-         * 招待はありません
-         */
-        "noInvitations": string;
-        /**
-         * 履歴
-         */
-        "history": string;
-        /**
-         * 履歴はありません
-         */
-        "noHistory": string;
-        /**
-         * グループはありません
-         */
-        "noRooms": string;
-        /**
-         * ユーザーを招待
-         */
-        "inviteUser": string;
-        /**
-         * 送信した招待
-         */
-        "sentInvitations": string;
-        /**
-         * 参加
-         */
-        "join": string;
-        /**
-         * 無視
-         */
-        "ignore": string;
-        /**
-         * グループから退出
-         */
-        "leave": string;
-        /**
-         * メンバー
-         */
-        "members": string;
-        /**
-         * メッセージを検索
-         */
-        "searchMessages": string;
-        /**
-         * ホーム
-         */
-        "home": string;
-        /**
-         * 送信
-         */
-        "send": string;
-        /**
-         * 改行
-         */
-        "newline": string;
-        /**
-         * このグループをミュート
-         */
-        "muteThisRoom": string;
-        /**
-         * グループを削除
-         */
-        "deleteRoom": string;
-        /**
-         * このサーバー、またはこのアカウントでダイレクトメッセージは有効化されていません。
-         */
-        "chatNotAvailableForThisAccountOrServer": string;
-        /**
-         * このサーバー、またはこのアカウントでダイレクトメッセージは読み取り専用となっています。新たに書き込んだり、グループを作成・参加したりすることはできません。
-         */
-        "chatIsReadOnlyForThisAccountOrServer": string;
-        /**
-         * 相手のアカウントでダイレクトメッセージが使えない状態になっています。
-         */
-        "chatNotAvailableInOtherAccount": string;
-        /**
-         * このユーザーとのダイレクトメッセージを開始できません
-         */
-        "cannotChatWithTheUser": string;
-        /**
-         * ダイレクトメッセージが使えない状態になっているか、相手がダイレクトメッセージを開放していません。
-         */
-        "cannotChatWithTheUser_description": string;
-        /**
-         * あなたはこのグループの参加者ではありませんが、招待が届いています。参加するには、招待を承認してください。
-         */
-        "youAreNotAMemberOfThisRoomButInvited": string;
-        /**
-         * 招待を承認しますか？
-         */
-        "doYouAcceptInvitation": string;
-        /**
-         * ダイレクトメッセージ
-         */
-        "chatWithThisUser": string;
-        /**
-         * このユーザーはフォロワーからのみメッセージを受け付けています。
-         */
-        "thisUserAllowsChatOnlyFromFollowers": string;
-        /**
-         * このユーザーは、このユーザーがフォローしているユーザーからのみメッセージを受け付けています。
-         */
-        "thisUserAllowsChatOnlyFromFollowing": string;
-        /**
-         * このユーザーは相互フォローのユーザーからのみメッセージを受け付けています。
-         */
-        "thisUserAllowsChatOnlyFromMutualFollowing": string;
-        /**
-         * このユーザーは誰からもメッセージを受け付けていません。
-         */
-        "thisUserNotAllowedChatAnyone": string;
-        /**
-         * メッセージを許可する相手
-         */
-        "chatAllowedUsers": string;
-        /**
-         * 自分からメッセージを送った相手とはこの設定に関わらずメッセージの送受信が可能です。
-         */
-        "chatAllowedUsers_note": string;
-        "_chatAllowedUsers": {
-            /**
-             * 誰でも
-             */
-            "everyone": string;
-            /**
-             * 自分のフォロワーのみ
-             */
-            "followers": string;
-            /**
-             * 自分がフォローしているユーザーのみ
-             */
-            "following": string;
-            /**
-             * 相互フォローのユーザーのみ
-             */
-            "mutual": string;
-            /**
-             * 誰も許可しない
-             */
-            "none": string;
-        };
-    };
     "_emojiPalette": {
         /**
          * パレット
@@ -6217,16 +6004,6 @@ export interface Locale extends ILocale {
          * 環境によっては有効化できない場合があります。
          */
         "settingsPersistence_description2": string;
-        "_chat": {
-            /**
-             * 送信者の名前を表示
-             */
-            "showSenderName": string;
-            /**
-             * Enterで送信
-             */
-            "sendOnEnter": string;
-        };
     };
     "_preferencesProfile": {
         /**
@@ -8156,10 +7933,6 @@ export interface Locale extends ILocale {
              */
             "canImportUserLists": string;
             /**
-             * ダイレクトメッセージを許可
-             */
-            "chatAvailability": string;
-            /**
              * アップロード可能なファイル種別
              */
             "uploadableFileTypes": string;
@@ -8984,10 +8757,6 @@ export interface Locale extends ILocale {
          * リアクション選択時
          */
         "reaction": string;
-        /**
-         * ダイレクトメッセージ
-         */
-        "chatMessage": string;
     };
     "_soundSettings": {
         /**
@@ -9798,10 +9567,6 @@ export interface Locale extends ILocale {
          * もうすぐ誕生日のユーザー
          */
         "birthdayFollowings": string;
-        /**
-         * ダイレクトメッセージ
-         */
-        "chat": string;
     };
     "_widgetOptions": {
         /**
@@ -10545,10 +10310,6 @@ export interface Locale extends ILocale {
          */
         "roleAssigned": string;
         /**
-         * ダイレクトメッセージのグループへ招待されました
-         */
-        "chatRoomInvitationReceived": string;
-        /**
          * プッシュ通知の更新をしました
          */
         "emptyPushNotificationMessage": string;
@@ -10877,10 +10638,6 @@ export interface Locale extends ILocale {
              * ロールタイムライン
              */
             "roleTimeline": string;
-            /**
-             * ダイレクトメッセージ
-             */
-            "chat": string;
         };
     };
     "_dialog": {

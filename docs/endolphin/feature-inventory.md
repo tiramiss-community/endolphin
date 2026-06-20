@@ -222,7 +222,7 @@ read/write の機械判定が曖昧な場合は当該 endpoint ファイルを�
 | `emoji` / `emojis` / `export-custom-emojis` / `get-avatar-decorations` | （トップレベル read） | keep(core) | core | spec §4「残す」（カスタム絵文字）。 |
 | `meta` / `stats` / `ping` / `server-info` / `endpoint(s)` / `emoji(s)` / `get-online-users-count` / `pinned-users` / `retention` / `email-address/available` / `username/available` / `fetch-rss` / `fetch-external-resources` / `verify-email` / `request-reset-password` / `reset-password` / `promo/read` / `test` / `reset-db` | （メタ / ユーティリティ） | keep(core)（`retention` / `promo/read` は **Phase 4a で remove**＝空返却スタブ・no-op） | core | インスタンスメタ・ユーティリティ。`retention` はリテンション分析削除に伴い空配列スタブ、`promo/read` は広告/プロモ削除に伴い no-op（登録・型は温存）。`reset-db` / `test` はテスト専用（NODE_ENV ガード）。 |
 | `notifications` 系 `i/notifications*` | （i グループ） | keep(core) | core | 通知。keep。 |
-| `chat/*` | messages/* / rooms/* / history / read-all | **remove 決定（Phase 4b で実施）** | core | チャット。§9.4 レビューで remove 決定。詳細は `docs/superpowers/plans/phase-4b-chat-removal.md`（25 endpoint / 5 entity / 6 migration / 13 page）。 |
+| `chat/*` | messages/* / rooms/* / history / read-all | **remove（Phase 4b で実施済）** | core | チャット。§9.4 レビューで remove 決定 → Phase 4b で実施。25 endpoint をスタブ化（write→410 / read→空配列 / `messages/show`・`rooms/show`→not-found throw、登録維持）。`ChatService`・2 streaming channel・全チャットフロント（13 page / `MkChatHistories` / `WidgetChat` / deck chat 列）を削除。`UserEntityService.canChat`/`hasUnreadChatMessages` は静的 false 化（`chatScope` パススルー温存）。5 entity / 6 migration / JSON-schema / misskey-js 型 / `chatRoomInvitationReceived` 通知種別 / `chatAvailability` ポリシー / `ChatEntityService`（招待通知 packing 用）は互換のため温存。詳細は `docs/superpowers/plans/phase-4b-chat-removal.md`。 |
 
 ### moderation / admin / roles（§9.2 / §9.3 レビュー対象）
 
@@ -461,7 +461,7 @@ spec §4「未言及のコアは明らかに冗長でなければ残す」の適
 - `admin/ad/*` / `admin/promo/create` / `promo/read`（広告 / プロモ）→ **remove（Phase 4a 実施済）**。小規模コミュニティに広告枠は不要。write→410 / read→空 / `promo/read`→no-op、entity・型は温存。
 - `retention`（リテンション分析）→ **remove（Phase 4a 実施済）**。小規模ではノイズ。read→空配列、`aggregateRetention` cron 撤去、entity・migration は温存。
 - `admin/get-index-stats` / `admin/get-table-stats`（DB 統計）→ **remove（Phase 4a 実施済）**。純 DevOps 用途で管理者に無価値。read→空（e2e フィクスチャ互換のため 200 維持）。
-- `chat/*`（チャット）→ **remove 決定（Phase 4b で実施）**。詳細は `docs/superpowers/plans/phase-4b-chat-removal.md`。
+- `chat/*`（チャット）→ **remove（Phase 4b で実施済）**。詳細は `docs/superpowers/plans/phase-4b-chat-removal.md`。
 - `admin/avatar-decorations/*`（アバターデコレーション）→ **keep（据置）**。
 - `admin/system-webhook/*` / `i/webhooks/*`（Webhook — spec §4 では「残す」に明記）→ **keep**。
 - Tier B クライアント完結機能（statusbar / sounds / AiScript 拡張面 / theme-install / custom-css）→ **keep（将来候補・保留）**。削減するなら別フェーズ。

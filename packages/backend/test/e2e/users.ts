@@ -348,7 +348,7 @@ describe('ユーザー', () => {
 		assert.strictEqual(response.followingVisibility, 'public');
 		assert.strictEqual(response.followersVisibility, 'public');
 		assert.strictEqual(response.chatScope, 'mutual');
-		assert.strictEqual(response.canChat, true);
+		assert.strictEqual(response.canChat, false); // endolphin: チャット機能は削除済み（静的 false）
 		assert.deepStrictEqual(response.roles, []);
 		assert.strictEqual(response.memo, null);
 

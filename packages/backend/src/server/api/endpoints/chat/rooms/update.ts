@@ -3,12 +3,9 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  */
 
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/endpoint-base.js';
-import { DI } from '@/di-symbols.js';
-import { ChatService } from '@/core/ChatService.js';
 import { ApiError } from '@/server/api/error.js';
-import { ChatEntityService } from '@/core/entities/ChatEntityService.js';
 
 export const meta = {
 	tags: ['chat'],
@@ -23,11 +20,13 @@ export const meta = {
 		ref: 'ChatRoom',
 	},
 
+	// endolphin: チャット機能は削除済み。登録・型は互換のため維持し、呼び出されたらエラーを返す。
 	errors: {
-		noSuchRoom: {
-			message: 'No such room.',
-			code: 'NO_SUCH_ROOM',
-			id: 'fcdb0f92-bda6-47f9-bd05-343e0e020932',
+		featureRemoved: {
+			message: 'This feature has been removed.',
+			code: 'FEATURE_REMOVED',
+			id: 'f111a11d-83bb-41f9-aa20-5bc957f56f00',
+			httpStatusCode: 410,
 		},
 	},
 } as const;
@@ -44,24 +43,9 @@ export const paramDef = {
 
 @Injectable()
 export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-disable-line import/no-default-export
-	constructor(
-		private chatService: ChatService,
-		private chatEntityService: ChatEntityService,
-	) {
-		super(meta, paramDef, async (ps, me) => {
-			await this.chatService.checkChatAvailability(me.id, 'write');
-
-			const room = await this.chatService.findMyRoomById(me.id, ps.roomId);
-			if (room == null) {
-				throw new ApiError(meta.errors.noSuchRoom);
-			}
-
-			const updated = await this.chatService.updateRoom(room, {
-				name: ps.name,
-				description: ps.description,
-			});
-
-			return this.chatEntityService.packRoom(updated, me);
+	constructor() {
+		super(meta, paramDef, async () => {
+			throw new ApiError(meta.errors.featureRemoved);
 		});
 	}
 }
