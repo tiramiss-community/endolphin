@@ -21,7 +21,6 @@ import StackingRouterView from './global/StackingRouterView.vue';
 import MkLoading from './global/MkLoading.vue';
 import MkError from './global/MkError.vue';
 import MkSuspense from './global/MkSuspense.vue';
-import MkAd from './global/MkAd.vue';
 import MkPageHeader from './global/MkPageHeader.vue';
 import MkStickyContainer from './global/MkStickyContainer.vue';
 import MkLazy from './global/MkLazy.vue';
@@ -62,7 +61,6 @@ export const components = {
 	MkLoading: MkLoading,
 	MkError: MkError,
 	MkSuspense: MkSuspense,
-	MkAd: MkAd,
 	MkPageHeader: MkPageHeader,
 	MkStickyContainer: MkStickyContainer,
 	MkLazy: MkLazy,
@@ -97,7 +95,6 @@ declare module 'vue' {
 		MkLoading: typeof MkLoading;
 		MkError: typeof MkError;
 		MkSuspense: typeof MkSuspense;
-		MkAd: typeof MkAd;
 		MkPageHeader: typeof MkPageHeader;
 		MkStickyContainer: typeof MkStickyContainer;
 		MkLazy: typeof MkLazy;

@@ -37,8 +37,7 @@ import { ImportFollowingProcessorService } from './processors/ImportFollowingPro
 import { ImportMutingProcessorService } from './processors/ImportMutingProcessorService.js';
 import { ImportUserListsProcessorService } from './processors/ImportUserListsProcessorService.js';
 import { ImportAntennasProcessorService } from './processors/ImportAntennasProcessorService.js';
-// endolphin: チャート機能は削除済み。tick/resync/clean Charts processor の import を撤去。
-import { AggregateRetentionProcessorService } from './processors/AggregateRetentionProcessorService.js';
+// endolphin: チャート / リテンション分析は削除済み。tick/resync/clean Charts / AggregateRetention processor の import を撤去。
 import { RelationshipProcessorService } from './processors/RelationshipProcessorService.js';
 
 @Module({
@@ -77,7 +76,6 @@ import { RelationshipProcessorService } from './processors/RelationshipProcessor
 		PostScheduledNoteProcessorService,
 		DeliverProcessorService,
 		InboxProcessorService,
-		AggregateRetentionProcessorService,
 		CheckExpiredMutingsProcessorService,
 		CheckModeratorsActivityProcessorService,
 		CleanRemoteNotesProcessorService,

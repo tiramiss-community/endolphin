@@ -9,8 +9,6 @@ SPDX-License-Identifier: AGPL-3.0-only
 
 	<MkInfo v-else>{{ $i.policies.chatAvailability === 'readonly' ? i18n.ts._chat.chatIsReadOnlyForThisAccountOrServer : i18n.ts._chat.chatNotAvailableForThisAccountOrServer }}</MkInfo>
 
-	<MkAd :preferForms="['horizontal', 'horizontal-big']"/>
-
 	<MkInput
 		v-model="searchQuery"
 		:placeholder="i18n.ts._chat.searchMessages"

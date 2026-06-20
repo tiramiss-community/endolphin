@@ -220,9 +220,9 @@ read/write の機械判定が曖昧な場合は当該 endpoint ファイルを�
 | `ap` | get / show | keep(core) | core | ActivityPub。完全準拠維持（spec §3 P3）。 |
 | `federation` | followers / following / instances / show-instance / stats / users / update-remote-user | keep(core) | core | 連合。完全準拠維持。`federation/update-remote-user` は admin 寄り。 |
 | `emoji` / `emojis` / `export-custom-emojis` / `get-avatar-decorations` | （トップレベル read） | keep(core) | core | spec §4「残す」（カスタム絵文字）。 |
-| `meta` / `stats` / `ping` / `server-info` / `endpoint(s)` / `emoji(s)` / `get-online-users-count` / `pinned-users` / `retention` / `email-address/available` / `username/available` / `fetch-rss` / `fetch-external-resources` / `verify-email` / `request-reset-password` / `reset-password` / `promo/read` / `test` / `reset-db` | （メタ / ユーティリティ） | keep(core) | core | インスタンスメタ・ユーティリティ。全 keep。`reset-db` / `test` はテスト専用（NODE_ENV ガード）。 |
+| `meta` / `stats` / `ping` / `server-info` / `endpoint(s)` / `emoji(s)` / `get-online-users-count` / `pinned-users` / `retention` / `email-address/available` / `username/available` / `fetch-rss` / `fetch-external-resources` / `verify-email` / `request-reset-password` / `reset-password` / `promo/read` / `test` / `reset-db` | （メタ / ユーティリティ） | keep(core)（`retention` / `promo/read` は **Phase 4a で remove**＝空返却スタブ・no-op） | core | インスタンスメタ・ユーティリティ。`retention` はリテンション分析削除に伴い空配列スタブ、`promo/read` は広告/プロモ削除に伴い no-op（登録・型は温存）。`reset-db` / `test` はテスト専用（NODE_ENV ガード）。 |
 | `notifications` 系 `i/notifications*` | （i グループ） | keep(core) | core | 通知。keep。 |
-| `chat/*` | messages/* / rooms/* / history / read-all | keep(core) | core | チャット。spec 未言及だが「明らかに冗長でなければ残す」（§4 既定ルール）→ keep-for-now。§9.4 で最終確認。 |
+| `chat/*` | messages/* / rooms/* / history / read-all | **remove 決定（Phase 4b で実施）** | core | チャット。§9.4 レビューで remove 決定。詳細は `docs/superpowers/plans/phase-4b-chat-removal.md`（25 endpoint / 5 entity / 6 migration / 13 page）。 |
 
 ### moderation / admin / roles（§9.2 / §9.3 レビュー対象）
 
@@ -287,11 +287,11 @@ spec §9.2（最小モデレーション）/ §9.3（最小ロール）で線引
 
 | endpoint group | endpoints | decision | notes |
 |---|---|---|---|
-| `admin/meta` / `admin/update-meta` / `admin/server-info` / `admin/get-index-stats` / `admin/get-table-stats` / `admin/update-proxy-account` / `admin/send-email` | read / write | keep(core) — review §9.2 | インスタンス設定。小規模でも必要だが範囲精査対象。 |
+| `admin/meta` / `admin/update-meta` / `admin/server-info` / `admin/get-index-stats` / `admin/get-table-stats` / `admin/update-proxy-account` / `admin/send-email` | read / write | keep(core) — review §9.2（`get-index-stats` / `get-table-stats` は **Phase 4a で remove**＝空返却スタブ） | インスタンス設定。DB 統計 2 endpoint は管理画面 DB ダッシュボード削除に伴い空返却スタブ化（e2e 汎用 admin 認証フィクスチャ互換のため 200 維持・登録/型は温存）。 |
 | `admin/emoji/*`（add / add-aliases-bulk / copy / delete / delete-bulk / import-zip / list / list-remote / remove-aliases-bulk / set-aliases-bulk / set-category-bulk / set-license-bulk / update）+ `v2/admin/emoji/list` | read / write | keep(core) | カスタム絵文字管理（spec §4「残す」）。 |
 | `admin/drive/*`（clean-remote-files / cleanup / files / show-file） | read / write | keep(core) — review §9.2 | ドライブ管理。 |
 | `admin/queue/*`（clear / deliver-delayed / inbox-delayed / retry-job / remove-job / show-job / show-job-logs / promote-jobs / pause / resume / jobs / stats / queues / queue-stats / promo/* 含む） | read / write | keep(core) — review §9.2 | ジョブキュー管理。運用に必要だが範囲精査。 |
-| `admin/ad/*`（create / delete / list / update）+ `admin/promo/create` | read / write | keep(core) — review §9.4 | 広告 / プロモ。小規模コミュニティでは不要候補。§9.4 で確認。 |
+| `admin/ad/*`（create / delete / list / update）+ `admin/promo/create` | read / write | **remove（Phase 4a）** | 広告 / プロモ。小規模コミュニティに不要。write→410 / read→空 / `promo/read`→no-op、entity・型は温存。 |
 | `admin/announcements/*`（create / delete / list / update） | read / write | keep(core) | アナウンス（spec §4「残す」）。 |
 | `admin/avatar-decorations/*`（create / delete / list / update） | read / write | keep(core) — review §9.4 | アバターデコレーション。§9.4 で確認。 |
 | `admin/invite/*`（create / list） | read / write | keep(core) | 招待（spec §4「残す」）。 |
@@ -454,13 +454,14 @@ spec §9.2（最小モデレーション）/ §9.3（最小ロール）で線引
 
 → ロール / ポリシーのうち残す範囲をインベントリに対して決定（本表では全 `keep(core) — review §9.3`）。特に `admin/roles/update-default-policies`（ポリシー既定値）が中心論点。
 
-### §9.4 未言及機能の最終 keep/remove 確認（未決）
+### §9.4 未言及機能の最終 keep/remove 確認
 
-spec §4「未言及のコアは明らかに冗長でなければ残す」の適用結果を確認する対象（本表では keep-for-now だが §9.4 で再確認）:
-- `admin/ad/*` / `admin/promo/create` / `promo/read`（広告 / プロモ — 小規模では不要候補）
-- `admin/avatar-decorations/*`（アバターデコレーション）
-- `admin/system-webhook/*` / `i/webhooks/*`（Webhook — spec §4 では「残す」に明記だが範囲確認）
-- `chat/*`（チャット — spec §4 未言及。keep-for-now）
-- `retention` / `admin/get-index-stats` / `admin/get-table-stats`（統計系）
+spec §4「未言及のコアは明らかに冗長でなければ残す」の適用結果。Phase 4 機能削減（`~/.claude/plans/ph3-bright-tome.md`）で全候補を 10 ドメイン並列調査・敵対的検証し、3 原則でティア分けして判断した:
 
-→ いずれも本 Phase 1 では触らず、§9.4 のレビューで最終判断する。
+- `admin/ad/*` / `admin/promo/create` / `promo/read`（広告 / プロモ）→ **remove（Phase 4a 実施済）**。小規模コミュニティに広告枠は不要。write→410 / read→空 / `promo/read`→no-op、entity・型は温存。
+- `retention`（リテンション分析）→ **remove（Phase 4a 実施済）**。小規模ではノイズ。read→空配列、`aggregateRetention` cron 撤去、entity・migration は温存。
+- `admin/get-index-stats` / `admin/get-table-stats`（DB 統計）→ **remove（Phase 4a 実施済）**。純 DevOps 用途で管理者に無価値。read→空（e2e フィクスチャ互換のため 200 維持）。
+- `chat/*`（チャット）→ **remove 決定（Phase 4b で実施）**。詳細は `docs/superpowers/plans/phase-4b-chat-removal.md`。
+- `admin/avatar-decorations/*`（アバターデコレーション）→ **keep（据置）**。
+- `admin/system-webhook/*` / `i/webhooks/*`（Webhook — spec §4 では「残す」に明記）→ **keep**。
+- Tier B クライアント完結機能（statusbar / sounds / AiScript 拡張面 / theme-install / custom-css）→ **keep（将来候補・保留）**。削減するなら別フェーズ。

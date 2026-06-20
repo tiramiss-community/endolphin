@@ -16,7 +16,6 @@ const SECOND_FETCH_LIMIT = 30;
 export type MisskeyEntity = {
 	id: string;
 	createdAt: string;
-	_shouldInsertAd_?: boolean;
 };
 
 type AbsEndpointType = {
@@ -228,11 +227,6 @@ export class Paginator<
 			apiRes.reverse();
 		}
 
-		for (let i = 0; i < apiRes.length; i++) {
-			const item = apiRes[i];
-			if (i === 3) item._shouldInsertAd_ = true;
-		}
-
 		this.pushItems(apiRes);
 
 		if (this.canFetchDetection === 'limit') {
@@ -281,11 +275,6 @@ export class Paginator<
 
 		if (apiRes == null) {
 			return;
-		}
-
-		for (let i = 0; i < apiRes.length; i++) {
-			const item = apiRes[i];
-			if (i === 10) item._shouldInsertAd_ = true;
 		}
 
 		if (this.order.value === 'oldest') {

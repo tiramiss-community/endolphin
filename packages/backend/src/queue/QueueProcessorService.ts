@@ -39,7 +39,6 @@ import { RelationshipProcessorService } from './processors/RelationshipProcessor
 import { CheckExpiredMutingsProcessorService } from './processors/CheckExpiredMutingsProcessorService.js';
 import { BakeBufferedReactionsProcessorService } from './processors/BakeBufferedReactionsProcessorService.js';
 import { CleanProcessorService } from './processors/CleanProcessorService.js';
-import { AggregateRetentionProcessorService } from './processors/AggregateRetentionProcessorService.js';
 import { CleanRemoteNotesProcessorService } from './processors/CleanRemoteNotesProcessorService.js';
 import { QueueLoggerService } from './QueueLoggerService.js';
 import { QUEUE, baseWorkerOptions } from './const.js';
@@ -114,8 +113,7 @@ export class QueueProcessorService implements OnApplicationShutdown {
 		private deleteFileProcessorService: DeleteFileProcessorService,
 		private cleanRemoteFilesProcessorService: CleanRemoteFilesProcessorService,
 		private relationshipProcessorService: RelationshipProcessorService,
-		// endolphin: チャート機能は削除済み。tick/resync/clean Charts processor の注入を撤去。
-		private aggregateRetentionProcessorService: AggregateRetentionProcessorService,
+		// endolphin: チャート / リテンション分析は削除済み。tick/resync/clean Charts / aggregateRetention processor の注入を撤去。
 		private checkExpiredMutingsProcessorService: CheckExpiredMutingsProcessorService,
 		private bakeBufferedReactionsProcessorService: BakeBufferedReactionsProcessorService,
 		private checkModeratorsActivityProcessorService: CheckModeratorsActivityProcessorService,
@@ -161,8 +159,7 @@ export class QueueProcessorService implements OnApplicationShutdown {
 		{
 			const processer = (job: Bull.Job) => {
 				switch (job.name) {
-					// endolphin: チャート機能は削除済み。tickCharts / resyncCharts / cleanCharts の case を撤去。
-					case 'aggregateRetention': return this.aggregateRetentionProcessorService.process();
+					// endolphin: チャート / リテンション分析は削除済み。tickCharts / resyncCharts / cleanCharts / aggregateRetention の case を撤去。
 					case 'checkExpiredMutings': return this.checkExpiredMutingsProcessorService.process();
 					case 'bakeBufferedReactions': return this.bakeBufferedReactionsProcessorService.process();
 					case 'checkModeratorsActivity': return this.checkModeratorsActivityProcessorService.process();

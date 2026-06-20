@@ -38,12 +38,6 @@ SPDX-License-Identifier: AGPL-3.0-only
 					</div>
 					<MkNote :class="$style.note" :note="note" :withHardMute="true"/>
 				</div>
-				<div v-else-if="note._shouldInsertAd_" :data-scroll-anchor="note.id">
-					<MkNote :class="$style.note" :note="note" :withHardMute="true"/>
-					<div :class="$style.ad">
-						<MkAd :preferForms="['horizontal', 'horizontal-big']"/>
-					</div>
-				</div>
 				<MkNote v-else :class="$style.note" :note="note" :withHardMute="true" :data-scroll-anchor="note.id"/>
 			</template>
 		</component>
@@ -68,7 +62,6 @@ import MkPullToRefresh from '@/components/MkPullToRefresh.vue';
 import { useStream } from '@/stream.js';
 import * as sound from '@/utility/sound.js';
 import { $i } from '@/i.js';
-import { instance } from '@/instance.js';
 import { prefer } from '@/preferences.js';
 import { store } from '@/store.js';
 import MkNote from '@/components/MkNote.vue';
@@ -240,8 +233,6 @@ watch(visibility, () => {
 	}
 });
 
-let adInsertionCounter = 0;
-
 const MIN_POLLING_INTERVAL = 1000 * 10;
 const POLLING_INTERVAL =
 	prefer.s.pollingInterval === 1 ? MIN_POLLING_INTERVAL * 1.5 * 1.5 :
@@ -283,12 +274,6 @@ function releaseQueue() {
 }
 
 function prepend(note: Misskey.entities.Note & MisskeyEntity) {
-	adInsertionCounter++;
-
-	if (instance.notesPerOneAd > 0 && adInsertionCounter % instance.notesPerOneAd === 0) {
-		note._shouldInsertAd_ = true;
-	}
-
 	if (isTop() && !isPausingUpdate) {
 		paginator.prepend(note);
 	} else {
@@ -414,8 +399,6 @@ onUnmounted(() => {
 
 function reloadTimeline() {
 	return new Promise<void>((res) => {
-		adInsertionCounter = 0;
-
 		paginator.reload().then(() => {
 			res();
 		});
@@ -554,17 +537,6 @@ defineExpose({
 	padding: 8px 8px;
 	margin: 0 auto;
 	border-bottom: solid 0.5px var(--MI_THEME-divider);
-}
-
-.ad {
-	padding: 8px;
-	background-size: auto auto;
-	background-image: repeating-linear-gradient(45deg, transparent, transparent 8px, var(--MI_THEME-bg) 8px, var(--MI_THEME-bg) 14px);
-	border-bottom: solid 0.5px var(--MI_THEME-divider);
-
-	&:empty {
-		display: none;
-	}
 }
 
 .more {

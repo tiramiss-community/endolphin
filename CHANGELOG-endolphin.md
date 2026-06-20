@@ -21,6 +21,9 @@ endolphin 固有の変更を記録する。本家 Misskey 由来の変更は ups
 - Remove: 初回チュートリアル（タイムラインチュートリアル）を削除（`MkTutorialDialog` 一式 / インスタンスメニューの起動項目）
 - Enhance: 初期設定ウィザードをフォロー提案・プッシュ通知許可のみに簡素化（プロフィール / プライバシー編集ステップとチュートリアル誘導を撤去し 6 → 4 ページに）
 - Fix: チャート削除後に残っていたインスタンスメニューの「チャート」項目（`/about#charts` への dead link）を除去
+- Remove: 管理画面の DB ダッシュボード（`/admin/database`）とナビ項目を削除
+- Remove: 管理概要のリテンション分析セクションと専用コンポーネント（`MkRetentionHeatmap` / `MkRetentionLineChart`）を削除（アクティビティヒートマップは維持）
+- Remove: 広告枠（タイムライン / ストリーミング TL / Play の広告表示）・広告管理画面（`/admin/ads`）・広告一覧ページ（`/ads`）・`MkAd` コンポーネント・管理設定の広告配信フォームを削除
 
 ### Server
 - Remove: お気に入り (favorites) 機能の write API を無効化し read API は空を返すよう変更（`notes/favorites/create`・`notes/favorites/delete`・`i/export-favorites` は `FEATURE_REMOVED` を返却、`i/favorites` は空配列を返却。endpoint 登録と型は互換のため維持）。関連の `NoteFavoriteEntityService` / お気に入りエクスポート処理を削除
@@ -31,3 +34,6 @@ endolphin 固有の変更を記録する。本家 Misskey 由来の変更は ups
 - Remove: 埋め込み配信を撤去（`packages/frontend-embed` パッケージ・backend の `/embed/*`・`/embed.js`・`/embed_vite` ルート・埋め込み asset 配信機構を削除し、workspace / Dockerfile / CI / clean スクリプトの参照も除去）
 - Remove: チャート (charts) 機能を削除（12 チャートサービスクラス・`ChartManagementService`・`ChartLoggerService`・tick/clean/resync の定期ジョブとプロセッサ・各サービスに散在する集計フック（`*Chart.update()` 等）を撤去）。read API（`charts/*`）は登録・型を維持したまま空チャートを返すスタブに変更。`getJsonSchema` とチャート entity 定義は型・DB 互換のため温存（破壊的 migration なし）
 - Enhance: チャート削除に伴い `stats` と nodeinfo のノート数・ユーザー数を、チャート集計から DB の直接カウント（クエリキャッシュ付き）に変更（fediverse 統計サイト等が参照する公開面の数値精度を維持）。大規模インスタンスでの COUNT コストは issue #3 で追跡
+- Remove: 管理 DB 統計 API（`admin/get-index-stats`・`admin/get-table-stats`）を空返却スタブに変更（endpoint 登録と型は互換のため維持。e2e の汎用 admin 認証フィクスチャ互換のため 200 を維持）
+- Remove: リテンション分析を削除（公開 read API `retention` は空配列を返すスタブに変更、`aggregateRetention` 定期ジョブと `AggregateRetentionProcessorService` を撤去。endpoint 登録・型・`retention_aggregation` entity / migration は互換のため温存）
+- Remove: 広告・プロモ配信を撤去（`admin/ad/{create,update,delete}`・`admin/promo/create` は `FEATURE_REMOVED` を返却、`admin/ad/list` は空配列・`promo/read` は no-op を返却。`MetaEntityService` の `ads` 配信を常に空配列に置換。endpoint 登録・型・`MetaDetailed.ads`/`notesPerOneAd` 型・`ad`/`promo_note`/`promo_read` entity は互換のため温存）
