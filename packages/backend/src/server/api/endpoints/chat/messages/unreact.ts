@@ -3,10 +3,8 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  */
 
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/endpoint-base.js';
-import { DI } from '@/di-symbols.js';
-import { ChatService } from '@/core/ChatService.js';
 import { ApiError } from '@/server/api/error.js';
 
 export const meta = {
@@ -16,11 +14,13 @@ export const meta = {
 
 	kind: 'write:chat',
 
+	// endolphin: チャット機能は削除済み。登録・型は互換のため維持し、呼び出されたらエラーを返す。
 	errors: {
-		noSuchMessage: {
-			message: 'No such message.',
-			code: 'NO_SUCH_MESSAGE',
-			id: 'c39ea42f-e3ca-428a-ad57-390e0a711595',
+		featureRemoved: {
+			message: 'This feature has been removed.',
+			code: 'FEATURE_REMOVED',
+			id: '404f651c-3fc8-453a-802b-d6fcdce1bc2f',
+			httpStatusCode: 410,
 		},
 	},
 } as const;
@@ -36,13 +36,9 @@ export const paramDef = {
 
 @Injectable()
 export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-disable-line import/no-default-export
-	constructor(
-		private chatService: ChatService,
-	) {
-		super(meta, paramDef, async (ps, me) => {
-			await this.chatService.checkChatAvailability(me.id, 'write');
-
-			await this.chatService.unreact(ps.messageId, me.id, ps.reaction);
+	constructor() {
+		super(meta, paramDef, async () => {
+			throw new ApiError(meta.errors.featureRemoved);
 		});
 	}
 }

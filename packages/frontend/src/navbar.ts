@@ -111,13 +111,6 @@ export const navbarItemDef = reactive<{
 		icon: 'ti ti-device-tv',
 		to: '/channels',
 	},
-	chat: {
-		title: i18n.ts.directMessage_short,
-		icon: 'ti ti-messages',
-		to: '/chat',
-		show: computed(() => $i != null && $i.policies.chatAvailability !== 'unavailable'),
-		indicated: computed(() => $i != null && $i.hasUnreadChatMessages),
-	},
 	ui: {
 		title: i18n.ts.switchUi,
 		icon: 'ti ti-devices',

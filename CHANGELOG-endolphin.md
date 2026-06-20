@@ -24,6 +24,7 @@ endolphin 固有の変更を記録する。本家 Misskey 由来の変更は ups
 - Remove: 管理画面の DB ダッシュボード（`/admin/database`）とナビ項目を削除
 - Remove: 管理概要のリテンション分析セクションと専用コンポーネント（`MkRetentionHeatmap` / `MkRetentionLineChart`）を削除（アクティビティヒートマップは維持）
 - Remove: 広告枠（タイムライン / ストリーミング TL / Play の広告表示）・広告管理画面（`/admin/ads`）・広告一覧ページ（`/ads`）・`MkAd` コンポーネント・管理設定の広告配信フォームを削除
+- Remove: チャット（DM / グループ）の UI を削除（全チャット画面 `/chat*` / `MkChatHistories` / `WidgetChat` / デッキの chat 列 / ナビ・ユーザーメニューの導線 / 設定のチャット項目（読み取り既読化・送信者名表示・Enter送信・chatScope・チャット音）/ チャット招待通知の表示分岐 / ロールポリシーエディタの chatAvailability 項目）。通知種別自体は互換のため温存
 
 ### Server
 - Remove: お気に入り (favorites) 機能の write API を無効化し read API は空を返すよう変更（`notes/favorites/create`・`notes/favorites/delete`・`i/export-favorites` は `FEATURE_REMOVED` を返却、`i/favorites` は空配列を返却。endpoint 登録と型は互換のため維持）。関連の `NoteFavoriteEntityService` / お気に入りエクスポート処理を削除
@@ -37,3 +38,4 @@ endolphin 固有の変更を記録する。本家 Misskey 由来の変更は ups
 - Remove: 管理 DB 統計 API（`admin/get-index-stats`・`admin/get-table-stats`）を空返却スタブに変更（endpoint 登録と型は互換のため維持。e2e の汎用 admin 認証フィクスチャ互換のため 200 を維持）
 - Remove: リテンション分析を削除（公開 read API `retention` は空配列を返すスタブに変更、`aggregateRetention` 定期ジョブと `AggregateRetentionProcessorService` を撤去。endpoint 登録・型・`retention_aggregation` entity / migration は互換のため温存）
 - Remove: 広告・プロモ配信を撤去（`admin/ad/{create,update,delete}`・`admin/promo/create` は `FEATURE_REMOVED` を返却、`admin/ad/list` は空配列・`promo/read` は no-op を返却。`MetaEntityService` の `ads` 配信を常に空配列に置換。endpoint 登録・型・`MetaDetailed.ads`/`notesPerOneAd` 型・`ad`/`promo_note`/`promo_read` entity は互換のため温存）
+- Remove: チャット（DM / グループ）の業務サービス・ストリーミングを撤去（`ChatService`・chat-user/chat-room streaming channel を削除、chat/* 25 endpoint は登録維持のままスタブ化（write は `FEATURE_REMOVED` 410 / read は空配列 / `messages/show`・`rooms/show` は not-found を throw）、`drive/files/attached-chat-messages` は空配列スタブ）。`UserEntityService` の `canChat`/`hasUnreadChatMessages` を静的 false に置換（`chatScope` はパススルー温存）。`ChatEntityService`（招待通知 packing 用）・5 entity・6 migration・JSON-schema・misskey-js 型・`chatRoomInvitationReceived` 通知種別・`chatAvailability` ロールポリシーは互換のため温存（破壊的 migration なし）

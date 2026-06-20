@@ -33,7 +33,6 @@ export default function(app: App) {
 	app.component('WidgetAichan', defineAsyncComponent(() => import('./WidgetAichan.vue')));
 	app.component('WidgetUserList', defineAsyncComponent(() => import('./WidgetUserList.vue')));
 	app.component('WidgetBirthdayFollowings', defineAsyncComponent(() => import('./WidgetBirthdayFollowings.vue')));
-	app.component('WidgetChat', defineAsyncComponent(() => import('./WidgetChat.vue')));
 }
 
 // 連合関連のウィジェット（連合無効時に隠す）
@@ -67,7 +66,6 @@ export const widgets = [
 	'aichan',
 	'userList',
 	'birthdayFollowings',
-	'chat',
 
 	...federationWidgets,
 ] as const;

@@ -74,7 +74,6 @@ import { ClipService } from './ClipService.js';
 import { FeaturedService } from './FeaturedService.js';
 import { FanoutTimelineService } from './FanoutTimelineService.js';
 import { ChannelFollowingService } from './ChannelFollowingService.js';
-import { ChatService } from './ChatService.js';
 import { RegistryApiService } from './RegistryApiService.js';
 
 // endolphin: チャート機能は削除済み。チャートサービス群・管理サービスの import を撤去（entity 定義と core.ts は温存）。
@@ -203,7 +202,6 @@ const $FanoutTimelineService: Provider = { provide: 'FanoutTimelineService', use
 const $FanoutTimelineEndpointService: Provider = { provide: 'FanoutTimelineEndpointService', useExisting: FanoutTimelineEndpointService };
 const $ChannelFollowingService: Provider = { provide: 'ChannelFollowingService', useExisting: ChannelFollowingService };
 const $ChannelMutingService: Provider = { provide: 'ChannelMutingService', useExisting: ChannelMutingService };
-const $ChatService: Provider = { provide: 'ChatService', useExisting: ChatService };
 const $RegistryApiService: Provider = { provide: 'RegistryApiService', useExisting: RegistryApiService };
 
 // endolphin: チャート機能は削除済み。チャート関連 provider 定義を撤去。
@@ -335,7 +333,6 @@ const $ApQuestionService: Provider = { provide: 'ApQuestionService', useExisting
 		FanoutTimelineEndpointService,
 		ChannelFollowingService,
 		ChannelMutingService,
-		ChatService,
 		RegistryApiService,
 
 		// endolphin: チャート関連 provider を撤去（チャート機能は削除済み）。
@@ -464,7 +461,6 @@ const $ApQuestionService: Provider = { provide: 'ApQuestionService', useExisting
 		$FanoutTimelineEndpointService,
 		$ChannelFollowingService,
 		$ChannelMutingService,
-		$ChatService,
 		$RegistryApiService,
 
 		// endolphin: チャート関連 provider を撤去（チャート機能は削除済み）。
@@ -593,7 +589,6 @@ const $ApQuestionService: Provider = { provide: 'ApQuestionService', useExisting
 		FanoutTimelineEndpointService,
 		ChannelFollowingService,
 		ChannelMutingService,
-		ChatService,
 		RegistryApiService,
 
 		// endolphin: チャート関連 export を撤去（チャート機能は削除済み）。
@@ -721,7 +716,6 @@ const $ApQuestionService: Provider = { provide: 'ApQuestionService', useExisting
 		$FanoutTimelineEndpointService,
 		$ChannelFollowingService,
 		$ChannelMutingService,
-		$ChatService,
 		$RegistryApiService,
 
 		// endolphin: チャート関連 export を撤去（チャート機能は削除済み）。

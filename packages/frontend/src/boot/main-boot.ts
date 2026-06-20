@@ -358,11 +358,6 @@ export async function mainBoot() {
 				});
 			});
 
-			main.on('newChatMessage', () => {
-				updateCurrentAccountPartial({ hasUnreadChatMessages: true });
-				sound.playMisskeySfx('chatMessage');
-			});
-
 			main.on('readAllAnnouncements', () => {
 				updateCurrentAccountPartial({ hasUnreadAnnouncement: false });
 			});

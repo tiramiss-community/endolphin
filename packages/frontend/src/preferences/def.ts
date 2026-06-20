@@ -191,7 +191,6 @@ export const PREF_DEF = definePreferences({
 			'clips',
 			'drive',
 			'followRequests',
-			'chat',
 			'-',
 			'explore',
 			'announcements',
@@ -490,9 +489,6 @@ export const PREF_DEF = definePreferences({
 	'sound.on.reaction': {
 		default: { type: 'syuilo/bubble2', volume: 1 } as SoundStore,
 	},
-	'sound.on.chatMessage': {
-		default: { type: 'syuilo/waon', volume: 1 } as SoundStore,
-	},
 
 	'deck.alwaysShowMainColumn': {
 		default: true,
@@ -517,13 +513,6 @@ export const PREF_DEF = definePreferences({
 	},
 	'deck.wallpaper': {
 		default: null as string | null,
-	},
-
-	'chat.showSenderName': {
-		default: false,
-	},
-	'chat.sendOnEnter': {
-		default: false,
 	},
 
 	'game.dropAndFusion': {

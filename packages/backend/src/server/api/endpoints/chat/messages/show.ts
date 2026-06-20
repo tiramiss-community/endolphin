@@ -3,14 +3,9 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  */
 
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/endpoint-base.js';
-import { DI } from '@/di-symbols.js';
-import { GetterService } from '@/server/api/GetterService.js';
-import { ChatService } from '@/core/ChatService.js';
-import { ChatEntityService } from '@/core/entities/ChatEntityService.js';
 import { ApiError } from '@/server/api/error.js';
-import { RoleService } from '@/core/RoleService.js';
 
 export const meta = {
 	tags: ['chat'],
@@ -44,22 +39,9 @@ export const paramDef = {
 
 @Injectable()
 export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-disable-line import/no-default-export
-	constructor(
-		private chatService: ChatService,
-		private roleService: RoleService,
-		private chatEntityService: ChatEntityService,
-	) {
-		super(meta, paramDef, async (ps, me) => {
-			await this.chatService.checkChatAvailability(me.id, 'read');
-
-			const message = await this.chatService.findMessageById(ps.messageId);
-			if (message == null) {
-				throw new ApiError(meta.errors.noSuchMessage);
-			}
-			if (message.fromUserId !== me.id && message.toUserId !== me.id && !(await this.roleService.isModerator(me))) {
-				throw new ApiError(meta.errors.noSuchMessage);
-			}
-			return this.chatEntityService.packMessageDetailed(message, me);
+	constructor() {
+		super(meta, paramDef, async () => {
+			throw new ApiError(meta.errors.noSuchMessage);
 		});
 	}
 }
