@@ -12,7 +12,6 @@ services:
         npm install -g pnpm
         pnpm -F backend i
         pnpm -F misskey-js i
-        pnpm -F misskey-reversi i
       "
 
   tester:
