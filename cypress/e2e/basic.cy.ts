@@ -189,26 +189,16 @@ describe('After user signed in', () => {
 
 	it('account setup wizard', () => {
 		// 表示に時間がかかるのでデフォルト秒数だとタイムアウトする
+		// welcome
 		cy.get('[data-cy-user-setup-continue]', { timeout: 30000 }).click();
 
-		cy.get('[data-cy-user-setup-user-name] input').type('ありす');
-		cy.get('[data-cy-user-setup-user-description] textarea').type('ほげ');
-		// TODO: アイコン設定テスト
-
-		cy.get('[data-cy-user-setup-continue]').click();
-
-		// プライバシー設定
-
-		cy.get('[data-cy-user-setup-continue]').click();
-
 		// フォローはスキップ
-
 		cy.get('[data-cy-user-setup-continue]').click();
 
 		// プッシュ通知設定はスキップ
-
 		cy.get('[data-cy-user-setup-continue]').click();
 
+		// 完了
 		cy.get('[data-cy-user-setup-continue]').click();
   });
 });
