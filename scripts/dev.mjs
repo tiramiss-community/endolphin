@@ -93,15 +93,3 @@ execa('pnpm', ['--filter', 'i18n', 'watch', '--no-clean'], {
 	stdout: process.stdout,
 	stderr: process.stderr,
 });
-
-execa('pnpm', ['--filter', 'misskey-reversi', 'watch', '--no-clean'], {
-	cwd: _dirname + '/../',
-	stdout: process.stdout,
-	stderr: process.stderr,
-});
-
-execa('pnpm', ['--filter', 'misskey-bubble-game', 'watch', '--no-clean'], {
-	cwd: _dirname + '/../',
-	stdout: process.stdout,
-	stderr: process.stderr,
-});

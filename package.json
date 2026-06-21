@@ -10,8 +10,6 @@
 	"workspaces": [
 		"packages/misskey-js",
 		"packages/i18n",
-		"packages/misskey-reversi",
-		"packages/misskey-bubble-game",
 		"packages/icons-subsetter",
 		"packages/frontend-shared",
 		"packages/frontend-builder",

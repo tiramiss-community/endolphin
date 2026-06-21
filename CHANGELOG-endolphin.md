@@ -9,6 +9,7 @@ endolphin 固有の変更を記録する。本家 Misskey 由来の変更は ups
 
 ### General
 - Feat: endolphin fork の基盤を整備（fork メタデータ / upstream 追従フロー / changelog 分離 / fork policy）
+- Remove: Games 削除（Phase 1）で孤児化していたゲームエンジンのサブパッケージ `misskey-reversi` / `misskey-bubble-game` を撤去（workspace / Dockerfile / CI / vite / 各 package.json 依存 / dev・clean スクリプト / 連合テスト compose の参照も除去）。併せて `GlobalEventService` の死にコードと化していた reversi ストリームのイベント型・publish メソッドを撤去（`ReversiGame` entity / `ReversiGameDetailed` 型 / reversi endpoint スタブは互換のため温存）
 
 ### Client
 - Remove: お気に入り (favorites) 機能の UI（一覧ページ / ナビ項目 / ノートメニュー / データエクスポート項目）を削除

@@ -267,9 +267,6 @@ importers:
       misskey-js:
         specifier: workspace:*
         version: link:../misskey-js
-      misskey-reversi:
-        specifier: workspace:*
-        version: link:../misskey-reversi
       ms:
         specifier: 3.0.0-canary.202508261828
         version: 3.0.0-canary.202508261828
@@ -689,15 +686,9 @@ importers:
       mfm-js:
         specifier: 0.26.0
         version: 0.26.0
-      misskey-bubble-game:
-        specifier: workspace:*
-        version: link:../misskey-bubble-game
       misskey-js:
         specifier: workspace:*
         version: link:../misskey-js
-      misskey-reversi:
-        specifier: workspace:*
-        version: link:../misskey-reversi
       photoswipe:
         specifier: 5.4.4
         version: 5.4.4
@@ -1094,43 +1085,6 @@ importers:
         specifier: 8.61.0
         version: 8.61.0(eslint@9.39.4)(typescript@5.9.3)
 
-  packages/misskey-bubble-game:
-    dependencies:
-      eventemitter3:
-        specifier: 5.0.4
-        version: 5.0.4
-      matter-js:
-        specifier: 0.20.0
-        version: 0.20.0
-      seedrandom:
-        specifier: 3.0.5
-        version: 3.0.5
-    devDependencies:
-      '@types/matter-js':
-        specifier: 0.20.2
-        version: 0.20.2
-      '@types/node':
-        specifier: 24.13.1
-        version: 24.13.1
-      '@types/seedrandom':
-        specifier: 3.0.8
-        version: 3.0.8
-      '@typescript-eslint/eslint-plugin':
-        specifier: 8.61.0
-        version: 8.61.0(@typescript-eslint/parser@8.61.0(eslint@9.39.4)(typescript@5.9.3))(eslint@9.39.4)(typescript@5.9.3)
-      '@typescript-eslint/parser':
-        specifier: 8.61.0
-        version: 8.61.0(eslint@9.39.4)(typescript@5.9.3)
-      esbuild:
-        specifier: 0.28.1
-        version: 0.28.1
-      execa:
-        specifier: 9.6.1
-        version: 9.6.1
-      nodemon:
-        specifier: 3.1.14
-        version: 3.1.14
-
   packages/misskey-js:
     dependencies:
       '@simplewebauthn/browser':
@@ -1209,31 +1163,6 @@ importers:
       tsx:
         specifier: 4.22.4
         version: 4.22.4
-
-  packages/misskey-reversi:
-    dependencies:
-      crc-32:
-        specifier: 1.2.2
-        version: 1.2.2
-    devDependencies:
-      '@types/node':
-        specifier: 24.13.1
-        version: 24.13.1
-      '@typescript-eslint/eslint-plugin':
-        specifier: 8.61.0
-        version: 8.61.0(@typescript-eslint/parser@8.61.0(eslint@9.39.4)(typescript@5.9.3))(eslint@9.39.4)(typescript@5.9.3)
-      '@typescript-eslint/parser':
-        specifier: 8.61.0
-        version: 8.61.0(eslint@9.39.4)(typescript@5.9.3)
-      esbuild:
-        specifier: 0.28.1
-        version: 0.28.1
-      execa:
-        specifier: 9.6.1
-        version: 9.6.1
-      nodemon:
-        specifier: 3.1.14
-        version: 3.1.14
 
   packages/sw:
     dependencies:
@@ -4492,7 +4421,7 @@ packages:
     engines: {node: '>= 14'}
 
   aiscript-vscode@https://codeload.github.com/aiscript-dev/aiscript-vscode/tar.gz/1dc7f60cda78d030dadfc518a33c472202b2ef67:
-    resolution: {gitHosted: true, tarball: https://codeload.github.com/aiscript-dev/aiscript-vscode/tar.gz/1dc7f60cda78d030dadfc518a33c472202b2ef67}
+    resolution: {gitHosted: true, integrity: sha512-S4eSTHasZz29AMlnU2/zdGP8zikiDiYfYW9kNooAfwVo8OghXdxKuTDDKDAjWsbBxa1+P4uQHa4BNk9MY74rJQ==, tarball: https://codeload.github.com/aiscript-dev/aiscript-vscode/tar.gz/1dc7f60cda78d030dadfc518a33c472202b2ef67}
     version: 0.1.16
     engines: {vscode: ^1.83.0}
 
@@ -9004,7 +8933,7 @@ packages:
     engines: {node: '>= 0.4'}
 
   storybook-addon-misskey-theme@https://codeload.github.com/misskey-dev/storybook-addon-misskey-theme/tar.gz/cf583db098365b2ccc81a82f63ca9c93bc32b640:
-    resolution: {gitHosted: true, tarball: https://codeload.github.com/misskey-dev/storybook-addon-misskey-theme/tar.gz/cf583db098365b2ccc81a82f63ca9c93bc32b640}
+    resolution: {gitHosted: true, integrity: sha512-QaH1uZSlApQ2CZPkHfhmNm89I92L02s3MdbUPG66TmAyqMaqzxd/AvobORBjtTZ0ymUSa3ii482dRXi+fFb19w==, tarball: https://codeload.github.com/misskey-dev/storybook-addon-misskey-theme/tar.gz/cf583db098365b2ccc81a82f63ca9c93bc32b640}
     version: 0.0.0
     peerDependencies:
       '@storybook/blocks': ^7.0.0-rc.4
@@ -10407,7 +10336,7 @@ snapshots:
       '@babel/code-frame': 7.29.0
       '@babel/generator': 7.29.1
       '@babel/helper-compilation-targets': 7.28.6
-      '@babel/helper-module-transforms': 7.28.6(@babel/core@7.29.0)
+      '@babel/helper-module-transforms': 7.28.6(@babel/core@7.29.0(supports-color@10.2.2))
       '@babel/helpers': 7.29.2
       '@babel/parser': 7.29.3
       '@babel/template': 7.28.6
@@ -10427,7 +10356,7 @@ snapshots:
       '@babel/code-frame': 7.29.0
       '@babel/generator': 7.29.1
       '@babel/helper-compilation-targets': 7.28.6
-      '@babel/helper-module-transforms': 7.28.6(@babel/core@7.29.0)
+      '@babel/helper-module-transforms': 7.28.6(@babel/core@7.29.0(supports-color@10.2.2))
       '@babel/helpers': 7.29.2
       '@babel/parser': 7.29.3
       '@babel/template': 7.28.6
@@ -10467,7 +10396,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@babel/helper-module-transforms@7.28.6(@babel/core@7.29.0)':
+  '@babel/helper-module-transforms@7.28.6(@babel/core@7.29.0(supports-color@10.2.2))':
     dependencies:
       '@babel/core': 7.29.0(supports-color@10.2.2)
       '@babel/helper-module-imports': 7.28.6
