@@ -8333,6 +8333,18 @@ export interface Locale extends ILocale {
          * プロジェクトメンバー
          */
         "projectMembers": string;
+        /**
+         * EndolphinはMisskeyを改変したバージョンで、Endolphinプロジェクトによって開発されています。
+         */
+        "aboutEndolphin": string;
+        /**
+         * Endolphin プロジェクトメンバー
+         */
+        "endolphinProjectMembers": string;
+        /**
+         * fork元のMisskeyについて
+         */
+        "learnAboutMisskey": string;
     };
     "_displayOfSensitiveMedia": {
         /**

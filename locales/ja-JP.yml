@@ -2173,6 +2173,9 @@ _aboutMisskey:
   morePatrons: "他にも多くの方が支援してくれています。ありがとうございます🥰"
   patrons: "支援者"
   projectMembers: "プロジェクトメンバー"
+  aboutEndolphin: "EndolphinはMisskeyを改変したバージョンで、Endolphinプロジェクトによって開発されています。"
+  endolphinProjectMembers: "Endolphin プロジェクトメンバー"
+  learnAboutMisskey: "fork元のMisskeyについて"
 
 _displayOfSensitiveMedia:
   respect: "センシティブ設定されたメディアを隠す"

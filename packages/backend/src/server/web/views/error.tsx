@@ -18,10 +18,10 @@ export function ErrorPage(props: {
 			<html>
 				<head>
 					<meta charset="UTF-8" />
-					<meta name="application-name" content="Misskey" />
+					<meta name="application-name" content="Endolphin" />
 					<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 					<meta name="referrer" content="origin" />
-					<title safe>{props.title ?? 'An error has occurred... | Misskey'}</title>
+					<title safe>{props.title ?? 'An error has occurred... | Endolphin'}</title>
 					<link rel="stylesheet" href="/static-assets/misc/error.css" />
 					<script src="/static-assets/misc/error.js"></script>
 				</head>
@@ -40,7 +40,7 @@ export function ErrorPage(props: {
 						<path d="M12 9v2m0 4v.01" />
 						<path d="M5 19h14a2 2 0 0 0 1.84 -2.75l-7.1 -12.25a2 2 0 0 0 -3.5 0l-7.1 12.25a2 2 0 0 0 1.75 2.75" />
 					</svg>
-					<h1 data-i18n="title">Failed to initialize Misskey</h1>
+					<h1 data-i18n="title">Failed to initialize Endolphin</h1>
 
 					<button class="button-big" onclick="location.reload();">
 						<span class="button-label-big" data-i18n="reload">Reload</span>

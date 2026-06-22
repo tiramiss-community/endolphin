@@ -9,6 +9,7 @@ endolphin 固有の変更を記録する。本家 Misskey 由来の変更は ups
 
 ### General
 - Feat: endolphin fork の基盤を整備（fork メタデータ / upstream 追従フロー / changelog 分離 / fork policy）
+- Enhance: ブランディング方針を確定（アプリ識別名のみ Endolphin 化 / 連合自己申告・内部識別子・プラットフォーム prose は温存）し、ビジュアル資産の差し替え口台帳 `docs/endolphin/branding.md` を整備（資産実体・テーマ色 `#86b300` は当面温存）
 - Remove: Games 削除（Phase 1）で孤児化していたゲームエンジンのサブパッケージ `misskey-reversi` / `misskey-bubble-game` を撤去（workspace / Dockerfile / CI / vite / 各 package.json 依存 / dev・clean スクリプト / 連合テスト compose の参照も除去）。併せて `GlobalEventService` の死にコードと化していた reversi ストリームのイベント型・publish メソッドを撤去（`ReversiGame` entity / `ReversiGameDetailed` 型 / reversi endpoint スタブは互換のため温存）
 
 ### Client
@@ -26,8 +27,11 @@ endolphin 固有の変更を記録する。本家 Misskey 由来の変更は ups
 - Remove: 管理概要のリテンション分析セクションと専用コンポーネント（`MkRetentionHeatmap` / `MkRetentionLineChart`）を削除（アクティビティヒートマップは維持）
 - Remove: 広告枠（タイムライン / ストリーミング TL / Play の広告表示）・広告管理画面（`/admin/ads`）・広告一覧ページ（`/ads`）・`MkAd` コンポーネント・管理設定の広告配信フォームを削除
 - Remove: チャット（DM / グループ）の UI を削除（全チャット画面 `/chat*` / `MkChatHistories` / `WidgetChat` / デッキの chat 列 / ナビ・ユーザーメニューの導線 / 設定のチャット項目（読み取り既読化・送信者名表示・Enter送信・chatScope・チャット音）/ チャット招待通知の表示分岐 / ロールポリシーエディタの chatAvailability 項目）。通知種別自体は互換のため温存
+- Enhance: about ページの wordmark を Misskey → Endolphin に変更
+- Feat: about ページを Endolphin / Misskey の 2 タブ構成に再編（`PageWithHeader` の既存タブ機構を使用）。Endolphin タブは概要・ソースコード（GitHub）・「Endolphin プロジェクトメンバー」（@samunohito）と Misskey タブへの導線を表示、Misskey タブは従来の about 内容（ソース / 翻訳 / 寄付 / プロジェクトメンバー / Special thanks / 支援者）を踏襲（locale キー `_aboutMisskey.aboutEndolphin` / `endolphinProjectMembers` / `learnAboutMisskey` を追加）
 
 ### Server
+- Enhance: アプリ識別名のフォールバックを Misskey → Endolphin に変更（PWA manifest 静的値 / document `<title>`・`og:*`・`application-name` メタ / OpenSearch / error・CLI・BIOS・flush・info-card view の見出し・メタ / 全 HTML 先頭コメントの挨拶 / `instanceName`・`title` フォールバック）。連合 nodeinfo `software.name`・User-Agent・内部識別子・テーマ色 `#86b300` は互換のため温存。runtime はインスタンス設定（`meta.name` 等）が従来どおり優先
 - Remove: お気に入り (favorites) 機能の write API を無効化し read API は空を返すよう変更（`notes/favorites/create`・`notes/favorites/delete`・`i/export-favorites` は `FEATURE_REMOVED` を返却、`i/favorites` は空配列を返却。endpoint 登録と型は互換のため維持）。関連の `NoteFavoriteEntityService` / お気に入りエクスポート処理を削除
 - Remove: ギャラリー (gallery) 機能の write API を無効化し read API は空を返すよう変更（endpoint 登録と型は互換のため維持、web ルートと GalleryPost/GalleryLike の packing service を削除）
 - Remove: Games（リバーシ / バブルゲーム）の write API を無効化し read API は空を返すよう変更（endpoint 登録と型は互換のため維持、ReversiService・リバーシ streaming channel・web ルート・packing service を削除）

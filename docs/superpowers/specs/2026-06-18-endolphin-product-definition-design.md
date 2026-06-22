@@ -137,7 +137,7 @@
 4. **未言及機能の最終 keep/remove 確認** ✅**確定（2026-06-20 / Phase 4 機能削減）**: §4「残す」の既定ルール適用結果をインベントリ上で確認。結果: 管理DB統計 / リテンション分析 / 広告・プロモ（Phase 4a）+ チャット（Phase 4b）を remove、アバターデコレーション / Webhook / Tier B クライアント完結機能は keep。詳細は `docs/endolphin/feature-inventory.md` §9.4 と `~/.claude/plans/ph3-bright-tome.md`。
 
 その他、時期を見て決める事項:
-- リポジトリ命名・ブランド資産（ロゴ等）の整備タイミング。
+- **リポジトリ命名・ブランド資産（ロゴ等）の整備タイミング** ✅**確定（2026-06-22 / 表層リブランディング）**: P3（互換維持）に沿った保守的な 4 境界を確定 ―― アプリ識別名（タイトル / PWA manifest / メタ / about ページ wordmark）のみ **Endolphin** に改名、連合自己申告（nodeinfo `software.name` / User-Agent）・内部識別子（`Mi*` prefix / package 名 / DB 名 / mount div）・プラットフォーム説明 prose は **Misskey のまま温存**。ビジュアル資産（ロゴ / favicon / app icon / テーマ色 `#86b300`）は当面温存し**差し替え口だけ台帳化**（後続で資産整備）。詳細は [fork-policy.md §ブランディング](../../endolphin/fork-policy.md) と差し替え口台帳 [docs/endolphin/branding.md](../../endolphin/branding.md)。
 
 ## 付録A. 連合非影響メモ
 

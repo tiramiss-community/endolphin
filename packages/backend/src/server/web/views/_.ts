@@ -11,8 +11,8 @@ export const comment = `<!--
  | | | | |_ -|_ -| '_| -_| | |
  |_|_|_|_|___|___|_,_|___|_  |
                          |___|
- Thank you for using Misskey!
- If you are reading this message... how about joining the development?
+ Thank you for using Endolphin!
+ Endolphin is a fork of Misskey. If you are reading this message... how about joining the development?
  https://github.com/misskey-dev/misskey
 
 -->`;
