@@ -32,7 +32,7 @@ endolphin の表層リブランディングで「アプリ識別名」は Endolp
 
 ## 運用者向け注記（AGPL ソース提供義務）
 
-ビジュアルとは別に、運用者は管理画面で次を設定すること（[fork-policy.md](fork-policy.md) / [プロダクト定義 spec](../superpowers/specs/2026-06-18-endolphin-product-definition-design.md) を参照）:
+ビジュアルとは別に、運用者は管理画面で次を設定すること（[fork-policy.md](fork-policy.md) を参照）:
 
 - `repositoryUrl`: endolphin のソース公開先（AGPL のソース提供義務。nodeinfo `software.repository` もこの値を読む）
 - `feedbackUrl`: endolphin のフィードバック先

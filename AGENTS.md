@@ -10,6 +10,18 @@
 
 ---
 
+## endolphin fork の前提 (コアコンセプト)
+
+このリポジトリは本家 Misskey そのものではなく、**小規模コミュニティ向けの軽量 fork「endolphin」**。機能を厳選しつつ、ActivityPub 連合と REST API 互換は本家準拠を維持する。設計判断はすべて次の 3 原則に従う (正本: [docs/endolphin/fork-policy.md](docs/endolphin/fork-policy.md)):
+
+- **P1 厳選UXファースト**: 削るのは機能単位 (画面・サブシステムを丸ごと)。パワーユーザーが愛する UI アフォーダンス (デッキの多カラム等) は剥がさない。
+- **P2 追従コスト ∝ 本家更新頻度**: 高 churn コア (TL / ノート / 投稿 / ドライブ / 連合) は流用し続け、改変・削除・自作は低 churn 部に限定する。アーキテクチャを本家から離すほど cherry-pick が「翻訳」になり追従コストが跳ね上がる。
+- **P3 互換維持**: 連合は本家完全準拠 (diverge させない)。削除機能も endpoint-list 登録と misskey-js 型生成を維持し、read 系は空 (`[]` / `null` / 既定値)、write 系は `FEATURE_REMOVED` (HTTP 410) を返すスタブにする。entity / table / migration / JSON schema は温存する (破壊的 drop migration を作らない)。
+
+**踏み外し厳禁**: 削除済み機能 (お気に入り / ページ / ギャラリー / 実績 / Games / 埋め込み / チャート / チャット / 管理DB統計 / リテンション分析 / 広告・プロモ) を **復活させない**。スタブ endpoint を「壊れている」と誤認して本家実装に戻さない。entity / migration を drop しない。upstream マージで削除機能に競合が出たら、実装を戻すのではなく **スタブを再適用** する。機能ごとの keep / remove / no-op 分類と削除コントラクトの正本は [docs/endolphin/feature-inventory.md](docs/endolphin/feature-inventory.md)。
+
+---
+
 ## 絶対にやってはいけない事
 
 違反すると CI 失敗 / 本番事故 / 共有環境破壊 になる。順守すること。

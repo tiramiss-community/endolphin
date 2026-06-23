@@ -11,6 +11,18 @@ SKILL.md 本体は references への索引だけ。具体的な手順や規約�
 
 **他スキル実行後も免除されない。** `brainstorming` / `writing-plans` / その他アップストリームスキルを先に呼んでいても、`packages/backend/` に触れる実装フェーズに入る時点でこのスキルを呼ぶこと。
 
+## endolphin 固有: 削除済み機能の削除コントラクト (★ upstream マージで踏み外しやすい)
+
+endolphin は本家の一部機能を削除した軽量 fork (背景は [AGENTS.md](../../../AGENTS.md) の「endolphin fork の前提」)。backend では削除機能を **物理削除せずスタブ化** している。この契約を破ると機能削除ポリシーが崩れる:
+
+- **read 系 endpoint**: endpoint-list 登録・`meta` / `paramDef` / `res`・misskey-js 型生成を維持したまま、ハンドラ本体を、削除済み entity / service を参照しない **静的な空レスポンス** (`[]` / `null` / 既定値) に置き換える。
+- **write 系 endpoint** (create / update / delete / like 等): 同じく登録を維持し、ハンドラは `ApiError` で `FEATURE_REMOVED` (HTTP 410 Gone) を throw する。
+- **entity / table / migration / JSON schema は温存** (DB・型互換維持、破壊的 drop migration を作らない)。物理削除するのは業務 service・packing service と、未使用化した repository provider のみ。
+
+**やってはいけない**: スタブ endpoint を「実装が欠けている / 壊れている」と誤認して本家実装を復元する / 削除機能の entity・migration を drop する / 削除機能に新規 endpoint・service を足す。upstream マージで削除機能に競合が出たら、実装を戻すのではなく **スタブを再適用** する。
+
+機能ごとの keep / remove / no-op 分類と各 endpoint の正確な扱いは [docs/endolphin/feature-inventory.md](../../../docs/endolphin/feature-inventory.md) が正本。削除機能に触れる前に必ずここを引く。
+
 ## 作業別ワークフロー (tasks)
 
 タスク単位の完結したチェックリスト + チェックポイント。新しい何かを足すときに開く。
