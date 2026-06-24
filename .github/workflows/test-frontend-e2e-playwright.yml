@@ -28,16 +28,36 @@ jobs:
     name: E2E tests (Playwright)
     runs-on: ubuntu-latest
 
+    # CI では infra を GitHub の service container で用意し（upstream cypress e2e と同方式・
+    # 固定ポートで .github/misskey/test.yml と一致）、webServer 側は PW_SKIP_COMPOSE=1 で
+    # compose 起動をスキップする。compose 公開ポートは GH runner から start:test に届かない
+    # ことがあるため、ローカルは compose / CI は service container と使い分ける。
+    services:
+      postgres:
+        image: postgres:18
+        ports:
+          - 54312:5432
+        env:
+          POSTGRES_DB: test-misskey
+          POSTGRES_HOST_AUTH_METHOD: trust
+      redis:
+        image: redis:8
+        ports:
+          - 56312:6379
+
     steps:
     - uses: actions/checkout@v6.0.2
       with:
         submodules: true
     - name: Setup pnpm
       uses: pnpm/action-setup@v6.0.3
+    # NOTE: Playwright 1.61 の TS loader が .node-version (22.15.0) で
+    # `context.conditions?.includes is not a function` を起こしテスト収集に失敗するため、
+    # e2e ジョブのみ Node を固定する（fork 所有ジョブ・他ジョブの .node-version には影響しない）。
     - name: Use Node.js
       uses: actions/setup-node@v6.4.0
       with:
-        node-version-file: '.node-version'
+        node-version: '22.22.2'
         cache: 'pnpm'
     - run: pnpm i --frozen-lockfile
     - name: Copy Configure
@@ -51,6 +71,7 @@ jobs:
       timeout-minutes: 20
       env:
         CI: 'true'
+        PW_SKIP_COMPOSE: '1'
     - uses: actions/upload-artifact@v7
       if: always()
       with:

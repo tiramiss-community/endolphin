@@ -50,7 +50,8 @@ Playwright run
 - `start-server-and-test` 依存は Playwright リグからは不要（`e2e` script 自体は Cypress 用に温存）。
 - **Misskey 本体はコンテナ化しない**: ビルド済み `built/entry.js` をホストでそのまま使えて inner loop が速く、CI の現行（pg/redis のみ service コンテナ・Misskey はランナー上）とも一致し divergence ゼロ。
 - **前提**: `start:test` は `node built/entry.js` を起動するので事前に `pnpm build` が必要。CI は明示ステップ、ローカルは一度ビルドする（webServer コマンドに build を埋めると reuse 時に遅くなるため埋めない）。
-- **CI**: 新規 fork workflow で同じ compose を使う（pg/redis を立てて `pnpm start:test`）。`reuseExistingServer` はローカルのみ true。
+- **CI**: infra は GitHub の **service container**（postgres/redis・固定ポート・upstream cypress と同方式）で用意し、webServer は `PW_SKIP_COMPOSE=1` で compose をスキップして `start:test` を起動する。compose の公開ポートが GH runner から `start:test`（ホスト）へ届かないことがあるため、**ローカル=compose / CI=service container** と使い分ける。`reuseExistingServer` はローカルのみ true。
+- **Node**: Playwright 1.61 の TS loader は Node 22.15.0（`.node-version`）で `context.conditions?.includes is not a function` を起こすため、e2e ジョブのみ Node を 22.22.x に固定する。ローカルでも `pnpm pw:test` は Node ≥ 22.22 で実行すること。
 
 ### なぜ compose（testcontainers ではない）か
 
