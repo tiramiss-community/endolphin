@@ -69,13 +69,46 @@ endolphin は本家 Misskey の軽量 fork（小規模コミュニティ向け�
 
 ## upstream 追従フロー
 
-1. 状況確認: `node scripts/sync-upstream.mjs --check`
-2. 同期ブランチを作成: `git switch -c sync/upstream-<yyyymmdd>`
-3. マージ（rebase ではなく merge で履歴を保つ）: `git merge upstream/develop`
-4. 競合解消。削除済み機能に upstream が触れている場合は、本 fork の削除方針（「機能セット / 削除実行方式」節・[feature-inventory.md](feature-inventory.md)）に従って drop する。
-5. `basedOn` 更新: `node scripts/sync-upstream.mjs --set-base`
-6. 検証: `pnpm lint` と `pnpm --filter backend test:fed`
-7. PR を作成して `origin/develop` へマージ。
+endolphin は `upstream/develop` を直接取り込むのではなく、**本家の新バージョンタグが出るたびにそのタグを基点にマージする**運用を基本とする。タグを使うことで「どの upstream バージョンを取り込んだか」が PR タイトルと `basedOn` で一目でわかり、変更範囲のレビューもしやすい。
+
+### タグベース追従手順（通常運用）
+
+```
+# 1. upstream のタグ一覧を確認
+git fetch upstream --tags
+git tag -l | grep '^[0-9]' | sort -V | tail -20   # 最新タグを確認
+
+# 2. 同期ブランチを作成（タグ名をそのままブランチ名に含める）
+git switch -c sync/upstream-<x.y.z>               # 例: sync/upstream-2026.6.1
+
+# 3. タグを指定してマージ（rebase ではなく merge で履歴を保つ）
+git merge <x.y.z>                                  # 例: git merge 2026.6.1
+
+# 4. 競合解消
+#    削除済み機能に upstream が触れている場合は本 fork の削除方針に従って drop する
+#    → 「機能セット / 削除実行方式」節・feature-inventory.md を参照
+
+# 5. basedOn 更新
+node scripts/sync-upstream.mjs --set-base
+
+# 6. 検証
+pnpm lint
+pnpm --filter backend test:fed
+
+# 7. PR を作成して origin/develop へマージ
+#    PR タイトル例: "sync: upstream 2026.6.1"
+```
+
+### 状況確認コマンド
+
+```bash
+# 現在の basedOn と upstream 最新タグとの差を確認
+node scripts/sync-upstream.mjs --check
+```
+
+### develop ブランチから直接取り込む場合
+
+本家でホットフィックスや緊急パッチがタグ前にリリースされた場合など、特定コミットを取り込む必要があるときは `upstream/develop` を直接 merge してよい。ブランチ名は `sync/upstream-<yyyymmdd>` とし、手順 4–7 は同じ。
 
 追従コストの原則（設計原則 P2）: 高 churn なコア（TL / ノート / 投稿 / ドライブ / 連合）は流用し続け、改変は低 churn 部に限定する。
 
