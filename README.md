@@ -1,63 +1,38 @@
-<div align="center">
-<a href="https://misskey-hub.net">
-	<img src="./assets/title_float.svg" alt="Misskey logo" style="border-radius:50%" width="300"/>
-</a>
+# Endolphin
 
-**🌎 **Misskey** is an open source, federated social media platform that's free forever! 🚀**
+[English](README.en.md)
 
-[Learn more](https://misskey-hub.net/)
+Endolphin は、お一人様～少人数規模なコミュニティ向けの、軽量な Misskey fork です。
 
----
+## Endolphin とは
 
-<a href="https://misskey-hub.net/servers/">
-		<img src="https://custom-icon-badges.herokuapp.com/badge/find_an-instance-acea31?logoColor=acea31&style=for-the-badge&logo=misskey&labelColor=363B40" alt="find an instance"/></a>
+Endolphin は、かつての [Dolphin](https://github.com/misskey-dev/dolphin) に着想を得た名称です。
+Dolphin ほどシンプルすぎず、Misskey ほど多機能でもない、お一人様～少人数規模のコミュニティ向けにちょうどよいバランスを目指しています。
+数千人・数万人規模の公開インスタンスではなく、友人・趣味のコミュニティなど、少人数での交流に必要な機能を厳選して残しました。
 
-<a href="https://misskey-hub.net/docs/for-admin/install/guides/">
-		<img src="https://custom-icon-badges.herokuapp.com/badge/create_an-instance-FBD53C?logoColor=FBD53C&style=for-the-badge&logo=server&labelColor=363B40" alt="create an instance"/></a>
+## 機能の範囲
 
-<a href="./CONTRIBUTING.md">
-		<img src="https://custom-icon-badges.herokuapp.com/badge/become_a-contributor-A371F7?logoColor=A371F7&style=for-the-badge&logo=git-merge&labelColor=363B40" alt="become a contributor"/></a>
+タイムライン、ノート、ドライブ、ActivityPub 連合、リスト、アンテナ、モデレーション、チャンネル、デッキなどのコア機能は維持します。
 
-<a href="https://discord.gg/Wp8gVStHW3">
-		<img src="https://custom-icon-badges.herokuapp.com/badge/join_the-community-5865F2?logoColor=5865F2&style=for-the-badge&logo=discord&labelColor=363B40" alt="join the community"/></a>
+一方で、お気に入り、ページ、ギャラリー、実績、Games、埋め込み、チャート、チャット、管理 DB 統計、リテンション分析、広告・プロモーションは削除済みです。
+削除対象の完全な分類と各 API・画面の扱いは [feature inventory](docs/endolphin/feature-inventory.md) に記録しています。
 
-<a href="https://www.patreon.com/syuilo">
-		<img src="https://custom-icon-badges.herokuapp.com/badge/become_a-patron-F96854?logoColor=F96854&style=for-the-badge&logo=patreon&labelColor=363B40" alt="become a patron"/></a>
+API 互換性のため、削除済み機能の endpoint 自体は残しています。read 系 endpoint は空配列・`null`・既定値を返し、write 系 endpoint は `FEATURE_REMOVED`（HTTP 410 Gone）を返します。
+entity、テーブル、migration、JSON schema も温存するため、既存のサードパーティアプリやデータベースとの互換性を保てます。
 
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/misskey-dev/misskey)
+## はじめるには
 
-<a href="https://flatt.tech/oss/gmo/trampoline" target="_blank"><img src="https://flatt.tech/assets/images/badges/gmo-oss.svg" height="24px"/></a>
+- Endolphin 固有の方針と運用上の注意は [fork policy](docs/endolphin/fork-policy.md) を確認してください。
+- 開発やコントリビュートの手順は [CONTRIBUTING.md](CONTRIBUTING.md) を参照してください。
 
-</div>
+## 開発・追従
 
-## Thanks
+Endolphin は misskey-dev/misskey を継続的に取り込みます。
+追従状況は `node scripts/sync-upstream.mjs --check` で確認できます。詳しいフローは [fork policy の upstream 追従フロー](docs/endolphin/fork-policy.md#upstream-追従フロー) を参照してください。
 
-<a href="https://sentry.io/"><img src="https://github.com/misskey-dev/misskey/assets/4439005/98576556-222f-467a-94be-e98dbda1d852" height="30" alt="Sentry" /></a>
+Endolphin 固有の変更履歴は [CHANGELOG-endolphin.md](CHANGELOG-endolphin.md) に記録しています。misskey-dev/misskey 由来の変更は `CHANGELOG.md` を参照してください。
 
-Thanks to [Sentry](https://sentry.io/) for providing the error tracking platform that helps us catch unexpected errors.
+## ライセンスと謝辞
 
-<a href="https://www.chromatic.com/"><img src="https://user-images.githubusercontent.com/321738/84662277-e3db4f80-af1b-11ea-88f5-91d67a5e59f6.png" height="30" alt="Chromatic" /></a>
-
-Thanks to [Chromatic](https://www.chromatic.com/) for providing the visual testing platform that helps us review UI changes and catch visual regressions.
-
-<a href="https://about.codecov.io/for/open-source/"><img src="https://about.codecov.io/wp-content/themes/codecov/assets/brand/sentry-cobranding/logos/codecov-by-sentry-logo.svg" height="30" alt="Codecov" /></a>
-
-Thanks to [Codecov](https://about.codecov.io/for/open-source/) for providing the code coverage platform that helps us improve our test coverage.
-
-<a href="https://crowdin.com/"><img src="https://user-images.githubusercontent.com/20679825/230709597-1299a011-171a-4294-a91e-355a9b37c672.svg" height="30" alt="Crowdin" /></a>
-
-Thanks to [Crowdin](https://crowdin.com/) for providing the localization platform that helps us translate Misskey into many languages.
-
-<a href="https://hub.docker.com/"><img src="https://user-images.githubusercontent.com/20679825/230148221-f8e73a32-a49b-47c3-9029-9a15c3824f92.png" height="30" alt="Docker" /></a>
-
-Thanks to [Docker](https://hub.docker.com/) for providing the container platform that helps us run Misskey in production.
-
----
-
-<div align="center">
-	
-Support us with a ⭐ !
-
-[![Star History Chart](https://api.star-history.com/svg?repos=misskey-dev/misskey&type=Date)](https://star-history.com/#misskey-dev/misskey&Date)
-
-</div>
+Endolphin は [AGPL-3.0-only](LICENSE) で提供しています。
+本プロジェクトは [Misskey](https://github.com/misskey-dev/misskey) を基にしています。Misskey プロジェクトとすべての貢献者に感謝します。
