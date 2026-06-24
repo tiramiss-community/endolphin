@@ -95,5 +95,50 @@ export async function login(page: Page, username: string, password: string): Pro
 		.waitFor({ state: 'visible', timeout: 30_000 });
 }
 
+/**
+ * 削除機能の read endpoint を叩いて静的な空レスポンス（[] / null / {} 等）を検証する。
+ * endolphin の no-op stub 契約: endpoint 登録は維持しつつ削除済み entity を参照せず空を返す。
+ * 返り値（parse 済み body）を返すので呼び出し側で更に shape を assert できる。
+ */
+export async function callApi(
+	request: APIRequestContext,
+	endpoint: string,
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	data: Record<string, any> = {},
+): Promise<{ status: number; body: unknown }> {
+	const res = await request.post(`/api/${endpoint}`, { data });
+	const text = await res.text();
+	let body: unknown = null;
+	try {
+		body = text.length > 0 ? JSON.parse(text) : null;
+	} catch {
+		body = text;
+	}
+	return { status: res.status(), body };
+}
+
+/**
+ * 削除機能の write endpoint が FEATURE_REMOVED（HTTP 410）を返すことを検証する。
+ * 認証が要る endpoint には token を渡す（body の `i` に乗る）。
+ */
+export async function expectFeatureRemoved(
+	request: APIRequestContext,
+	endpoint: string,
+	token?: string,
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	extra: Record<string, any> = {},
+): Promise<void> {
+	const { status, body } = await callApi(request, endpoint, { ...(token ? { i: token } : {}), ...extra });
+	if (status !== 410) {
+		throw new Error(`${endpoint}: expected 410, got ${status} (${JSON.stringify(body)})`);
+	}
+	// ApiError shape: { error: { code, id, kind, httpStatusCode } }
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	const code = (body as any)?.error?.code;
+	if (code !== 'FEATURE_REMOVED') {
+		throw new Error(`${endpoint}: expected error.code FEATURE_REMOVED, got ${String(code)} (${JSON.stringify(body)})`);
+	}
+}
+
 export const test = base;
 export { expect };
