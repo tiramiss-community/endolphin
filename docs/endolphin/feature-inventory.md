@@ -1,12 +1,11 @@
 # endolphin Feature Inventory (Phase 1 Deliverable 1)
 
 - **日付**: 2026-06-18
-- **対象 spec**: [docs/superpowers/specs/2026-06-18-endolphin-product-definition-design.md](../superpowers/specs/2026-06-18-endolphin-product-definition-design.md) §9（未解決事項 / Phase 1 冒頭の機能インベントリ作成タスク）
-- **位置づけ**: Phase 1 の **ゲーティングドキュメント**。全 REST endpoint と全フロント画面を列挙し、各機能を keep / remove / no-op に分類する。これが §9.2（最小モデレーション）/ §9.3（最小ロール）/ §9.4（未言及機能の最終確認）の判断材料になる。
+- **位置づけ**: プロダクト定義（[fork-policy.md](fork-policy.md)）の機能インベントリ成果物であり、Phase 1 の **ゲーティングドキュメント**。全 REST endpoint と全フロント画面を列挙し、各機能を keep / remove / no-op に分類する。これが §9.2（最小モデレーション）/ §9.3（最小ロール）/ §9.4（未言及機能の最終確認）の判断材料になる。
 
 ## 目的
 
-本 spec §9 は「具体的なインベントリに対してのみ判断可能」な事項を Phase 1 の成果物に委ねている。本ファイルはその成果物であり、以下を満たす:
+プロダクト定義は「具体的なインベントリに対してのみ判断可能」な事項（最小モデレーション / 最小ロール / 未言及機能の最終確認）を Phase 1 の成果物に委ねている。本ファイルはその成果物であり、以下を満たす:
 
 1. backend の全 endpoint（endpoint-list 登録分）を機能単位で分類する。
 2. frontend の全画面・コンポーネントを機能単位で分類する。
@@ -16,7 +15,7 @@
 
 ## keep / remove / no-op のセマンティクス（endolphin Phase 1 削除コントラクト）
 
-spec §3 P3 / §5 の削除実行方式に対応する。
+[fork-policy.md](fork-policy.md) の設計原則 P3 / 削除実行方式（方式 C）に対応する。
 
 | 区分 | 意味 |
 |---|---|
@@ -29,7 +28,7 @@ spec §3 P3 / §5 の削除実行方式に対応する。
 
 ## Phase 1 削除対象 6 機能
 
-spec §6 Phase 1 で「葉機能のハード削除」とされる 6 機能:
+Phase 1（葉機能削除）の対象 6 機能:
 
 | # | 機能 | feature タグ | 備考 |
 |---|---|---|---|
@@ -42,11 +41,11 @@ spec §6 Phase 1 で「葉機能のハード削除」とされる 6 機能:
 
 ### Phase 2
 
-spec §6 Phase 2 はコア絡みの削除。**チャートのみ削除し、チャンネルは残す**（2026-06-19 方針変更）。
+Phase 2 はコア絡みの削除。**チャートのみ削除し、チャンネルは残す**（2026-06-19 方針変更）。
 
 | 機能 | feature タグ | 扱い |
 |---|---|---|
-| チャンネル | `channels` | **keep(core)（残す確定）**。ノート生成 / ストリーミング / TL に深く統合された最ホットコアであり、削除は追従コスト（P2）と衝突。小規模コミュニティの話題整理機能として価値があり残す（spec §4）。 |
+| チャンネル | `channels` | **keep(core)（残す確定）**。ノート生成 / ストリーミング / TL に深く統合された最ホットコアであり、削除は追従コスト（P2）と衝突。小規模コミュニティの話題整理機能として価値があり残す（[fork-policy.md](fork-policy.md)「機能セット」）。 |
 | チャート | `charts(Phase2)` | **Phase 2 で削除**。集計フックを各サービスから除去 → エンジン実行部（12 チャートクラス・ChartManagementService・3 processor）を削除。`getJsonSchema`/entity 定義は型・DB 互換のため温存し、read endpoint は空チャートを返す。 |
 
 ## カウント整合性（実測値）
@@ -61,7 +60,7 @@ spec §6 Phase 2 はコア絡みの削除。**チャートのみ削除し、チ�
   - `ui/`: **33**
 - **ルータブルパス数**: **151**（`router.definition.ts` の `path:` 行数）
 
-> spec §9 では「439 endpoint / 586 画面」と概算されていた。実測では endpoint は **437**（fork 基盤整備時点での upstream 状態に依存。±数件は upstream マージで変動しうる）、`.vue` は **586** で一致した。endpoint 数（437）と `.vue` 数（586）と ルータブルパス数（151）は **別軸の数え方**であり一致しない（1 機能が複数 endpoint・複数コンポーネントを持つ、レイアウト用 `.vue` はルートを持たない、等）。
+> プロダクト定義（初期 spec）では「439 endpoint / 586 画面」と概算されていた。実測では endpoint は **437**（fork 基盤整備時点での upstream 状態に依存。±数件は upstream マージで変動しうる）、`.vue` は **586** で一致した。endpoint 数（437）と `.vue` 数（586）と ルータブルパス数（151）は **別軸の数え方**であり一致しない（1 機能が複数 endpoint・複数コンポーネントを持つ、レイアウト用 `.vue` はルートを持たない、等）。
 >
 > **keep / remove の判断は個別行ではなく FEATURE レベルで行う。** 例えば「gallery」という 1 機能の決定が、`gallery/*` の全 endpoint と `*gallery*.vue` の全画面に伝播する。本表は機能の根拠として個別行を列挙するが、決定の単位は機能である。
 
@@ -207,26 +206,26 @@ read/write の機械判定が曖昧な場合は当該 endpoint ファイルを�
 | `drive` | files/* / folders/* / stream 等 | keep(core) | core | 高 churn コア。全 keep。 |
 | `following` | create / delete / list / requests/* / update 等 | keep(core) | core | 全 keep。 |
 | `notifications` | create / flush / mark-all-as-read / test-notification | keep(core) | core | 全 keep。 |
-| `antennas` | create / delete / list / notes / show / update / remove-note | keep(core) | core | spec §4「残す」（アンテナ）。 |
-| `clips` | create / delete / list / add-note / remove-note / favorite / unfavorite / my-favorites / notes / show / update | keep(core) | core | spec §4「残す」（クリップ）。favorites 機能とは別。 |
-| `flash` | create / delete / update / show / featured / like / unlike / my / my-likes / search | keep(core) | core | spec §4「残す」（Play / Flash）。Games ではない。 |
-| `hashtags` | list / search / show / trend / users | keep(core) | core | spec §4「残す」（ハッシュタグ / トレンド）。 |
-| `blocking` / `mute` / `renote-mute` | create / delete / list | keep(core) | core | 個人レベルのブロック / ミュート。spec §4「残す」。 |
-| `following` 系の `users/lists/*` | （users グループ内） | keep(core) | core | spec §4「残す」（リスト）。 |
-| `auth` / `app` / `my/apps` / `miauth` | session/* / create / show / gen-token | keep(core) | core | API トークン / OAuth 互換。spec §4「残す」。 |
+| `antennas` | create / delete / list / notes / show / update / remove-note | keep(core) | core | プロダクト定義「残す」（アンテナ）。 |
+| `clips` | create / delete / list / add-note / remove-note / favorite / unfavorite / my-favorites / notes / show / update | keep(core) | core | プロダクト定義「残す」（クリップ）。favorites 機能とは別。 |
+| `flash` | create / delete / update / show / featured / like / unlike / my / my-likes / search | keep(core) | core | プロダクト定義「残す」（Play / Flash）。Games ではない。 |
+| `hashtags` | list / search / show / trend / users | keep(core) | core | プロダクト定義「残す」（ハッシュタグ / トレンド）。 |
+| `blocking` / `mute` / `renote-mute` | create / delete / list | keep(core) | core | 個人レベルのブロック / ミュート。プロダクト定義「残す」。 |
+| `following` 系の `users/lists/*` | （users グループ内） | keep(core) | core | プロダクト定義「残す」（リスト）。 |
+| `auth` / `app` / `my/apps` / `miauth` | session/* / create / show / gen-token | keep(core) | core | API トークン / OAuth 互換。プロダクト定義「残す」。 |
 | `sw` | register / show-registration / unregister / update-registration | keep(core) | core | Web Push。通知に必要。 |
-| `announcements` | announcements / show / admin/announcements/* | keep(core) | core | spec §4「残す」（アナウンス）。 |
-| `invite` | create / delete / limit / list / admin/invite/* | keep(core) | core | spec §4「残す」（登録 / 招待）。 |
-| `ap` | get / show | keep(core) | core | ActivityPub。完全準拠維持（spec §3 P3）。 |
+| `announcements` | announcements / show / admin/announcements/* | keep(core) | core | プロダクト定義「残す」（アナウンス）。 |
+| `invite` | create / delete / limit / list / admin/invite/* | keep(core) | core | プロダクト定義「残す」（登録 / 招待）。 |
+| `ap` | get / show | keep(core) | core | ActivityPub。完全準拠維持（設計原則 P3）。 |
 | `federation` | followers / following / instances / show-instance / stats / users / update-remote-user | keep(core) | core | 連合。完全準拠維持。`federation/update-remote-user` は admin 寄り。 |
-| `emoji` / `emojis` / `export-custom-emojis` / `get-avatar-decorations` | （トップレベル read） | keep(core) | core | spec §4「残す」（カスタム絵文字）。 |
+| `emoji` / `emojis` / `export-custom-emojis` / `get-avatar-decorations` | （トップレベル read） | keep(core) | core | プロダクト定義「残す」（カスタム絵文字）。 |
 | `meta` / `stats` / `ping` / `server-info` / `endpoint(s)` / `emoji(s)` / `get-online-users-count` / `pinned-users` / `retention` / `email-address/available` / `username/available` / `fetch-rss` / `fetch-external-resources` / `verify-email` / `request-reset-password` / `reset-password` / `promo/read` / `test` / `reset-db` | （メタ / ユーティリティ） | keep(core)（`retention` / `promo/read` は **Phase 4a で remove**＝空返却スタブ・no-op） | core | インスタンスメタ・ユーティリティ。`retention` はリテンション分析削除に伴い空配列スタブ、`promo/read` は広告/プロモ削除に伴い no-op（登録・型は温存）。`reset-db` / `test` はテスト専用（NODE_ENV ガード）。 |
 | `notifications` 系 `i/notifications*` | （i グループ） | keep(core) | core | 通知。keep。 |
-| `chat/*` | messages/* / rooms/* / history / read-all | **remove（Phase 4b で実施済）** | core | チャット。§9.4 レビューで remove 決定 → Phase 4b で実施。25 endpoint をスタブ化（write→410 / read→空配列 / `messages/show`・`rooms/show`→not-found throw、登録維持）。`ChatService`・2 streaming channel・全チャットフロント（13 page / `MkChatHistories` / `WidgetChat` / deck chat 列）を削除。`UserEntityService.canChat`/`hasUnreadChatMessages` は静的 false 化（`chatScope` パススルー温存）。5 entity / 6 migration / JSON-schema / misskey-js 型 / `chatRoomInvitationReceived` 通知種別 / `chatAvailability` ポリシー / `ChatEntityService`（招待通知 packing 用）は互換のため温存。詳細は `docs/superpowers/plans/phase-4b-chat-removal.md`。 |
+| `chat/*` | messages/* / rooms/* / history / read-all | **remove（Phase 4b で実施済）** | core | チャット。§9.4 レビューで remove 決定 → Phase 4b で実施。25 endpoint をスタブ化（write→410 / read→空配列 / `messages/show`・`rooms/show`→not-found throw、登録維持）。`ChatService`・2 streaming channel・全チャットフロント（13 page / `MkChatHistories` / `WidgetChat` / deck chat 列）を削除。`UserEntityService.canChat`/`hasUnreadChatMessages` は静的 false 化（`chatScope` パススルー温存）。5 entity / 6 migration / JSON-schema / misskey-js 型 / `chatRoomInvitationReceived` 通知種別 / `chatAvailability` ポリシー / `ChatEntityService`（招待通知 packing 用）は互換のため温存。 |
 
 ### moderation / admin / roles（§9.2 / §9.3 レビュー対象）
 
-spec §9.2（最小モデレーション）/ §9.3（最小ロール）で線引きを後送り。**現時点では全 keep(core)** だが、後で削減候補になりうるためフラグを立てる。
+本ファイル §4 の §9.2（最小モデレーション）/ §9.3（最小ロール）で線引きを後送り。**現時点では全 keep(core)** だが、後で削減候補になりうるためフラグを立てる。
 
 #### roles（feature: roles）
 
@@ -288,13 +287,13 @@ spec §9.2（最小モデレーション）/ §9.3（最小ロール）で線引
 | endpoint group | endpoints | decision | notes |
 |---|---|---|---|
 | `admin/meta` / `admin/update-meta` / `admin/server-info` / `admin/get-index-stats` / `admin/get-table-stats` / `admin/update-proxy-account` / `admin/send-email` | read / write | keep(core) — review §9.2（`get-index-stats` / `get-table-stats` は **Phase 4a で remove**＝空返却スタブ） | インスタンス設定。DB 統計 2 endpoint は管理画面 DB ダッシュボード削除に伴い空返却スタブ化（e2e 汎用 admin 認証フィクスチャ互換のため 200 維持・登録/型は温存）。 |
-| `admin/emoji/*`（add / add-aliases-bulk / copy / delete / delete-bulk / import-zip / list / list-remote / remove-aliases-bulk / set-aliases-bulk / set-category-bulk / set-license-bulk / update）+ `v2/admin/emoji/list` | read / write | keep(core) | カスタム絵文字管理（spec §4「残す」）。 |
+| `admin/emoji/*`（add / add-aliases-bulk / copy / delete / delete-bulk / import-zip / list / list-remote / remove-aliases-bulk / set-aliases-bulk / set-category-bulk / set-license-bulk / update）+ `v2/admin/emoji/list` | read / write | keep(core) | カスタム絵文字管理（プロダクト定義「残す」）。 |
 | `admin/drive/*`（clean-remote-files / cleanup / files / show-file） | read / write | keep(core) — review §9.2 | ドライブ管理。 |
 | `admin/queue/*`（clear / deliver-delayed / inbox-delayed / retry-job / remove-job / show-job / show-job-logs / promote-jobs / pause / resume / jobs / stats / queues / queue-stats / promo/* 含む） | read / write | keep(core) — review §9.2 | ジョブキュー管理。運用に必要だが範囲精査。 |
 | `admin/ad/*`（create / delete / list / update）+ `admin/promo/create` | read / write | **remove（Phase 4a）** | 広告 / プロモ。小規模コミュニティに不要。write→410 / read→空 / `promo/read`→no-op、entity・型は温存。 |
-| `admin/announcements/*`（create / delete / list / update） | read / write | keep(core) | アナウンス（spec §4「残す」）。 |
+| `admin/announcements/*`（create / delete / list / update） | read / write | keep(core) | アナウンス（プロダクト定義「残す」）。 |
 | `admin/avatar-decorations/*`（create / delete / list / update） | read / write | keep(core) — review §9.4 | アバターデコレーション。§9.4 で確認。 |
-| `admin/invite/*`（create / list） | read / write | keep(core) | 招待（spec §4「残す」）。 |
+| `admin/invite/*`（create / list） | read / write | keep(core) | 招待（プロダクト定義「残す」）。 |
 | `admin/captcha/*`（current / save） | read / write | keep(core) | 登録時 CAPTCHA。 |
 | `admin/system-webhook/*`（create / delete / list / show / test / update） | read / write | keep(core) — review §9.4 | システム Webhook。 |
 | `auth/accept` | write | keep(core) | OAuth 互換。 |
@@ -316,7 +315,7 @@ spec §9.2（最小モデレーション）/ §9.3（最小ロール）で線引
 | `channels/mute/create` / `channels/mute/delete` | write | keep(core) — Phase 2 | |
 | `channels/mute/list` | read | keep(core) — Phase 2 | |
 
-> **2026-06-19 方針変更: チャンネルは残す**（spec §4）。ノート生成 / ストリーミング / TL に深く統合された最ホットコアであり、削除は追従コスト（P2）と衝突する。小規模コミュニティの話題整理機能として価値があるため本家のまま維持し、endpoint・service・streaming・UI いずれも一切手を付けない。
+> **2026-06-19 方針変更: チャンネルは残す**（[fork-policy.md](fork-policy.md)「機能セット」）。ノート生成 / ストリーミング / TL に深く統合された最ホットコアであり、削除は追従コスト（設計原則 P2）と衝突する。小規模コミュニティの話題整理機能として価値があるため本家のまま維持し、endpoint・service・streaming・UI いずれも一切手を付けない。
 
 ---
 
@@ -415,7 +414,7 @@ spec §9.2（最小モデレーション）/ §9.3（最小ロール）で線引
 |---|---|---|---|
 | component | `packages/frontend/src/components/MkEmbedCodeGenDialog.vue` | embed | remove（呼び出し元 `utility/get-embed-code.ts` も整理） |
 
-> **加えて**: `packages/frontend-embed`（埋め込み専用パッケージ全体）と、サーバ側の埋め込みルートも remove 対象（spec §5 削除トリアージ表「埋め込み = パッケージごと撤去」）。これらは `.vue` 画面表の対象外（別パッケージ / バックエンドルート）だが、embed 機能削除の一部としてここに記録する。
+> **加えて**: `packages/frontend-embed`（埋め込み専用パッケージ全体）と、サーバ側の埋め込みルートも remove 対象（[fork-policy.md](fork-policy.md)「機能セット / 削除実行方式」: 埋め込み = パッケージ・配信ルート・ビルド機構ごと撤去）。これらは `.vue` 画面表の対象外（別パッケージ / バックエンドルート）だが、embed 機能削除の一部としてここに記録する。
 
 ### コア画面・コンポーネント（グループ集約 / keep）
 
@@ -425,8 +424,8 @@ spec §9.2（最小モデレーション）/ §9.3（最小ロール）で線引
 |---|---|---|---|---|
 | page | `pages/` の残り（gallery / page-editor / page* / reversi / drop-and-fusion* / clicker / games / achievements* / favorites を除く全 ~220 ページ） | core | keep | timeline / note / user / settings / admin / drive / clip / antenna / list / search / about / announcements / chat 等。`pages/channels*` は Phase 2、`pages/admin/*` は §9.2/§9.3 レビュー対象。 |
 | component | `components/` の残り（MkGalleryPostPreview / MkPagePreview / MkPageWindow / page/* / MkAchievements / MkClickerGame / MkEmbedCodeGenDialog を除く全 ~250 コンポーネント） | core | keep | `Mk*` 共通部品（note / drive / form / dialog / picker / global layout 等）。`components/global/MkPageHeader*` / `PageWithHeader` / `PageWithAnimBg` / `MkFolderPage` は明示 keep（上記注記参照）。 |
-| widget | `widgets/` の残り（WidgetClicker を除く全 37 ウィジェット） | core | keep | デッキ / ウィジェット（spec §4「残す」: デッキ）。`WidgetActivity.chart.vue` / `WidgetFederation.vue` は charts/federation 表示を含むため Phase 2 で再確認。 |
-| ui | `ui/` 全 33（deck / classic / universal レイアウト等） | core | keep | クライアントレイアウト。spec §4「残す」（デッキ等の UI アフォーダンス、§3 P1）。 |
+| widget | `widgets/` の残り（WidgetClicker を除く全 37 ウィジェット） | core | keep | デッキ / ウィジェット（プロダクト定義「残す」: デッキ）。`WidgetActivity.chart.vue` / `WidgetFederation.vue` は charts/federation 表示を含むため Phase 2 で再確認。 |
+| ui | `ui/` 全 33（deck / classic / universal レイアウト等） | core | keep | クライアントレイアウト。プロダクト定義「残す」（デッキ等の UI アフォーダンス、設計原則 P1）。 |
 
 ---
 
@@ -456,12 +455,12 @@ spec §9.2（最小モデレーション）/ §9.3（最小ロール）で線引
 
 ### §9.4 未言及機能の最終 keep/remove 確認
 
-spec §4「未言及のコアは明らかに冗長でなければ残す」の適用結果。Phase 4 機能削減（`~/.claude/plans/ph3-bright-tome.md`）で全候補を 10 ドメイン並列調査・敵対的検証し、3 原則でティア分けして判断した:
+プロダクト定義「未言及のコアは明らかに冗長でなければ残す」の適用結果。Phase 4 機能削減で全候補を 10 ドメイン並列調査・敵対的検証し、3 原則でティア分けして判断した:
 
 - `admin/ad/*` / `admin/promo/create` / `promo/read`（広告 / プロモ）→ **remove（Phase 4a 実施済）**。小規模コミュニティに広告枠は不要。write→410 / read→空 / `promo/read`→no-op、entity・型は温存。
 - `retention`（リテンション分析）→ **remove（Phase 4a 実施済）**。小規模ではノイズ。read→空配列、`aggregateRetention` cron 撤去、entity・migration は温存。
 - `admin/get-index-stats` / `admin/get-table-stats`（DB 統計）→ **remove（Phase 4a 実施済）**。純 DevOps 用途で管理者に無価値。read→空（e2e フィクスチャ互換のため 200 維持）。
-- `chat/*`（チャット）→ **remove（Phase 4b で実施済）**。詳細は `docs/superpowers/plans/phase-4b-chat-removal.md`。
+- `chat/*`（チャット）→ **remove（Phase 4b で実施済）**。25 endpoint をスタブ化（§2 Endpoint 表 `chat/*` 行に詳細）。
 - `admin/avatar-decorations/*`（アバターデコレーション）→ **keep（据置）**。
-- `admin/system-webhook/*` / `i/webhooks/*`（Webhook — spec §4 では「残す」に明記）→ **keep**。
+- `admin/system-webhook/*` / `i/webhooks/*`（Webhook — プロダクト定義で「残す」に明記）→ **keep**。
 - Tier B クライアント完結機能（statusbar / sounds / AiScript 拡張面 / theme-install / custom-css）→ **keep（将来候補・保留）**。削減するなら別フェーズ。
