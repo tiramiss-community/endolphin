@@ -29,7 +29,8 @@ export default defineConfig({
 		screenshot: 'only-on-failure',
 	},
 	projects: [
-		{ name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+		// locale を固定して i18n テキストベースのセレクタを決定的にする（data-cy が無い画面用）
+		{ name: 'chromium', use: { ...devices['Desktop Chrome'], locale: 'en-US' } },
 	],
 	// 案1+2: 先に compose で infra を上げ（Playwright は webServer を globalSetup より先に
 	// 起動するため、DB 依存の start:test より前に compose を確実に上げる必要がある）、続けて

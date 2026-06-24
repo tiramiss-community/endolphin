@@ -11,7 +11,7 @@ endolphin 固有の変更を記録する。本家 Misskey 由来の変更は ups
 - Feat: endolphin fork の基盤を整備（fork メタデータ / upstream 追従フロー / changelog 分離 / fork policy）
 - Enhance: ブランディング方針を確定（アプリ識別名のみ Endolphin 化 / 連合自己申告・内部識別子・プラットフォーム prose は温存）し、ビジュアル資産の差し替え口台帳 `docs/endolphin/branding.md` を整備（資産実体・テーマ色 `#86b300` は当面温存）
 - Remove: Games 削除（Phase 1）で孤児化していたゲームエンジンのサブパッケージ `misskey-reversi` / `misskey-bubble-game` を撤去（workspace / Dockerfile / CI / vite / 各 package.json 依存 / dev・clean スクリプト / 連合テスト compose の参照も除去）。併せて `GlobalEventService` の死にコードと化していた reversi ストリームのイベント型・publish メソッドを撤去（`ReversiGame` entity / `ReversiGameDetailed` 型 / reversi endpoint スタブは互換のため温存）
-- Feat: フロント e2e / LLM 駆動の基盤として fork 所有の Playwright 環境を追加（`playwright/` 一式 / compose で test 用 postgres・redis をライフサイクル管理 / 専用 CI workflow `test-frontend-e2e-playwright.yml`、ローカル実行も対応）。基幹 happy-path（signup / signin / ノート投稿→TL 反映）の初期スイートを同梱。LLM 駆動の Playwright MCP は Claude Code の既存プラグイン経由で利用（project `.mcp.json` は二重登録回避のため同梱しない）。upstream の cypress・start:test は無改変で流用（詳細は `docs/endolphin/playwright-e2e.md`）
+- Feat: フロント e2e / LLM 駆動の基盤として fork 所有の Playwright 環境を追加（`playwright/` 一式 / compose で test 用 postgres・redis をライフサイクル管理 / 専用 CI workflow `test-frontend-e2e-playwright.yml`、ローカル実行も対応）。基幹 happy-path（signup / signin / ノート投稿→TL 反映 / ドライブアップロード / フォロー / 設定画面）のスイートを同梱。LLM 駆動の Playwright MCP は Claude Code の既存プラグイン経由で利用（project `.mcp.json` は二重登録回避のため同梱しない）。upstream の cypress・start:test は無改変で流用（詳細は `docs/endolphin/playwright-e2e.md`）
 
 ### Client
 - Remove: お気に入り (favorites) 機能の UI（一覧ページ / ナビ項目 / ノートメニュー / データエクスポート項目）を削除

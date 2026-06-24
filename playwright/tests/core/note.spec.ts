@@ -3,15 +3,13 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  */
 
-import { test, expect, resetDb, setupInstance, registerUser, login, dismissUserSetup } from '../../fixtures/misskey';
+import { test, expect, prepareLoggedInUser, dismissUserSetup } from '../../fixtures/misskey';
 
 // Stage 1: ノート投稿 → タイムライン反映（最ホットコアの happy-path）。
 test.describe('core / note', () => {
 	test.beforeEach(async ({ page, request }) => {
-		await resetDb(request);
-		await setupInstance(request);
-		await registerUser(request, 'alice', 'alice1234');
-		await login(page, 'alice', 'alice1234');
+		await prepareLoggedInUser(page, request);
+		// ログイン直後の home でウィザードを閉じる（この後 home 上で操作するため）
 		await dismissUserSetup(page);
 	});
 

@@ -46,12 +46,33 @@ export async function setupInstance(request: APIRequestContext): Promise<any> {
 	return registerUser(request, 'admin', 'admin1234', true);
 }
 
-/** 新規ユーザーがログイン直後に表示する初期設定ウィザードを閉じる。 */
+/**
+ * 初期設定ウィザードを閉じる（× → skip 確認 OK で accountSetupWizard=-1）。
+ * ウィザードは全ページ共通の popup（boot 時に開く）なので、**操作対象ページへ遷移した後**に
+ * 1 度だけ呼ぶこと（遷移直後に再オープンして backdrop がクリックを遮るため、遷移前に閉じても無駄）。
+ */
 export async function dismissUserSetup(page: Page): Promise<void> {
 	const close = page.locator('[data-cy-user-setup] [data-cy-modal-window-close]');
 	await close.waitFor({ state: 'visible', timeout: 30_000 });
 	await close.click();
-	await page.locator('[data-cy-modal-dialog-ok]').click();
+	// 「スキップしますか？」確認ダイアログの OK
+	const ok = page.locator('[data-cy-modal-dialog-ok]');
+	await ok.waitFor({ state: 'visible', timeout: 10_000 });
+	await ok.click();
+	await page.locator('[data-cy-user-setup]').waitFor({ state: 'hidden', timeout: 10_000 }).catch(() => {});
+}
+
+/** reset → 初期管理者作成 → 対象ユーザー作成 → UI ログイン まで（ウィザードは遷移先で completeUserSetup する）。 */
+export async function prepareLoggedInUser(
+	page: Page,
+	request: APIRequestContext,
+	username = 'alice',
+	password = 'alice1234',
+): Promise<void> {
+	await resetDb(request);
+	await setupInstance(request);
+	await registerUser(request, username, password);
+	await login(page, username, password);
 }
 
 /** UI フローでサインインする（data-cy-signin* 経由）。 */
@@ -66,6 +87,12 @@ export async function login(page: Page, username: string, password: string): Pro
 		page.waitForResponse((r) => r.url().includes('/api/signin-flow')),
 		page.locator('[data-cy-signin-password] input').press('Enter'),
 	]);
+
+	// signin 成功後、クライアントはトークンを localStorage に保存して home にリロードする。
+	// これを待たずに goto するとリロードと競合し、未ログインの welcome 画面へ飛ぶ。
+	// ログイン後 home（post ボタン or 初期設定ウィザード）が出るまで待ち、セッション確立を保証する。
+	await page.locator('[data-cy-open-post-form], [data-cy-user-setup]').first()
+		.waitFor({ state: 'visible', timeout: 30_000 });
 }
 
 export const test = base;
