@@ -38,12 +38,12 @@ endolphin に **fork 所有の Playwright 環境**を導入するための正本
 
 ```
 Playwright run
-├─ globalSetup:    playwright/compose.test.yml を `docker compose up -d --wait`
-│                  postgres:18 → :54312 / redis:8 → :56312（trust / db=test-misskey）
-├─ webServer:      `pnpm start:test` を spawn → :61812 を wait → 終了時に自動 kill
-│                  （start:test はそのまま test.yml を読む。改変不要）
+├─ webServer:      compose up -d --wait（pg→:54312 / redis→:56312）に続けて `pnpm start:test`
+│                  を spawn → :61812 を wait。Playwright は webServer を globalSetup より先に
+│                  起動するため、DB 依存の start:test より前に compose を同コマンド内で上げる。
+│                  start:test はそのまま test.yml を読む（改変不要）。
 ├─ tests:          playwright/tests/**.spec.ts
-└─ globalTeardown: `docker compose down -v`
+└─ globalTeardown: `docker compose down -v`（PW_SKIP_COMPOSE=1 でスキップ可）
 ```
 
 - ライフサイクルが Playwright run に完全に紐づく（テスト終了で infra も落ちる）= 案2 の狙い。
@@ -66,12 +66,11 @@ pg+redis+**Misskey コンテナ**まで compose に入れ、Playwright は URL �
 
 ```
 playwright/
-├─ playwright.config.ts        # baseURL=:61812, webServer=start:test, global setup/teardown
+├─ playwright.config.ts        # baseURL=:61812 / webServer=(compose up + start:test) / globalTeardown
 ├─ compose.test.yml            # postgres:18→:54312 / redis:8→:56312（fork 所有・固定ポート）
-├─ global-setup.ts             # compose up --wait
 ├─ global-teardown.ts          # compose down -v
 ├─ fixtures/
-│  └─ misskey.ts               # resetState / setupInstance / registerUser / login（Cypress support から移植）
+│  └─ misskey.ts               # resetDb / setupInstance / registerUser / login / dismissUserSetup（Cypress support から移植）
 ├─ tests/
 │  ├─ smoke.spec.ts            # Stage 0: ホーム描画
 │  ├─ core/                    # Stage 1: 基幹 happy-path
@@ -84,10 +83,11 @@ playwright/
 
 | ヘルパ | 内容 |
 |---|---|
-| `resetState` | `POST /api/reset-db` → 204 を確認 → reload |
-| `setupInstance` | 初期管理者作成ウィザード（`data-cy-admin-*`）。`registerUser('admin', _, true)` でも代替可 |
-| `registerUser(name, pass, isAdmin)` | admin は `POST /api/admin/accounts/create`（`setupPassword` 同梱）、一般は `POST /api/signup` |
+| `resetDb` | `POST /api/reset-db` → 204 を確認（テスト DB 初期化） |
+| `registerUser(name, pass, isAdmin)` | admin は `POST /api/admin/accounts/create`（`setupPassword` 同梱）、一般は `POST /api/signup`。作成 body（`token` 含む）を返す |
+| `setupInstance` | `registerUser('admin', _, true)` で初期管理者を作成しインスタンスをセットアップ |
 | `login(name, pass)` | `data-cy-signin*` 経由の UI ログインフロー |
+| `dismissUserSetup` | 新規ユーザーがログイン直後に出す初期設定ウィザードを閉じる |
 
 ---
 

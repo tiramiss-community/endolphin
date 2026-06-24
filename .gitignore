@@ -27,6 +27,10 @@ packages/sw/.yarn/cache
 cypress/screenshots
 cypress/videos
 
+# Playwright (endolphin)
+/test-results/
+/playwright-report/
+
 # Coverage
 coverage
 

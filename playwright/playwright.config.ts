@@ -12,7 +12,6 @@ const BASE_URL = 'http://localhost:61812';
 
 export default defineConfig({
 	testDir: path.join(__dirname, 'tests'),
-	globalSetup: path.join(__dirname, 'global-setup.ts'),
 	globalTeardown: path.join(__dirname, 'global-teardown.ts'),
 	// テスト用 Misskey は単一インスタンスを共有するため直列実行する
 	fullyParallel: false,
@@ -32,14 +31,16 @@ export default defineConfig({
 	projects: [
 		{ name: 'chromium', use: { ...devices['Desktop Chrome'] } },
 	],
-	// 案1（起動/終了サイクルにアプリを乗せる）: start:test を spawn し :61812 を待つ。
-	// start:test は無改変で呼ぶだけ（.github/misskey/test.yml をそのまま読む）。
+	// 案1+2: 先に compose で infra を上げ（Playwright は webServer を globalSetup より先に
+	// 起動するため、DB 依存の start:test より前に compose を確実に上げる必要がある）、続けて
+	// 無改変の start:test を spawn して :61812 を待つ。compose 撤去は globalTeardown が行う。
+	// PW_SKIP_COMPOSE=1 で compose 起動をスキップ（外部 pg/redis 利用時）。
 	webServer: {
-		command: 'pnpm start:test',
+		command: '[ -n "$PW_SKIP_COMPOSE" ] || docker compose -f playwright/compose.test.yml up -d --wait && pnpm start:test',
 		cwd: ROOT,
 		url: BASE_URL,
 		reuseExistingServer: !process.env.CI,
-		timeout: 180_000,
+		timeout: 240_000,
 		stdout: 'pipe',
 		stderr: 'pipe',
 	},

@@ -24,7 +24,8 @@ export async function registerUser(
 	username: string,
 	password: string,
 	isAdmin = false,
-): Promise<unknown> {
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+): Promise<any> {
 	const route = isAdmin ? '/api/admin/accounts/create' : '/api/signup';
 	const res = await request.post(route, {
 		data: {
@@ -37,6 +38,20 @@ export async function registerUser(
 		throw new Error(`registerUser(${username}) failed: ${res.status()} ${await res.text()}`);
 	}
 	return res.json();
+}
+
+/** 初期管理者を作成してインスタンスをセットアップする。作成された admin（token を含む）を返す。 */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function setupInstance(request: APIRequestContext): Promise<any> {
+	return registerUser(request, 'admin', 'admin1234', true);
+}
+
+/** 新規ユーザーがログイン直後に表示する初期設定ウィザードを閉じる。 */
+export async function dismissUserSetup(page: Page): Promise<void> {
+	const close = page.locator('[data-cy-user-setup] [data-cy-modal-window-close]');
+	await close.waitFor({ state: 'visible', timeout: 30_000 });
+	await close.click();
+	await page.locator('[data-cy-modal-dialog-ok]').click();
 }
 
 /** UI フローでサインインする（data-cy-signin* 経由）。 */
