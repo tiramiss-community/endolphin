@@ -6,7 +6,7 @@ endolphin は本家 Misskey の軽量 fork（小規模コミュニティ向け�
 
 ## プロダクト定義（コンセプト / ターゲット）
 
-かつての **dolphin** の精神を継ぐ、小規模コミュニティ向けの軽量 Misskey fork。ブランド名 **endolphin**（dolphin + endorphin のもじり）。機能を厳選し「これだけあればいい」体験に絞るが、本家の ActivityPub 連合と REST API 互換は維持し、Fediverse / 既存エコシステムから孤立しない。
+かつての **dolphin** に着想を得た軽量 Misskey fork。ブランド名 **endolphin**（dolphin + endorphin のもじり）。機能を厳選し「これだけあればいい」体験に絞るが、本家の ActivityPub 連合と REST API 互換は維持し、Fediverse / 既存エコシステムから孤立しない。
 
 - **対象**: 知人・趣味でつながる 〜数百人規模のサーバ。リスト / アンテナ / 最小限のモデレーションは必要。
 - **非対象**: 数千〜数万人の大規模公開インスタンス、企業運用、本家のフル機能を求める層。
