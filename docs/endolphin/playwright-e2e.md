@@ -51,7 +51,7 @@ Playwright run
 - **Misskey 本体はコンテナ化しない**: ビルド済み `built/entry.js` をホストでそのまま使えて inner loop が速く、CI の現行（pg/redis のみ service コンテナ・Misskey はランナー上）とも一致し divergence ゼロ。
 - **前提**: `start:test` は `node built/entry.js` を起動するので事前に `pnpm build` が必要。CI は明示ステップ、ローカルは一度ビルドする（webServer コマンドに build を埋めると reuse 時に遅くなるため埋めない）。
 - **CI**: infra は GitHub の **service container**（postgres/redis・固定ポート・upstream cypress と同方式）で用意し、webServer は `PW_SKIP_COMPOSE=1` で compose をスキップして `start:test` を起動する。compose の公開ポートが GH runner から `start:test`（ホスト）へ届かないことがあるため、**ローカル=compose / CI=service container** と使い分ける。`reuseExistingServer` はローカルのみ true。
-- **Node**: Playwright 1.61 の TS loader は Node 22.15.0（`.node-version`）で `context.conditions?.includes is not a function` を起こすため、e2e ジョブのみ Node を 22.22.x に固定する。ローカルでも `pnpm pw:test` は Node ≥ 22.22 で実行すること。
+- **Node**: Playwright 1.61 の TS loader は Node 22.15.0（`.node-version`）で `context.conditions?.includes is not a function` を起こすため、e2e ジョブのみ Node を 22.22.x に固定する。ローカルでも Node ≥ 22.22 で実行すること（`playwright/pnpm-workspace.yaml` の `engineStrict` で install 時に強制）。
 
 ### なぜ compose（testcontainers ではない）か
 
@@ -96,23 +96,29 @@ playwright/
 
 CI は新規 workflow が自動で行うが、**ローカルでも同じリグをそのまま実行できる**。
 
-```bash
-# 1) 一度だけ: Playwright のブラウザを導入（chromium のみ）
-#    --with-deps は OS 依存パッケージを apt で入れる（sudo 必要）ため CI 専用。ローカルでは付けない。
-pnpm exec playwright install chromium
+> `playwright/` は **独立した pnpm workspace**（`playwright/pnpm-workspace.yaml` が境界）。root package.json には依存も script も足していないため、Playwright 関連の操作はすべて `playwright/` ディレクトリ配下で行う（`pnpm -C playwright …` または `cd playwright`）。
 
-# 2) フロント / バックエンドをビルド（start:test が built/entry.js とフロント built 資産を使う）
+```bash
+# 1) 一度だけ: テストランナー（@playwright/test）を playwright/ workspace に install
+pnpm -C playwright i
+
+# 2) 一度だけ: Playwright のブラウザを導入（chromium のみ）
+#    --with-deps は OS 依存パッケージを apt で入れる（sudo 必要）ため CI 専用。ローカルでは付けない。
+pnpm -C playwright exec playwright install chromium
+
+# 3) フロント / バックエンドをビルド（start:test が built/entry.js とフロント built 資産を使う。root で実行）
 pnpm build
 
-# 3) 実行（compose の pg/redis 起動 → start:test 起動 → 後片付け まで全自動）
-pnpm pw:test
+# 4) 実行（compose の pg/redis 起動 → start:test 起動 → 後片付け まで全自動）
+pnpm -C playwright test
 ```
 
 - **Docker が必須**（compose で test 用 pg/redis を起動するため）。`docker compose version` で確認。
 - ポート `54312` / `56312` / `61812` が空いていること（compose と start:test が使う）。
-- 既に `pnpm start:test`（= test.yml → compose の DB を使う構成）を手動起動済みなら、`pw:test` はそれを再利用する（`reuseExistingServer: !CI`）。`pnpm dev` は別 config（default.yml）なので再利用対象にしない。
-- 外部の pg/redis を使いたい場合は `PW_SKIP_COMPOSE=1 pnpm pw:test` で compose 起動をスキップできる。
-- テスト作成補助: `pnpm pw:codegen`（起動中インスタンスに対して codegen）。レポート閲覧: `pnpm pw:report`。
+- **Node ≥ 22.22** が必要（`playwright/pnpm-workspace.yaml` の `engineStrict` + `engines` で install 時に強制。理由は後述の「Node」節）。
+- 既に `pnpm start:test`（= test.yml → compose の DB を使う構成）を手動起動済みなら、`pnpm -C playwright test` はそれを再利用する（`reuseExistingServer: !CI`）。`pnpm dev` は別 config（default.yml）なので再利用対象にしない。
+- 外部の pg/redis を使いたい場合は `PW_SKIP_COMPOSE=1 pnpm -C playwright test` で compose 起動をスキップできる。
+- テスト作成補助: `pnpm -C playwright codegen`（起動中インスタンスに対して codegen）。レポート閲覧: `pnpm -C playwright report`。
 
 ## Playwright MCP（LLM 駆動）
 
@@ -124,7 +130,7 @@ Claude Code は公式プラグイン `playwright@claude-plugins-official`（`.cl
 ## 育成ロードマップ
 
 ### Stage 0 — 足場（rig を end-to-end で通す）
-- deps: `@playwright/test`（CI e2e ランナー）
+- deps: `@playwright/test`（CI e2e ランナー）。**root package.json には足さず**、`playwright/package.json` + `playwright/pnpm-workspace.yaml` で独立 workspace 化（root を汚さない）
 - `playwright.config.ts`（baseURL / webServer=`pnpm start:test` / global setup/teardown / trace・video on-first-retry）
 - `compose.test.yml`（固定ポート 54312 / 56312、healthcheck 付きで `up --wait` 対応）
 - `fixtures/misskey.ts`（上記ヘルパ移植）

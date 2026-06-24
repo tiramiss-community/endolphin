@@ -27,9 +27,10 @@ packages/sw/.yarn/cache
 cypress/screenshots
 cypress/videos
 
-# Playwright (endolphin)
-/test-results/
-/playwright-report/
+# Playwright (endolphin) — standalone workspace under playwright/
+/playwright/node_modules/
+/playwright/test-results/
+/playwright/playwright-report/
 
 # Coverage
 coverage

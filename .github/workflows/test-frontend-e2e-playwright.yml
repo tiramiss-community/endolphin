@@ -59,15 +59,22 @@ jobs:
       with:
         node-version: '22.22.2'
         cache: 'pnpm'
+    # root workspace（misskey 本体）の install + build。start:test を動かすために必要。
     - run: pnpm i --frozen-lockfile
     - name: Copy Configure
       run: cp .github/misskey/test.yml .config
     - name: Build
       run: pnpm build
+    # playwright/ は独立した pnpm workspace（playwright/pnpm-workspace.yaml）。
+    # root package.json を汚さないよう、テストランナーはここで個別に install する。
+    - name: Install Playwright runner (standalone workspace)
+      run: pnpm -C playwright i --frozen-lockfile
+    - name: Typecheck e2e specs
+      run: pnpm -C playwright run typecheck
     - name: Install Playwright browser
-      run: pnpm exec playwright install --with-deps chromium
+      run: pnpm -C playwright exec playwright install --with-deps chromium
     - name: Playwright run
-      run: pnpm pw:test
+      run: pnpm -C playwright test
       timeout-minutes: 20
       env:
         CI: 'true'
@@ -76,4 +83,4 @@ jobs:
       if: always()
       with:
         name: playwright-report
-        path: playwright-report
+        path: playwright/playwright-report
