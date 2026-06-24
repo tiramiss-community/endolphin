@@ -41,6 +41,9 @@
 		"cy:run": "pnpm cypress run",
 		"e2e": "pnpm start-server-and-test start:test http://localhost:61812 cy:run",
 		"e2e-dev-container": "ncp ./.config/cypress-devcontainer.yml ./.config/test.yml && pnpm start-server-and-test start:test http://localhost:61812 cy:run",
+		"pw:test": "playwright test --config=playwright/playwright.config.ts",
+		"pw:codegen": "playwright codegen http://localhost:61812",
+		"pw:report": "playwright show-report",
 		"backend-unit-test": "cd packages/backend && pnpm test",
 		"backend-unit-test-and-coverage": "cd packages/backend && pnpm test-and-coverage",
 		"test": "pnpm -r test",
@@ -62,6 +65,7 @@
 	"devDependencies": {
 		"@eslint/js": "9.39.4",
 		"@misskey-dev/eslint-plugin": "2.1.0",
+		"@playwright/test": "1.61.0",
 		"@types/js-yaml": "4.0.9",
 		"@types/node": "24.13.1",
 		"@typescript-eslint/eslint-plugin": "8.61.0",

@@ -1,0 +1,58 @@
+# endolphin fork 所有の workflow。upstream の test-frontend.yml には job を足さない
+# （マージ競合を避けるため）。Playwright e2e（docs/endolphin/playwright-e2e.md）。
+name: Test (frontend e2e / Playwright)
+
+on:
+  push:
+    branches:
+      - develop
+      - master
+    paths:
+      - packages/frontend/**
+      - packages/misskey-js/**
+      - packages/backend/**
+      - playwright/**
+      - .github/workflows/test-frontend-e2e-playwright.yml
+      - .github/misskey/test.yml
+  pull_request:
+    paths:
+      - packages/frontend/**
+      - packages/misskey-js/**
+      - packages/backend/**
+      - playwright/**
+      - .github/workflows/test-frontend-e2e-playwright.yml
+      - .github/misskey/test.yml
+
+jobs:
+  e2e-playwright:
+    name: E2E tests (Playwright)
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v6.0.2
+      with:
+        submodules: true
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v6.0.3
+    - name: Use Node.js
+      uses: actions/setup-node@v6.4.0
+      with:
+        node-version-file: '.node-version'
+        cache: 'pnpm'
+    - run: pnpm i --frozen-lockfile
+    - name: Copy Configure
+      run: cp .github/misskey/test.yml .config
+    - name: Build
+      run: pnpm build
+    - name: Install Playwright browser
+      run: pnpm exec playwright install --with-deps chromium
+    - name: Playwright run
+      run: pnpm pw:test
+      timeout-minutes: 20
+      env:
+        CI: 'true'
+    - uses: actions/upload-artifact@v7
+      if: always()
+      with:
+        name: playwright-report
+        path: playwright-report
