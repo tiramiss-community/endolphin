@@ -1,0 +1,21 @@
+{
+	"name": "@endolphin/playwright-e2e",
+	"version": "0.0.0",
+	"private": true,
+	"description": "endolphin fork-owned Playwright e2e rig (see docs/endolphin/playwright-e2e.md). Standalone workspace — does not depend on the root workspace.",
+	"packageManager": "pnpm@11.5.2",
+	"scripts": {
+		"test": "playwright test",
+		"codegen": "playwright codegen http://localhost:61812",
+		"report": "playwright show-report",
+		"typecheck": "tsc --noEmit"
+	},
+	"engines": {
+		"node": ">=22.22.0"
+	},
+	"devDependencies": {
+		"@playwright/test": "1.61.0",
+		"@types/node": "24.13.1",
+		"typescript": "5.9.3"
+	}
+}

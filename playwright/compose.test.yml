@@ -1,0 +1,27 @@
+# endolphin fork 所有: Playwright e2e 用の infra（postgres/redis）。
+# 固定ポート（54312/56312）で公開し .github/misskey/test.yml と一致させる。
+# upstream の compose.local-db.yml / compose_example.yml とは別物（触らない）。
+
+services:
+  db:
+    image: postgres:18
+    ports:
+      - "54312:5432"
+    environment:
+      POSTGRES_DB: test-misskey
+      POSTGRES_HOST_AUTH_METHOD: trust
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d test-misskey"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+
+  redis:
+    image: redis:8
+    ports:
+      - "56312:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
