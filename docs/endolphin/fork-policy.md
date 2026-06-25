@@ -130,7 +130,8 @@ node scripts/sync-upstream.mjs --check
 
 - **削除済（upstream 専用 / fork 無用）**: `on-release-created.yml`（misskey-js を npm publish）/ `storybook.yml`（Chromatic publish）/ `release-with-dispatch.yml`・`release-edit-with-push.yml`（`misskey-dev/release-manager-actions` 依存）/ `request-release-review.yml`（`@misskey-dev/dev` メンション）/ `deploy-test-environment.yml`（`joinmisskey/misskey-tga` + upstream org メンバーシップ）。**upstream sync でこれらに modify/delete コンフリクトが出たら、実装を戻さず削除を維持する**（スタブ機能と同じ＝復活させない）。
 - **fork 向け付け替え（Docker）**: `docker-develop.yml` / `docker.yml` は publish 先を `misskey/misskey`（upstream Docker Hub）から `ghcr.io/tiramiss-community/endolphin`（認証はビルトイン `GITHUB_TOKEN`、追加 secret 不要）へ変更し、guard を `github.repository == 'tiramiss-community/endolphin'` へ反転。`docker-develop` が develop push で `:develop` を、`docker.yml` が git タグ push でバージョンタグを publish する。upstream がこれらを更新したら、レジストリ / guard / login の付け替えだけ再適用する。
-- **維持**: lint / test（backend / federation / frontend / Playwright / misskey-js / production）/ SPDX・misskey-js・api.json 整合 / locale / changelog-check / labeler / dockle / PR インサイト（bundle / memory / api-diff）は upstream のまま流用。`check-spdx-license-id.yml` の copyright（`syuilo and misskey-project`）は改名しない（アイデンティティ節 / SPDX 規約に従う）。
+- **fork 向け付け替え（changelog-check）**: `changelog-check.yml` の検査対象を upstream 所有の `CHANGELOG.md` から fork の `CHANGELOG-endolphin.md` へ変更（checkout / copy ステップのみ。チェッカ本体 `scripts/changelog-checker/` は無改変）。fork PR の changelog 追記を**構造的に**検証する（`## Unreleased` 配下に追記されているか・カテゴリ順が崩れていないか）。なお追記の**有無**自体は強制しない（presence ゲートではない＝entry 漏れは shipping チェックリストでカバー）。
+- **維持**: lint / test（backend / federation / frontend / Playwright / misskey-js / production）/ SPDX・misskey-js・api.json 整合 / locale / labeler / dockle / PR インサイト（bundle / memory / api-diff）は upstream のまま流用。`check-spdx-license-id.yml` の copyright（`syuilo and misskey-project`）は改名しない（アイデンティティ節 / SPDX 規約に従う）。
 
 ## ブランディング
 
