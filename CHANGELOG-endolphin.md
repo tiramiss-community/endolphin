@@ -28,6 +28,7 @@ endolphin 固有の変更を記録する。本家 Misskey 由来の変更は ups
 - Remove: チャート (charts) 機能の UI（`MkChart` / インスタンス統計 `MkInstanceStats` / About のチャートタブ / インスタンス情報のチャートタブ / 管理ダッシュボードのチャートセクション（Stats・Active users・Federation・Ap requests・New users）/ 管理ユーザー詳細のチャート / ユーザーのアクティビティチャート / アクティビティウィジェット / 訪問者ダッシュボードのアクティブユーザーチャート / ドライブ設定のチャート）を削除（ヒートマップ / リテンション / キュー監視チャート / ミニチャート等の Chart.js 共有部品は維持）
 - Remove: 初回チュートリアル（タイムラインチュートリアル）を削除（`MkTutorialDialog` 一式 / インスタンスメニューの起動項目）
 - Enhance: 初期設定ウィザードをフォロー提案・プッシュ通知許可のみに簡素化（プロフィール / プライバシー編集ステップとチュートリアル誘導を撤去し 6 → 4 ページに）
+- Fix: チャート削除後に管理ダッシュボード (`/admin`) に残っていたヒートマップセクション（`overview.heatmap.vue` / `MkFoldableSection#Heatmap`）を除去
 - Fix: チャート削除後に残っていたインスタンスメニューの「チャート」項目（`/about#charts` への dead link）を除去
 - Remove: 管理画面の DB ダッシュボード（`/admin/database`）とナビ項目を削除
 - Remove: 管理概要のリテンション分析セクションと専用コンポーネント（`MkRetentionHeatmap` / `MkRetentionLineChart`）を削除（アクティビティヒートマップは維持）
