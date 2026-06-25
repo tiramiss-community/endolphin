@@ -119,12 +119,13 @@ pnpm -C playwright test
 - 既に `pnpm start:test`（= test.yml → compose の DB を使う構成）を手動起動済みなら、`pnpm -C playwright test` はそれを再利用する（`reuseExistingServer: !CI`）。`pnpm dev` は別 config（default.yml）なので再利用対象にしない。
 - 外部の pg/redis を使いたい場合は `PW_SKIP_COMPOSE=1 pnpm -C playwright test` で compose 起動をスキップできる。
 - テスト作成補助: `pnpm -C playwright codegen`（起動中インスタンスに対して codegen）。レポート閲覧: `pnpm -C playwright report`。
+- 対話的な MCP / codegen 探索のために**インスタンスを起動して保持**したいだけなら `pnpm -C playwright explore`（要 `pnpm build`）。`test` と同じ compose + `start:test` を上げて `:61812` を保持し、**Ctrl-C で `start:test` 停止 + `docker compose down -v` まで自動撤去**する（既に `:61812` が上がっていれば再利用し撤去しない / `PW_SKIP_COMPOSE=1` で compose をスキップ）。spec の実行は `test` が起動/終了を自前にやるのでこのヘルパは不要＝探索セッション専用。
 
 ## Playwright MCP（LLM 駆動）
 
 Claude Code は公式プラグイン `playwright@claude-plugins-official`（`.claude/settings.json` で有効化済み）経由で Playwright MCP ツール（`browser_*`）を利用できる。**project `.mcp.json` は同梱しない**（プラグインと二重登録になるため）。
 
-- 使い方: ローカルで Misskey を起動（`pnpm dev` または `pnpm start:test`）し、エージェントに MCP で `http://localhost:61812` を探索・操作させる。
+- 使い方: ローカルで Misskey を起動（探索なら `pnpm -C playwright explore` が最短 = 起動保持 + Ctrl-C 自動撤去。`pnpm dev` / `pnpm start:test` でも可）し、エージェントに MCP で `http://localhost:61812` を探索・操作させる。
 - Claude 以外の MCP クライアントから使いたい場合のみ、project `.mcp.json` に `@playwright/mcp` を別途登録する（その際 Claude 側はプラグインを無効化して二重登録を避ける）。
 
 ## 育成ロードマップ
@@ -156,7 +157,7 @@ fork 所有 UI の品質を純粋な fork 価値として固める: デッキ多
 MCP を「探索 → spec 蒸留」の定常ループに乗せる。
 - エージェントが Playwright MCP で起動中インスタンスを探索 → codegen で spec 草案 → trace viewer で flake 切り分け
 - 規約: **MCP 探索ログは commit せず、蒸留した spec のみ** `playwright/` に commit
-- 必要なら `.claude/skills/` に「MCP 経由で pw e2e を書く」スキルを追加（任意）
+- この「探索 → 蒸留 → flake 切り分け」ループの手順は [.claude/skills/authoring-playwright-e2e/](../../.claude/skills/authoring-playwright-e2e/SKILL.md) スキルに成文化済（Codex 向けスタブは `.agents/skills/authoring-playwright-e2e/`）。`playwright/` の e2e を書く・直すときの入口
 
 ### 継続運用 — メンテ規律（育成を負債化させない）
 - upstream sync のたびに pw スイートを実行。落ちたら `data-cy-*` のズレを直す（安価）

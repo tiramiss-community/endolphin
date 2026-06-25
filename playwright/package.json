@@ -6,6 +6,7 @@
 	"packageManager": "pnpm@11.5.2",
 	"scripts": {
 		"test": "playwright test",
+		"explore": "node scripts/explore.mjs",
 		"codegen": "playwright codegen http://localhost:61812",
 		"report": "playwright show-report",
 		"typecheck": "tsc --noEmit"
