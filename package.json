@@ -1,22 +1,12 @@
 {
-	"name": "misskey",
+	"name": "endolphin",
 	"version": "2026.6.0-endolphin.0",
 	"codename": "nasubi",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/misskey-dev/misskey.git"
+		"url": "https://github.com/tiramiss-community/endolphin.git"
 	},
 	"packageManager": "pnpm@11.5.2",
-	"workspaces": [
-		"packages/misskey-js",
-		"packages/i18n",
-		"packages/icons-subsetter",
-		"packages/frontend-shared",
-		"packages/frontend-builder",
-		"packages/sw",
-		"packages/backend",
-		"packages/frontend"
-	],
 	"private": true,
 	"scripts": {
 		"compile-config": "cd packages/backend && pnpm compile-config",
