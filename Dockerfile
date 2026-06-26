@@ -37,9 +37,7 @@ RUN --mount=type=cache,target=/root/.local/share/pnpm/store,sharing=locked \
 
 COPY --link . ./
 
-RUN git submodule update --init
 RUN pnpm build
-RUN rm -rf .git/
 
 # build native dependencies for target platform
 
@@ -55,25 +53,27 @@ COPY --link ["pnpm-lock.yaml", "pnpm-workspace.yaml", "package.json", "./"]
 COPY --link ["scripts", "./scripts"]
 COPY --link ["patches", "./patches"]
 COPY --link ["packages/backend/package.json", "./packages/backend/"]
+COPY --link ["packages/i18n/package.json", "./packages/i18n/"]
 COPY --link ["packages/misskey-js/package.json", "./packages/misskey-js/"]
 
 ARG NODE_ENV=production
 
 RUN node -e "console.log(JSON.parse(require('node:fs').readFileSync('./package.json')).packageManager)" | xargs npm install -g
 
+COPY --link --from=native-builder /misskey/packages/i18n/built ./packages/i18n/built
+COPY --link --from=native-builder /misskey/packages/misskey-js/built ./packages/misskey-js/built
+
 RUN --mount=type=cache,target=/root/.local/share/pnpm/store,sharing=locked \
-	pnpm i --frozen-lockfile --aggregate-output
+	pnpm --filter backend deploy --prod --legacy /misskey-deploy
 
 FROM --platform=$TARGETPLATFORM node:${NODE_VERSION}-slim AS runner
 
 ARG UID="991"
 ARG GID="991"
 
-ENV PNPM_CONFIG_VERIFY_DEPS_BEFORE_RUN=false
-
 RUN apt-get update \
 	&& apt-get install -y --no-install-recommends \
-	ffmpeg tini curl libjemalloc-dev libjemalloc2 \
+	ffmpeg tini libjemalloc2 \
 	&& ln -s /usr/lib/$(uname -m)-linux-gnu/libjemalloc.so.2 /usr/local/lib/libjemalloc.so \
 	&& groupadd -g "${GID}" misskey \
 	&& useradd -l -u "${UID}" -g "${GID}" -m -d /misskey misskey \
@@ -82,24 +82,26 @@ RUN apt-get update \
 	&& apt-get clean \
 	&& rm -rf /var/lib/apt/lists
 
-# add package.json to add pnpm
-COPY ./package.json ./package.json
-RUN node -e "console.log(JSON.parse(require('node:fs').readFileSync('./package.json')).packageManager)" | xargs npm install -g
-
 USER misskey
 WORKDIR /misskey
 
-COPY --chown=misskey:misskey --from=target-builder /misskey/node_modules ./node_modules
-COPY --chown=misskey:misskey --from=target-builder /misskey/packages/backend/node_modules ./packages/backend/node_modules
-COPY --chown=misskey:misskey --from=target-builder /misskey/packages/misskey-js/node_modules ./packages/misskey-js/node_modules
+COPY --chown=misskey:misskey --from=target-builder /misskey-deploy/node_modules ./node_modules
+COPY --chown=misskey:misskey --from=target-builder /misskey-deploy/node_modules/@misskey-dev/emoji-assets ./packages/backend/node_modules/@misskey-dev/emoji-assets
 COPY --chown=misskey:misskey --from=native-builder /misskey/built ./built
-COPY --chown=misskey:misskey --from=native-builder /misskey/packages/misskey-js/built ./packages/misskey-js/built
 COPY --chown=misskey:misskey --from=native-builder /misskey/packages/backend/built ./packages/backend/built
-COPY --chown=misskey:misskey --from=native-builder /misskey/packages/i18n/built ./packages/i18n/built
-COPY --chown=misskey:misskey . ./
+COPY --chown=misskey:misskey package.json ./package.json
+COPY --chown=misskey:misskey packages/backend/package.json ./packages/backend/package.json
+COPY --chown=misskey:misskey packages/backend/scripts ./packages/backend/scripts
+COPY --chown=misskey:misskey packages/backend/migration ./packages/backend/migration
+COPY --chown=misskey:misskey packages/backend/assets ./packages/backend/assets
+COPY --chown=misskey:misskey packages/backend/src/server/assets ./packages/backend/src/server/file/assets
+COPY --chown=misskey:misskey packages/frontend/assets ./packages/frontend/assets
+COPY --chown=misskey:misskey packages/backend/ormconfig.js ./packages/backend/ormconfig.js
+COPY --chown=misskey:misskey healthcheck.mjs ./healthcheck.mjs
 
 ENV LD_PRELOAD=/usr/local/lib/libjemalloc.so
 ENV NODE_ENV=production
-HEALTHCHECK --interval=5s --retries=20 CMD ["/bin/bash", "/misskey/healthcheck.sh"]
+ENV NPM_CONFIG_UPDATE_NOTIFIER=false
+HEALTHCHECK --interval=5s --retries=20 CMD ["node", "/misskey/healthcheck.mjs"]
 ENTRYPOINT ["/usr/bin/tini", "--"]
-CMD ["pnpm", "run", "migrateandstart"]
+CMD ["/bin/sh", "-c", "cd /misskey/packages/backend && node ./scripts/compile_config.js && npm exec -- typeorm migration:run -d ormconfig.js && node ./built/entry.js"]

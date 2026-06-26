@@ -16,6 +16,7 @@ endolphin 固有の変更を記録する。本家 Misskey 由来の変更は ups
 - Enhance: Playwright e2e に探索セッション用ヘルパ `pnpm -C playwright explore` を追加（Stage 4）。`test` と同じ compose（pg/redis）+ 無改変 `start:test` を起動して `:61812` を保持し、Ctrl-C で `start:test` 停止 + `docker compose down -v` まで自動撤去する（既に `:61812` が起動済なら再利用し撤去しない / `PW_SKIP_COMPOSE=1` で compose スキップ）。対話的な Playwright MCP（`browser_*`）/ codegen 探索向け。spec の実行は従来どおり `pnpm -C playwright test` が webServer + globalTeardown で起動/終了を自前にやるためこのヘルパは不要＝探索セッション専用
 - Remove: upstream 専用 / fork 無用の GitHub Actions ワークフローを削除（misskey-js の npm publish / Storybook Chromatic publish / release-manager 連携 2 本 / リリースレビュー依頼 / テスト環境デプロイ）。判断指針は `docs/endolphin/fork-policy.md` の「GitHub Actions / CI 方針」に記録（upstream sync で衝突しても削除を維持）
 - Change: Docker イメージの公開先を `misskey/misskey`（upstream Docker Hub）から `ghcr.io/tiramiss-community/endolphin`（認証はビルトイン `GITHUB_TOKEN`）へ付け替え。`docker-develop.yml` が develop push で `:develop`、`docker.yml` が git タグ push でバージョンタグを publish する（guard も fork リポジトリへ反転）
+- Enhance: Docker runtime image を `pnpm deploy` ベースに変更し、ランタイムの pnpm / curl と不要な workspace copy を削減。Debian 版と distroless 版の healthcheck を `healthcheck.mjs` に統一
 - Enhance: `changelog-check` ワークフローの検査対象を upstream 所有の `CHANGELOG.md` から fork の `CHANGELOG-endolphin.md` へ付け替え（fork PR の changelog 追記を構造チェック。チェッカ本体は無改変）
 
 ### Client
