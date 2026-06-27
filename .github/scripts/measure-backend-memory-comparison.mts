@@ -167,19 +167,6 @@ function summarizeSamples(samples: MemoryReport['samples']) {
 	return summary;
 }
 
-// endolphin: resolve the measure-memory script relative to the target repo. Upstream renamed it from
-// `.mjs` to `.mts`, but a comparison job runs this (head-side) script against the *base* checkout, whose
-// `base_ref` may predate the rename. Fall back to the legacy `.mjs` so the very PR that introduces the
-// rename (and any PR opened before it lands on the base branch) still measures the base repo.
-async function resolveMeasureMemoryScript(repoDir: string) {
-	const relCandidates = ['packages/backend/scripts/measure-memory.mts', 'packages/backend/scripts/measure-memory.mjs'];
-	for (const rel of relCandidates) {
-		if (await util.fileExists(join(repoDir, rel))) return rel;
-	}
-	// Prefer the current name in the error if neither exists.
-	throw new Error(`measure-memory script not found in ${repoDir} (looked for ${relCandidates.join(', ')})`);
-}
-
 async function measureRepo(label: string, repoDir: string, round: number, options: { heapSnapshotSavePath?: string } = {}) {
 	process.stderr.write(`[${label}] Resetting database and Redis\n`);
 	await resetState(repoDir);
@@ -199,8 +186,7 @@ async function measureRepo(label: string, repoDir: string, round: number, option
 	if (round <= 0) measureEnv.MK_MEMORY_HEAP_SNAPSHOT = '0';
 	if (options.heapSnapshotSavePath != null) measureEnv.MK_MEMORY_HEAP_SNAPSHOT_SAVE_PATH = options.heapSnapshotSavePath;
 
-	const measureMemoryScript = await resolveMeasureMemoryScript(repoDir);
-	const stdout = await util.run('node', [measureMemoryScript], {
+	const stdout = await util.run('node', ['packages/backend/scripts/measure-memory.mts'], {
 		cwd: repoDir,
 		env: measureEnv,
 	});

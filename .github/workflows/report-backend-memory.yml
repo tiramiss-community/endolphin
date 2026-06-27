@@ -33,8 +33,23 @@ jobs:
       - name: Load PR Number
         id: load-pr-num
         run: echo "pr-number=$(cat artifacts/pr_number)" >> "$GITHUB_OUTPUT"
+      # endolphin: the measurement job skips the comparison (and so uploads no memory-*.json) when the PR's
+      # base predates the redesigned memory tooling (see get-backend-memory.yml). The pr-number artifact is
+      # always present, so this report workflow still runs; detect the absent comparison artifacts and skip
+      # building/posting the comment instead of failing on the missing files.
+      - name: Check memory comparison artifacts
+        id: check-memory-artifacts
+        shell: bash
+        run: |
+          if [ -f artifacts/memory-base.json ] && [ -f artifacts/memory-head.json ]; then
+            echo 'present=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'present=false' >> "$GITHUB_OUTPUT"
+            echo 'Backend memory comparison artifacts are absent (comparison was skipped). Skipping memory diff comment.' >> "$GITHUB_STEP_SUMMARY"
+          fi
       - name: Find head heap snapshot artifact
         id: find-heap-snapshot-artifact
+        if: steps.check-memory-artifacts.outputs.present == 'true'
         uses: actions/github-script@v8
         with:
           script: |
@@ -51,10 +66,12 @@ jobs:
 
       - id: build-comment
         name: Build memory comment
+        if: steps.check-memory-artifacts.outputs.present == 'true'
         env:
           MK_MEMORY_HEAP_SNAPSHOT_ARTIFACT_URL_HEAD: ${{ steps.find-heap-snapshot-artifact.outputs.url }}
         run: node .github/scripts/backend-memory-report.mts ./artifacts/memory-base.json ./artifacts/memory-head.json ./output.md ./artifacts/js-footprint-base.json ./artifacts/js-footprint-head.json
-      - uses: thollander/actions-comment-pull-request@v3
+      - if: steps.check-memory-artifacts.outputs.present == 'true'
+        uses: thollander/actions-comment-pull-request@v3
         with:
           pr-number: ${{ steps.load-pr-num.outputs.pr-number }}
           comment-tag: show_memory_diff

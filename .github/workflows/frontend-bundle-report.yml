@@ -59,12 +59,19 @@ jobs:
       - name: Check base visualizer support
         id: check-base-visualizer
         shell: bash
+        # endolphin: the head-side report script (frontend-js-size.mts) parses the visualizer output as the
+        # `raw-data` (JSON) stats file. The current build emits JSON to FRONTEND_BUNDLE_VISUALIZER_FILE and a
+        # separate treemap HTML to FRONTEND_BUNDLE_VISUALIZER_HTML_FILE (upstream #17600+). A base that
+        # predates that split instead writes a treemap *HTML* page to FRONTEND_BUNDLE_VISUALIZER_FILE, which
+        # makes the report script die with `JSON.parse('<...')`. Gate on the new env var so an older base is
+        # skipped rather than producing a misleading failure; this self-resolves once the split lands on the
+        # base branch (e.g. after the upstream-merge PR that introduces it).
         run: |
-          if grep -q 'FRONTEND_BUNDLE_VISUALIZER' before/packages/frontend/vite.config.ts; then
+          if grep -q 'FRONTEND_BUNDLE_VISUALIZER_HTML_FILE' before/packages/frontend/vite.config.ts; then
             echo 'supported=true' >> "$GITHUB_OUTPUT"
           else
             echo 'supported=false' >> "$GITHUB_OUTPUT"
-            echo 'Base commit does not support frontend bundle visualizer. Skipping frontend bundle report.' >> "$GITHUB_STEP_SUMMARY"
+            echo 'Base commit predates the raw-data frontend bundle visualizer split. Skipping frontend bundle report.' >> "$GITHUB_STEP_SUMMARY"
           fi
 
       - name: Setup pnpm
