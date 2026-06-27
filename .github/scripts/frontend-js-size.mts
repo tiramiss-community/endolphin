@@ -83,23 +83,45 @@ function collectStartupKeys(manifest: Manifest) {
 	return keys;
 }
 
+// endolphin: the fork's frontend build (issue #18) deviates from upstream's per-locale layout in two ways
+// the upstream report script does not expect, so resolve the on-disk artifact tolerantly:
+//   1. Locale deduplication (`packages/frontend-builder/locale-inliner.ts`) writes locale-independent
+//      "shared" chunks ONLY to `scripts/<file>` and skips them in every `<locale>/` directory. So a
+//      `scripts/<X>.js` manifest entry may have NO `<locale>/<X>.js` copy — fall back to `scripts/<X>.js`
+//      instead of throwing.
+//   2. The build Brotli-compresses every chunk to `<file>.js.br` and deletes the raw `.js` by default
+//      (`FRONTEND_KEEP_RAW_JS` unset, see `packages/frontend/build.ts`). So the raw `.js` is usually
+//      absent; fall back to the `.js.br` and report its (compressed) on-disk size. Base and head are built
+//      identically, so the comparison stays apples-to-apples.
+async function resolveBuiltFileFrom(outDir: string, candidates: { rel: string }[]) {
+	for (const { rel } of candidates) {
+		const raw = path.join(outDir, rel);
+		if (await util.fileExists(raw)) return { absolutePath: raw, relativePath: util.normalizePath(rel) };
+		const brotli = `${raw}.br`;
+		if (await util.fileExists(brotli)) {
+			return { absolutePath: brotli, relativePath: `${util.normalizePath(rel)}.br` };
+		}
+	}
+	return null;
+}
+
 async function resolveBuiltFile(outDir: string, file: string) {
 	if (file.startsWith('scripts/')) {
 		const localizedFile = file.slice('scripts/'.length);
-		const localizedPath = path.join(outDir, locale, localizedFile);
-		if (await util.fileExists(localizedPath)) {
-			return {
-				absolutePath: localizedPath,
-				relativePath: `${locale}/${localizedFile}`,
-			};
-		}
+		// Prefer the locale-specific copy; fall back to the shared chunk that lives only under `scripts/`.
+		const resolved = await resolveBuiltFileFrom(outDir, [
+			{ rel: path.join(locale, localizedFile) },
+			{ rel: file },
+		]);
+		if (resolved != null) return resolved;
 
-		throw new Error(`Expected ${locale} localized chunk for ${file}, but ${localizedPath} was not found.`);
+		throw new Error(`Expected ${locale} localized or shared chunk for ${file}, but neither ${path.join(outDir, locale, localizedFile)} nor ${path.join(outDir, file)} (or their .br) was found.`);
 	}
-	return {
-		absolutePath: path.join(outDir, file),
-		relativePath: file,
-	};
+
+	const resolved = await resolveBuiltFileFrom(outDir, [{ rel: file }]);
+	if (resolved != null) return resolved;
+
+	throw new Error(`Expected built chunk ${file}, but ${path.join(outDir, file)} (or its .br) was not found.`);
 }
 
 async function collectReport(repoDir: string) {
@@ -127,7 +149,9 @@ async function collectReport(repoDir: string) {
 	const localeDir = path.join(outDir, locale);
 	if (await util.fileExists(localeDir)) {
 		for await (const fullPath of util.traverseDirectory(localeDir)) {
-			if (!fullPath.endsWith('.js')) continue;
+			// Pick up JS chunks not already accounted for via the manifest. Tolerate the fork's Brotli output
+			// (`.js.br`); the build deletes the raw `.js` by default (see resolveBuiltFile).
+			if (!fullPath.endsWith('.js') && !fullPath.endsWith('.js.br')) continue;
 			const relativePath = util.normalizePath(path.relative(outDir, fullPath));
 			if (byFile.has(relativePath)) continue;
 			const size = await util.fileSize(fullPath);
