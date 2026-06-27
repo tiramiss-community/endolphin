@@ -198,6 +198,9 @@ export class ClientServerService {
 					maxAge: ms('30 days'),
 					immutable: true,
 					decorateReply: false,
+					// Serve Brotli-precompressed chunks (`<file>.js.br`) with `Content-Encoding: br` to capable
+					// clients; falls back to the raw `.js` for clients that do not advertise `Accept-Encoding: br`.
+					preCompressed: true,
 				});
 				fastify.addHook('onRequest', handleRequestRedirectToOmitSearch);
 				done();

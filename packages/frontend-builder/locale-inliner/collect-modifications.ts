@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  */
 
+import path from 'node:path';
 import { parseAst } from 'rolldown/parseAst';
 import { walk } from 'oxc-walker';
 import { assertNever } from '../utils.js';
@@ -36,12 +37,17 @@ export function collectModifications(sourceCode: string, fileName: string, fileL
 				if (node.raw.substring(1).startsWith(inliner.scriptsDir)) {
 					// we find `scripts/\w+\.js` literal and replace 'scripts' part with locale code
 					fileLogger.debug(`${lineCol(sourceCode, node)}: found ${inliner.scriptsDir}/ path literal ${node.raw}`);
+					// Record the referenced chunk basename so the rewrite can be suppressed for shared chunks.
+					// Only `.js` chunk literals get a target; asset literals (e.g. `assets/x.css`) do not match
+					// `startsWith(scriptsDir)` and so never reach here.
+					const targetFileName = node.value.endsWith('.js') ? path.posix.basename(node.value) : undefined;
 					modifications.push({
 						type: 'locale-name',
 						begin: node.start + 1,
 						end: node.start + 1 + inliner.scriptsDir.length,
 						literal: false,
 						localizedOnly: true,
+						targetFileName,
 					});
 				}
 				if (node.raw.substring(1, node.raw.length - 1) === `${inliner.scriptsDir}/${inliner.i18nFileName}`) {
@@ -78,6 +84,42 @@ export function collectModifications(sourceCode: string, fileName: string, fileL
 					end: node.end,
 					localizedOnly: true,
 				});
+			}
+
+			// Inter-chunk relative imports / re-exports. The `./` prefix is rewritten to `../scripts/` when the
+			// target is a shared chunk and this chunk is written into a `<locale>/` directory (decided later in
+			// apply). The static-import, re-export, and template dynamic-import sources all share the same
+			// `[src.start+1, src.start+3)` offset for the `./` prefix (just after the quote/backtick).
+			if (node.type === 'ImportDeclaration'
+				|| node.type === 'ExportNamedDeclaration'
+				|| node.type === 'ExportAllDeclaration') {
+				// import ... from "./X.js"  /  export { ... } from "./X.js"  /  export * [as ns] from "./X.js"
+				const src = node.source;
+				if (src != null && typeof src.value === 'string' && src.value.startsWith('./') && src.value.endsWith('.js')) {
+					modifications.push({
+						type: 'relative-import-prefix',
+						begin: src.start + 1, // just after the opening quote
+						end: src.start + 3, // covers `./`
+						targetFileName: path.posix.basename(src.value),
+						localizedOnly: false,
+					});
+				}
+			}
+			if (node.type === 'ImportExpression') {
+				// dynamic import: import(`./X.js`) — only the plain single-quasi template literal form
+				const src = node.source;
+				if (src.type === 'TemplateLiteral' && src.quasis.length === 1 && src.expressions.length === 0) {
+					const cooked = src.quasis[0].value.cooked;
+					if (cooked != null && cooked.startsWith('./') && cooked.endsWith('.js')) {
+						modifications.push({
+							type: 'relative-import-prefix',
+							begin: src.start + 1, // just after the opening backtick
+							end: src.start + 3, // covers `./`
+							targetFileName: path.posix.basename(cooked),
+							localizedOnly: false,
+						});
+					}
+				}
 			}
 		},
 	});
