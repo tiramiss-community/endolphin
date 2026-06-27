@@ -35,6 +35,8 @@ async function buildAllLocale() {
 
 	inliner.collectsModifications();
 
+	inliner.computeSharedSet();
+
 	await inliner.saveAllLocales(locales);
 
 	if (logger.errorCount > 0) {

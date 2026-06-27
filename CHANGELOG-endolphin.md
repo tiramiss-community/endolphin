@@ -37,6 +37,7 @@ endolphin 固有の変更を記録する。本家 Misskey 由来の変更は ups
 - Remove: チャット（DM / グループ）の UI を削除（全チャット画面 `/chat*` / `MkChatHistories` / `WidgetChat` / デッキの chat 列 / ナビ・ユーザーメニューの導線 / 設定のチャット項目（読み取り既読化・送信者名表示・Enter送信・chatScope・チャット音）/ チャット招待通知の表示分岐 / ロールポリシーエディタの chatAvailability 項目）。通知種別自体は互換のため温存
 - Enhance: about ページの wordmark を Misskey → Endolphin に変更
 - Feat: about ページを Endolphin / Misskey の 2 タブ構成に再編（`PageWithHeader` の既存タブ機構を使用）。Endolphin タブは概要・ソースコード（GitHub）・「Endolphin プロジェクトメンバー」（@samunohito）と Misskey タブへの導線を表示、Misskey タブは従来の about 内容（ソース / 翻訳 / 寄付 / プロジェクトメンバー / Special thanks / 支援者）を踏襲（locale キー `_aboutMisskey.aboutEndolphin` / `endolphinProjectMembers` / `learnAboutMisskey` を追加）
+- Enhance: フロントエンドのビルド成果物 (`built/_frontend_vite_/`) の言語チャンク重複を排除（サポート言語は不変）。`LocaleInliner` が言語非依存チャンクを推移閉包まで含めて判定し、安全な部分集合（約 104 チャンク）を `scripts/` に 1 本化して各言語ディレクトリへの重複コピーを廃止（locale 固有チャンク内の参照は静的/動的 import・再エクスポートを `../scripts/` へ、`__vite__mapDeps` リテラルは `scripts/` 据え置きへ向け直す）。成果物は約 181MB → 約 102MB に縮小
 
 ### Server
 - Enhance: アプリ識別名のフォールバックを Misskey → Endolphin に変更（PWA manifest 静的値 / document `<title>`・`og:*`・`application-name` メタ / OpenSearch / error・CLI・BIOS・flush・info-card view の見出し・メタ / 全 HTML 先頭コメントの挨拶 / `instanceName`・`title` フォールバック）。連合 nodeinfo `software.name`・User-Agent・内部識別子・テーマ色 `#86b300` は互換のため温存。runtime はインスタンス設定（`meta.name` 等）が従来どおり優先
