@@ -9,14 +9,32 @@ import type { ILocale, Locale } from 'i18n';
 import type { TextModification } from '../locale-inliner.js';
 import type { Logger } from '../logger.js';
 
+export interface ApplyOptions {
+	// 'locale' = writing into a `<locale>/` directory; 'shared' = writing the single `scripts/` copy.
+	mode: 'locale' | 'shared';
+	// Set of file names that are shared (locale-independent) chunks living only in `scripts/`.
+	sharedSet: Set<string>;
+}
+
 export function applyWithLocale(
 	sourceCode: MagicString,
 	modifications: TextModification[],
 	localeName: string,
 	localeJson: Locale,
 	fileLogger: Logger,
+	options: ApplyOptions,
 ) {
 	for (const modification of modifications) {
+		// A shared chunk carries no translation modification by construction; if one shows up here it means
+		// the chunk was misclassified as shared, which would silently corrupt output. Fail loudly instead.
+		if (options.mode === 'shared'
+			&& modification.localizedOnly
+			&& (modification.type === 'localized'
+				|| modification.type === 'parameterized-function'
+				|| modification.type === 'locale-name'
+				|| modification.type === 'locale-json')) {
+			throw new Error(`Shared chunk unexpectedly has a locale-specific modification of type '${modification.type}'.`);
+		}
 		switch (modification.type) {
 			case 'delete':
 				sourceCode.remove(modification.begin, modification.end);
@@ -72,7 +90,22 @@ export function applyWithLocale(
 				}
 			}
 			case 'locale-name': {
+				// For the `__vite__mapDeps` path literal form (literal: false) pointing at a shared chunk,
+				// suppress the `scripts` -> `<locale>` rewrite so the literal stays `scripts/X.js`
+				// (resolves to `/vite/scripts/X.js` at runtime). All other cases rewrite as before.
+				if (!modification.literal && modification.targetFileName != null && options.sharedSet.has(modification.targetFileName)) {
+					break;
+				}
 				sourceCode.update(modification.begin, modification.end, modification.literal ? JSON.stringify(localeName) : localeName);
+				break;
+			}
+			case 'relative-import-prefix': {
+				// Rewrite `./X.js` -> `../scripts/X.js` only when emitting a locale copy that references a
+				// shared chunk (which lives only in `scripts/`). In 'shared' mode, or when the target is itself
+				// locale-specific, `./` is already correct (resolves within the same directory).
+				if (options.mode === 'locale' && options.sharedSet.has(modification.targetFileName)) {
+					sourceCode.update(modification.begin, modification.end, '../scripts/');
+				}
 				break;
 			}
 			case 'locale-json': {
