@@ -1,6 +1,44 @@
 # このconfigは、 dockerでMisskey本体を起動せず、 redisとpostgresql などだけを起動します
 
 services:
+  web-debian:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    links:
+      - db
+      - redis
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    env_file:
+      - .config/docker.env
+    volumes:
+      - .config:/misskey/.config
+
+  web-distroless:
+    build:
+      context: .
+      dockerfile: Dockerfile.distroless
+    links:
+      - db
+      - redis
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    env_file:
+      - .config/docker.env
+    volumes:
+      - .config:/misskey/.config
+
   redis:
     restart: always
     image: redis:7-alpine

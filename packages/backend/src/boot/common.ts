@@ -6,6 +6,7 @@
 import { NestFactory } from '@nestjs/core';
 import { init } from 'slacc';
 import { NestLogger } from '@/NestLogger.js';
+import { envOption } from '@/env.js';
 import type { Config } from '@/config.js';
 
 let slaccInitialized = false;
@@ -31,7 +32,7 @@ export async function server() {
 	const serverService = app.get(ServerService);
 	await serverService.launch();
 
-	if (process.env.NODE_ENV !== 'test') {
+	if (process.env.NODE_ENV !== 'test' && !envOption.noDaemons) {
 		// endolphin: チャート機能は削除済み。ChartManagementService の起動を撤去。
 		const { QueueStatsService } = await import('../daemons/QueueStatsService.js');
 		const { ServerStatsService } = await import('../daemons/ServerStatsService.js');
