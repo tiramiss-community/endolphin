@@ -19,6 +19,7 @@ endolphin 固有の変更を記録する。本家 Misskey 由来の変更は ups
 - Enhance: `changelog-check` ワークフローの検査対象を upstream 所有の `CHANGELOG.md` から fork の `CHANGELOG-endolphin.md` へ付け替え（fork PR の changelog 追記を構造チェック。チェッカ本体は無改変）
 
 ### Client
+- Remove: About ページのイースターエッグ（ロゴクリックで絵文字が物理落下するアニメーション）と物理エンジン `matter-js` を削除
 - Remove: お気に入り (favorites) 機能の UI（一覧ページ / ナビ項目 / ノートメニュー / データエクスポート項目）を削除
 - Remove: ギャラリー (gallery) 機能の UI（一覧/投稿/編集ページ / ナビ項目 / プロフィールタブ）を削除
 - Remove: Games（リバーシ / バブルゲーム / クリッカー / ゲームハブ）の UI（各ページ / ナビ項目 / クリッカーウィジェット）を削除
