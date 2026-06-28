@@ -18,6 +18,7 @@ endolphin 固有の変更を記録する。本家 Misskey 由来の変更は ups
 - Change: Docker イメージの公開先を `misskey/misskey`（upstream Docker Hub）から `ghcr.io/tiramiss-community/endolphin`（認証はビルトイン `GITHUB_TOKEN`）へ付け替え。`docker-develop.yml` が develop push で `:develop`、`docker.yml` が git タグ push でバージョンタグを publish する（guard も fork リポジトリへ反転）
 - Enhance: Docker runtime image を `pnpm deploy` ベースに変更し、ランタイムの pnpm / curl と不要な workspace copy を削減。Debian 版と distroless 版の healthcheck を `healthcheck.mjs` に統一
 - Enhance: `changelog-check` ワークフローの検査対象を upstream 所有の `CHANGELOG.md` から fork の `CHANGELOG-endolphin.md` へ付け替え（fork PR の changelog 追記を構造チェック。チェッカ本体は無改変）
+- Enhance: Docker イメージをさらに軽量化（Debian 約1.22GB→約922MB / distroless 約834MB→約728MB）。(1) `pnpm deploy` 後も `@sentry/server-utils` の optional `vite` peer 経由で runtime に残っていたビルドツール（vite / rolldown / esbuild / sass / lightningcss、約77MB）を両イメージから prune（バックエンドランタイムは未参照）。(2) Debian 版の ffmpeg を apt（コーデック依存閉包込みで約400MB）から BtbN 配布の LGPL v3 static ビルド（ffmpeg / ffprobe のみ・`$TARGETARCH` で amd64/arm64 選択・SHA256 pin）へ置換し、LGPL v3 ライセンス全文と source offer をイメージに同梱。distroless は既存の lddtree トリムの方が小さいため ffmpeg は据え置き
 
 ### Client
 - Remove: About ページのイースターエッグ（ロゴクリックで絵文字が物理落下するアニメーション）と物理エンジン `matter-js` を削除

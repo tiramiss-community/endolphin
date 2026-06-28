@@ -68,6 +68,17 @@ COPY --link --from=native-builder /misskey/packages/misskey-js/built ./packages/
 RUN --mount=type=cache,target=/root/.local/share/pnpm/store,sharing=locked \
 	pnpm --filter backend deploy --prod --legacy /misskey-deploy
 
+# Drop build-time-only tooling that pnpm links into the @sentry tree via @sentry/server-utils'
+# optional `vite` peer (present only because the workspace ships a frontend vite). None of these
+# are required by the backend runtime, so removing them before the lddtree native-addon scan also
+# keeps their *.node binaries out of /runtime-root.
+RUN cd /misskey-deploy/node_modules \
+	&& for pkg in vite rolldown @rolldown+binding-linux-x64-gnu esbuild @esbuild+linux-x64 \
+		sass sass-embedded sass-embedded-linux-x64 lightningcss lightningcss-linux-x64-gnu; do \
+		rm -rf .pnpm/${pkg}@* ; \
+	done \
+	&& find . -xtype l -delete
+
 RUN <<'EOF'
 cat > /misskey-docker-entrypoint.mjs <<'ENTRYPOINT'
 import { spawn } from 'node:child_process';
