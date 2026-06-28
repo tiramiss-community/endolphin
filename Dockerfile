@@ -37,9 +37,7 @@ RUN --mount=type=cache,target=/root/.local/share/pnpm/store,sharing=locked \
 
 COPY --link . ./
 
-RUN git submodule update --init
 RUN pnpm build
-RUN rm -rf .git/
 
 # build native dependencies for target platform
 
@@ -55,25 +53,83 @@ COPY --link ["pnpm-lock.yaml", "pnpm-workspace.yaml", "package.json", "./"]
 COPY --link ["scripts", "./scripts"]
 COPY --link ["patches", "./patches"]
 COPY --link ["packages/backend/package.json", "./packages/backend/"]
+COPY --link ["packages/i18n/package.json", "./packages/i18n/"]
 COPY --link ["packages/misskey-js/package.json", "./packages/misskey-js/"]
 
 ARG NODE_ENV=production
 
 RUN node -e "console.log(JSON.parse(require('node:fs').readFileSync('./package.json')).packageManager)" | xargs npm install -g
 
+COPY --link --from=native-builder /misskey/packages/i18n/built ./packages/i18n/built
+COPY --link --from=native-builder /misskey/packages/misskey-js/built ./packages/misskey-js/built
+
 RUN --mount=type=cache,target=/root/.local/share/pnpm/store,sharing=locked \
-	pnpm i --frozen-lockfile --aggregate-output
+	pnpm --filter backend deploy --prod --legacy /misskey-deploy
+
+# Drop build-time-only tooling that pnpm links into the @sentry tree via @sentry/server-utils'
+# optional `vite` peer (present only because the workspace ships a frontend vite). None of these
+# are required by the backend runtime (`node built/entry.js`, compile_config, typeorm migrate),
+# so removing them and pruning the dangling symlinks shaves ~77 MB off the image.
+RUN cd /misskey-deploy/node_modules \
+	&& for pkg in vite rolldown @rolldown+binding-linux-x64-gnu esbuild @esbuild+linux-x64 \
+		sass sass-embedded sass-embedded-linux-x64 lightningcss lightningcss-linux-x64-gnu; do \
+		rm -rf .pnpm/${pkg}@* ; \
+	done \
+	&& find . -xtype l -delete
+
+# fetch a self-contained static ffmpeg instead of apt's ffmpeg, whose hard-dependency closure
+# (codec libraries) pulls in ~400 MB even with --no-install-recommends. Misskey only decodes frames
+# for thumbnails / sensitive-media analysis (no GPL encoders), so the lgpl build is sufficient.
+# Runs on $BUILDPLATFORM and selects the target arch via $TARGETARCH so cross-builds don't emulate.
+# Pinned to an immutable BtbN autobuild + SHA256; to upgrade, pick a newer autobuild-* tag and refresh
+# both digests from the GitHub release API (`.assets[].digest`).
+FROM --platform=$BUILDPLATFORM node:${NODE_VERSION} AS ffmpeg-fetch
+ARG TARGETARCH
+ARG FFMPEG_VERSION=n8.1.2
+ARG FFMPEG_BASE_URL=https://github.com/BtbN/FFmpeg-Builds/releases/download/autobuild-2026-06-27-13-21
+ARG FFMPEG_SHA256_amd64=e4b3e7a92ff8a0713f961e2fa99d2a70fcabb26ca22f354a88d2973c226f94d4
+ARG FFMPEG_SHA256_arm64=eabf197f1815f638f9f62c9220154e857dcadc9888f8e006d33d230e85a11e18
+# (1) download the tarball for the target arch and verify its pinned SHA256 (build fails on mismatch)
+RUN <<EOF
+set -eux
+case "$TARGETARCH" in
+	amd64) slug=linux64;    sha="$FFMPEG_SHA256_amd64" ;;
+	arm64) slug=linuxarm64; sha="$FFMPEG_SHA256_arm64" ;;
+	*) echo "unsupported TARGETARCH: $TARGETARCH" >&2; exit 1 ;;
+esac
+curl -fsSL -o /tmp/ffmpeg.tar.xz "${FFMPEG_BASE_URL}/ffmpeg-${FFMPEG_VERSION}-${slug}-lgpl-8.1.tar.xz"
+echo "${sha}  /tmp/ffmpeg.tar.xz" | sha256sum -c -
+EOF
+
+# (2) extract only the two binaries we ship plus the upstream LGPL v3 license text
+RUN <<EOF
+set -eux
+mkdir -p /ffmpeg-out
+tar -xJf /tmp/ffmpeg.tar.xz -C /ffmpeg-out --strip-components=1 --wildcards \
+	'*/bin/ffmpeg' '*/bin/ffprobe' '*/LICENSE.txt'
+EOF
+
+# (3) written offer for the corresponding source (LGPL v3 distribution requirement)
+RUN cat > /ffmpeg-out/SOURCE.txt <<EOF
+This image bundles FFmpeg (ffmpeg, ffprobe) ${FFMPEG_VERSION}, prebuilt by BtbN/FFmpeg-Builds.
+It is an LGPL v3 build (configured without --enable-gpl / --enable-nonfree), used as a
+standalone program invoked via subprocess -- it is not linked into Misskey, and FFmpeg
+was not modified.
+
+License:                 see LICENSE.txt in this directory (GNU LGPL v3).
+Corresponding source:    https://github.com/FFmpeg/FFmpeg/releases/tag/${FFMPEG_VERSION}
+Build recipe / config:   https://github.com/BtbN/FFmpeg-Builds
+Upstream binary release: ${FFMPEG_BASE_URL}
+EOF
 
 FROM --platform=$TARGETPLATFORM node:${NODE_VERSION}-slim AS runner
 
 ARG UID="991"
 ARG GID="991"
 
-ENV PNPM_CONFIG_VERIFY_DEPS_BEFORE_RUN=false
-
 RUN apt-get update \
 	&& apt-get install -y --no-install-recommends \
-	ffmpeg tini curl libjemalloc-dev libjemalloc2 \
+	tini libjemalloc2 ca-certificates \
 	&& ln -s /usr/lib/$(uname -m)-linux-gnu/libjemalloc.so.2 /usr/local/lib/libjemalloc.so \
 	&& groupadd -g "${GID}" misskey \
 	&& useradd -l -u "${UID}" -g "${GID}" -m -d /misskey misskey \
@@ -82,24 +138,31 @@ RUN apt-get update \
 	&& apt-get clean \
 	&& rm -rf /var/lib/apt/lists
 
-# add package.json to add pnpm
-COPY ./package.json ./package.json
-RUN node -e "console.log(JSON.parse(require('node:fs').readFileSync('./package.json')).packageManager)" | xargs npm install -g
+# static ffmpeg/ffprobe on PATH; fluent-ffmpeg discovers them there (root-owned, world-executable)
+COPY --from=ffmpeg-fetch /ffmpeg-out/bin/ffmpeg /ffmpeg-out/bin/ffprobe /usr/local/bin/
+# LGPL v3 license text + written offer for corresponding source (mirrors distro /usr/share/doc/<pkg>)
+COPY --from=ffmpeg-fetch /ffmpeg-out/LICENSE.txt /ffmpeg-out/SOURCE.txt /usr/local/share/doc/ffmpeg/
 
 USER misskey
 WORKDIR /misskey
 
-COPY --chown=misskey:misskey --from=target-builder /misskey/node_modules ./node_modules
-COPY --chown=misskey:misskey --from=target-builder /misskey/packages/backend/node_modules ./packages/backend/node_modules
-COPY --chown=misskey:misskey --from=target-builder /misskey/packages/misskey-js/node_modules ./packages/misskey-js/node_modules
+COPY --chown=misskey:misskey --from=target-builder /misskey-deploy/node_modules ./node_modules
+COPY --chown=misskey:misskey --from=target-builder /misskey-deploy/node_modules/@misskey-dev/emoji-assets ./packages/backend/node_modules/@misskey-dev/emoji-assets
 COPY --chown=misskey:misskey --from=native-builder /misskey/built ./built
-COPY --chown=misskey:misskey --from=native-builder /misskey/packages/misskey-js/built ./packages/misskey-js/built
 COPY --chown=misskey:misskey --from=native-builder /misskey/packages/backend/built ./packages/backend/built
-COPY --chown=misskey:misskey --from=native-builder /misskey/packages/i18n/built ./packages/i18n/built
-COPY --chown=misskey:misskey . ./
+COPY --chown=misskey:misskey package.json ./package.json
+COPY --chown=misskey:misskey packages/backend/package.json ./packages/backend/package.json
+COPY --chown=misskey:misskey packages/backend/scripts ./packages/backend/scripts
+COPY --chown=misskey:misskey packages/backend/migration ./packages/backend/migration
+COPY --chown=misskey:misskey packages/backend/assets ./packages/backend/assets
+COPY --chown=misskey:misskey packages/backend/src/server/assets ./packages/backend/src/server/file/assets
+COPY --chown=misskey:misskey packages/frontend/assets ./packages/frontend/assets
+COPY --chown=misskey:misskey packages/backend/ormconfig.js ./packages/backend/ormconfig.js
+COPY --chown=misskey:misskey healthcheck.mjs ./healthcheck.mjs
 
 ENV LD_PRELOAD=/usr/local/lib/libjemalloc.so
 ENV NODE_ENV=production
-HEALTHCHECK --interval=5s --retries=20 CMD ["/bin/bash", "/misskey/healthcheck.sh"]
+ENV NPM_CONFIG_UPDATE_NOTIFIER=false
+HEALTHCHECK --interval=5s --retries=20 CMD ["node", "/misskey/healthcheck.mjs"]
 ENTRYPOINT ["/usr/bin/tini", "--"]
-CMD ["pnpm", "run", "migrateandstart"]
+CMD ["/bin/sh", "-c", "cd /misskey/packages/backend && node ./scripts/compile_config.js && npm exec -- typeorm migration:run -d ormconfig.js && node ./built/entry.js"]

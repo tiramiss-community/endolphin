@@ -51,6 +51,12 @@ jobs:
         submodules: true
     - name: Setup pnpm
       uses: pnpm/action-setup@v6.0.3
+    # start:test の動画サムネ生成（VideoProcessingService = サーバ ffmpeg）には ffmpeg/ffprobe が要る。
+    # GH の ubuntu runner には ffmpeg が無いため、backend / federation テストと同様に明示インストールする
+    # （media-upload spec の動画サムネ検証がこれに依存。Docker ランタイムは別途 ffmpeg を同梱している）。
+    - name: Install FFmpeg
+      run: |
+        sudo apt install -y ffmpeg
     # NOTE: Playwright 1.61 の TS loader が .node-version (22.15.0) で
     # `context.conditions?.includes is not a function` を起こしテスト収集に失敗するため、
     # e2e ジョブのみ Node を固定する（fork 所有ジョブ・他ジョブの .node-version には影響しない）。

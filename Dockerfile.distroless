@@ -1,0 +1,229 @@
+# syntax = docker/dockerfile:1.23
+# Distroless-based image (experimental). Debian-based Dockerfile is the stable default.
+
+ARG NODE_VERSION=22.22.2-bookworm
+ARG DISTROLESS_NODE_IMAGE=gcr.io/distroless/nodejs22-debian12:latest
+
+# build assets & compile TypeScript
+
+FROM --platform=$BUILDPLATFORM node:${NODE_VERSION} AS native-builder
+
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+	--mount=type=cache,target=/var/lib/apt,sharing=locked \
+	rm -f /etc/apt/apt.conf.d/docker-clean \
+	; echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache \
+	&& apt-get update \
+	&& apt-get install -yqq --no-install-recommends \
+	build-essential
+
+WORKDIR /misskey
+
+COPY --link ["pnpm-lock.yaml", "pnpm-workspace.yaml", "package.json", "./"]
+COPY --link ["scripts", "./scripts"]
+COPY --link ["patches", "./patches"]
+COPY --link ["packages/backend/package.json", "./packages/backend/"]
+COPY --link ["packages/frontend-shared/package.json", "./packages/frontend-shared/"]
+COPY --link ["packages/frontend/package.json", "./packages/frontend/"]
+COPY --link ["packages/frontend-builder/package.json", "./packages/frontend-builder/"]
+COPY --link ["packages/i18n/package.json", "./packages/i18n/"]
+COPY --link ["packages/icons-subsetter/package.json", "./packages/icons-subsetter/"]
+COPY --link ["packages/sw/package.json", "./packages/sw/"]
+COPY --link ["packages/misskey-js/package.json", "./packages/misskey-js/"]
+
+ARG NODE_ENV=production
+
+RUN node -e "console.log(JSON.parse(require('node:fs').readFileSync('./package.json')).packageManager)" | xargs npm install -g
+
+RUN --mount=type=cache,target=/root/.local/share/pnpm/store,sharing=locked \
+	pnpm i --frozen-lockfile --aggregate-output
+
+COPY --link . ./
+
+RUN pnpm build
+
+# build native dependencies for target platform
+
+FROM node:${NODE_VERSION} AS target-builder
+
+RUN apt-get update \
+	&& apt-get install -yqq --no-install-recommends \
+	build-essential
+
+WORKDIR /misskey
+
+COPY --link ["pnpm-lock.yaml", "pnpm-workspace.yaml", "package.json", "./"]
+COPY --link ["scripts", "./scripts"]
+COPY --link ["patches", "./patches"]
+COPY --link ["packages/backend/package.json", "./packages/backend/"]
+COPY --link ["packages/i18n/package.json", "./packages/i18n/"]
+COPY --link ["packages/misskey-js/package.json", "./packages/misskey-js/"]
+
+ARG NODE_ENV=production
+
+RUN node -e "console.log(JSON.parse(require('node:fs').readFileSync('./package.json')).packageManager)" | xargs npm install -g
+
+COPY --link --from=native-builder /misskey/packages/i18n/built ./packages/i18n/built
+COPY --link --from=native-builder /misskey/packages/misskey-js/built ./packages/misskey-js/built
+
+RUN --mount=type=cache,target=/root/.local/share/pnpm/store,sharing=locked \
+	pnpm --filter backend deploy --prod --legacy /misskey-deploy
+
+# Drop build-time-only tooling that pnpm links into the @sentry tree via @sentry/server-utils'
+# optional `vite` peer (present only because the workspace ships a frontend vite). None of these
+# are required by the backend runtime, so removing them before the lddtree native-addon scan also
+# keeps their *.node binaries out of /runtime-root.
+RUN cd /misskey-deploy/node_modules \
+	&& for pkg in vite rolldown @rolldown+binding-linux-x64-gnu esbuild @esbuild+linux-x64 \
+		sass sass-embedded sass-embedded-linux-x64 lightningcss lightningcss-linux-x64-gnu; do \
+		rm -rf .pnpm/${pkg}@* ; \
+	done \
+	&& find . -xtype l -delete
+
+RUN <<'EOF'
+cat > /misskey-docker-entrypoint.mjs <<'ENTRYPOINT'
+import { spawn } from 'node:child_process';
+import process from 'node:process';
+
+const backendDir = '/misskey/packages/backend';
+const node = '/nodejs/bin/node';
+const signalExitCode = new Map([
+	['SIGHUP', 129],
+	['SIGINT', 130],
+	['SIGTERM', 143],
+]);
+
+function run(args) {
+	return new Promise((resolve, reject) => {
+		const child = spawn(node, args, {
+			cwd: backendDir,
+			env: process.env,
+			stdio: 'inherit',
+		});
+
+		child.on('error', reject);
+		child.on('exit', (code, signal) => {
+			if (code === 0) {
+				resolve();
+			} else {
+				reject(new Error(`${args.join(' ')} failed with ${signal ?? code}`));
+			}
+		});
+	});
+}
+
+await run(['./scripts/compile_config.js']);
+await run(['/misskey/node_modules/typeorm/cli.js', 'migration:run', '-d', 'ormconfig.js']);
+
+const server = spawn(node, ['./built/entry.js'], {
+	cwd: backendDir,
+	env: process.env,
+	stdio: 'inherit',
+});
+
+for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP']) {
+	process.on(signal, () => {
+		server.kill(signal);
+	});
+}
+
+server.on('error', error => {
+	console.error(error);
+	process.exit(1);
+});
+
+server.on('exit', (code, signal) => {
+	process.exit(code ?? signalExitCode.get(signal) ?? 1);
+});
+ENTRYPOINT
+EOF
+
+# gather runtime files not provided by the distroless base
+
+FROM target-builder AS runtime-deps
+
+ARG UID="991"
+ARG GID="991"
+
+# (1) tools: ffmpeg, jemalloc, pax-utils (lddtree for dependency tracing)
+RUN apt-get update \
+	&& apt-get install -yqq --no-install-recommends \
+	ca-certificates ffmpeg libjemalloc2 pax-utils \
+	&& rm -rf /var/lib/apt/lists/*
+
+# (2) static layout: directory skeleton, passwd/group entries, jemalloc symlink, ffmpeg data
+RUN arch="$(uname -m)-linux-gnu" \
+	&& mkdir -p /runtime-root/etc /runtime-root/usr/local/lib /runtime-root/usr/share \
+	&& printf 'misskey:x:%s:%s:misskey:/misskey:/sbin/nologin\n' "${UID}" "${GID}" > /runtime-root/etc/passwd \
+	&& printf 'misskey:x:%s:\n' "${GID}" > /runtime-root/etc/group \
+	&& cp -a /usr/share/ffmpeg /runtime-root/usr/share/ffmpeg \
+	&& ln -s "/usr/lib/${arch}/libjemalloc.so.2" /runtime-root/usr/local/lib/libjemalloc.so
+
+# (3) build target list: ffmpeg binaries + jemalloc + native Node.js addons (*.node)
+RUN arch="$(uname -m)-linux-gnu" \
+	&& find /misskey-deploy/node_modules -type f -name '*.node' > /tmp/native-addons \
+	&& { \
+		printf '%s\n' /usr/bin/ffmpeg /usr/bin/ffprobe "/usr/lib/${arch}/libjemalloc.so.2"; \
+		cat /tmp/native-addons; \
+	} | sort -u > /tmp/runtime-targets
+
+# (4) copy each target binary/addon into runtime-root.
+# -L for parity with step 5: today these targets (ffmpeg/ffprobe binaries, *.node addons,
+# libjemalloc.so.2) are regular files, but should the distro ship one as a SONAME symlink the
+# real file would otherwise be left out (dangling). -L copies the real content under the name.
+RUN while read -r path; do \
+		mkdir -p "/runtime-root$(dirname "$path")"; \
+		cp -aL "$path" "/runtime-root$path"; \
+	done < /tmp/runtime-targets
+
+# (5) trace shared-library deps of each target via lddtree, copy only system libs.
+# -L dereferences symlinks: lddtree reports each lib by its SONAME symlink (e.g.
+# libavdevice.so.59 -> libavdevice.so.59.7.100), and a plain `cp -a` would copy the symlink
+# without its target, leaving a dangling link the loader cannot open. -L copies the real file
+# content under the SONAME name (what the loader resolves NEEDED entries to).
+RUN while read -r path; do \
+		lddtree -l "$path"; \
+	done < /tmp/runtime-targets \
+	| sort -u \
+	| while read -r lib; do \
+		case "$lib" in \
+			/lib/*|/lib64/*|/usr/lib/*) \
+				mkdir -p "/runtime-root$(dirname "$lib")"; \
+				cp -aL "$lib" "/runtime-root$lib"; \
+				;; \
+		esac; \
+	done
+
+# (6) drop setuid/setgid bits from everything collected
+RUN find /runtime-root -type f -perm /u+s -exec chmod u-s {} \; \
+	&& find /runtime-root -type f -perm /g+s -exec chmod g-s {} \;
+
+FROM ${DISTROLESS_NODE_IMAGE} AS runner
+
+ARG UID="991"
+ARG GID="991"
+
+USER ${UID}:${GID}
+WORKDIR /misskey
+
+COPY --from=runtime-deps /runtime-root /
+COPY --chown=${UID}:${GID} --from=target-builder /misskey-deploy/node_modules ./node_modules
+COPY --chown=${UID}:${GID} --from=target-builder /misskey-deploy/node_modules/@misskey-dev/emoji-assets ./packages/backend/node_modules/@misskey-dev/emoji-assets
+COPY --chown=${UID}:${GID} --from=native-builder /misskey/built ./built
+COPY --chown=${UID}:${GID} --from=native-builder /misskey/packages/backend/built ./packages/backend/built
+COPY --chown=${UID}:${GID} package.json ./package.json
+COPY --chown=${UID}:${GID} packages/backend/package.json ./packages/backend/package.json
+COPY --chown=${UID}:${GID} packages/backend/scripts ./packages/backend/scripts
+COPY --chown=${UID}:${GID} packages/backend/migration ./packages/backend/migration
+COPY --chown=${UID}:${GID} packages/backend/assets ./packages/backend/assets
+COPY --chown=${UID}:${GID} packages/backend/src/server/assets ./packages/backend/src/server/file/assets
+COPY --chown=${UID}:${GID} packages/frontend/assets ./packages/frontend/assets
+COPY --chown=${UID}:${GID} packages/backend/ormconfig.js ./packages/backend/ormconfig.js
+COPY --chown=${UID}:${GID} healthcheck.mjs ./healthcheck.mjs
+COPY --chown=${UID}:${GID} --from=target-builder /misskey-docker-entrypoint.mjs ./docker-entrypoint.mjs
+
+ENV HOME=/misskey
+ENV LD_PRELOAD=/usr/local/lib/libjemalloc.so
+ENV NODE_ENV=production
+ENV NPM_CONFIG_UPDATE_NOTIFIER=false
+HEALTHCHECK --interval=5s --retries=20 CMD ["/nodejs/bin/node", "/misskey/healthcheck.mjs"]
+ENTRYPOINT ["/nodejs/bin/node", "/misskey/docker-entrypoint.mjs"]

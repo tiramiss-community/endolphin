@@ -1,9 +1,11 @@
 .autogen
+.git
 .github
 .travis
 .vscode
 .config
 Dockerfile
+Dockerfile.distroless
 build/
 built/
 src-js/
