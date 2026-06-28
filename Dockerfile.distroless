@@ -166,13 +166,20 @@ RUN arch="$(uname -m)-linux-gnu" \
 		cat /tmp/native-addons; \
 	} | sort -u > /tmp/runtime-targets
 
-# (4) copy each target binary/addon into runtime-root
+# (4) copy each target binary/addon into runtime-root.
+# -L for parity with step 5: today these targets (ffmpeg/ffprobe binaries, *.node addons,
+# libjemalloc.so.2) are regular files, but should the distro ship one as a SONAME symlink the
+# real file would otherwise be left out (dangling). -L copies the real content under the name.
 RUN while read -r path; do \
 		mkdir -p "/runtime-root$(dirname "$path")"; \
-		cp -a "$path" "/runtime-root$path"; \
+		cp -aL "$path" "/runtime-root$path"; \
 	done < /tmp/runtime-targets
 
-# (5) trace shared-library deps of each target via lddtree, copy only system libs
+# (5) trace shared-library deps of each target via lddtree, copy only system libs.
+# -L dereferences symlinks: lddtree reports each lib by its SONAME symlink (e.g.
+# libavdevice.so.59 -> libavdevice.so.59.7.100), and a plain `cp -a` would copy the symlink
+# without its target, leaving a dangling link the loader cannot open. -L copies the real file
+# content under the SONAME name (what the loader resolves NEEDED entries to).
 RUN while read -r path; do \
 		lddtree -l "$path"; \
 	done < /tmp/runtime-targets \
@@ -181,7 +188,7 @@ RUN while read -r path; do \
 		case "$lib" in \
 			/lib/*|/lib64/*|/usr/lib/*) \
 				mkdir -p "/runtime-root$(dirname "$lib")"; \
-				cp -a "$lib" "/runtime-root$lib"; \
+				cp -aL "$lib" "/runtime-root$lib"; \
 				;; \
 		esac; \
 	done
