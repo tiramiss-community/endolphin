@@ -24,6 +24,7 @@ endolphin 固有の変更を記録する。本家 Misskey 由来の変更は ups
 - Feat: upstream 追従を自動化する運用スクリプト群 `.endolphin/`（ルート workspace から独立した tsx + yargs CLI）を追加。`sync-upstream`（upstream develop を `origin/upstream/develop` ブランチへミラー）と `fetch-releases`（upstream の正式リリースのタグを `upstream/<version>` として origin に作成。例 `upstream/2026.6.0`）を 6 時間ごとに実行する GitHub Actions ワークフロー `endolphin-sync-upstream.yml` を同梱（upstream は readonly、書き込みは origin のみ）。旧 `scripts/sync-upstream.mjs`（手動 basedOn 追跡ヘルパ）は撤去し fork-policy / README の追従手順を更新
 
 ### Client
+- Fix: 非ログイン時トップページのスクロールバーがドラッグ操作でスクロールできない問題を修正
 - Remove: About ページのイースターエッグ（ロゴクリックで絵文字が物理落下するアニメーション）と物理エンジン `matter-js` を削除
 - Remove: お気に入り (favorites) 機能の UI（一覧ページ / ナビ項目 / ノートメニュー / データエクスポート項目）を削除
 - Remove: ギャラリー (gallery) 機能の UI（一覧/投稿/編集ページ / ナビ項目 / プロフィールタブ）を削除
