@@ -32,6 +32,9 @@ cypress/videos
 /playwright/test-results/
 /playwright/playwright-report/
 
+# endolphin ops scripts — standalone workspace under .endolphin/
+/.endolphin/node_modules/
+
 # Coverage
 coverage
 

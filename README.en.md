@@ -28,7 +28,7 @@ Entities, database tables, migrations, and JSON schemas also remain, preserving 
 ## Development and upstream following
 
 Endolphin continuously incorporates Misskey from misskey-dev/misskey.
-Check the current following status with `node scripts/sync-upstream.mjs --check`; see the [upstream following workflow in the fork policy](docs/endolphin/fork-policy.md#upstream-追従フロー) for the complete process.
+The upstream develop mirror (`origin/upstream/develop`) and release tags (`upstream/*`) are fetched automatically by the operations scripts under `.endolphin/`. See the [upstream following workflow in the fork policy](docs/endolphin/fork-policy.md#upstream-追従フロー) for the complete process.
 
 Endolphin-specific history is recorded in [CHANGELOG-endolphin.md](CHANGELOG-endolphin.md). See the upstream-owned `CHANGELOG.md` for changes inherited from misskey-dev/misskey.
 

@@ -1,0 +1,12 @@
+# endolphin fork 所有: .endolphin/ を独立した pnpm workspace root にするための境界ファイル。
+# これがあることで `pnpm` はルート（misskey 本体）の pnpm-workspace.yaml まで遡らず、
+# .endolphin/ 単体で install/lockfile を完結させる（root package.json を汚さない）。
+# docs/endolphin/fork-policy.md 参照。
+packages: []
+# supply-chain 緩和（root と同じ 7 日遅延）と exact 固定を引き継ぐ。
+minimumReleaseAge: 10080 # 7 days
+saveExact: true
+engineStrict: true
+# tsx の依存 esbuild はプラットフォーム別バイナリ配置に postinstall を使うため許可する。
+allowBuilds:
+  esbuild: true
