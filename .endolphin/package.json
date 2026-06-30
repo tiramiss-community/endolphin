@@ -1,0 +1,27 @@
+{
+	"name": "@endolphin/ops",
+	"version": "0.0.0",
+	"private": true,
+	"type": "module",
+	"description": "endolphin fork 所有の運用スクリプト群 (upstream 追従の自動化)。ルート workspace から独立したスタンドアロンプロジェクト。docs/endolphin/fork-policy.md 参照。",
+	"packageManager": "pnpm@11.8.0",
+	"engines": {
+		"node": ">=22.22.0"
+	},
+	"scripts": {
+		"ops": "tsx src/cli.ts",
+		"sync-upstream": "tsx src/cli.ts sync-upstream",
+		"fetch-releases": "tsx src/cli.ts fetch-releases",
+		"typecheck": "tsc --noEmit"
+	},
+	"dependencies": {
+		"octokit": "5.0.5",
+		"yargs": "18.0.0"
+	},
+	"devDependencies": {
+		"@types/node": "26.0.0",
+		"@types/yargs": "17.0.35",
+		"tsx": "4.22.4",
+		"typescript": "6.0.3"
+	}
+}

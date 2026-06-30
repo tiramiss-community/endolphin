@@ -88,8 +88,7 @@ git merge <x.y.z>                                  # 例: git merge 2026.6.1
 #    削除済み機能に upstream が触れている場合は本 fork の削除方針に従って drop する
 #    → 「機能セット / 削除実行方式」節・feature-inventory.md を参照
 
-# 5. basedOn 更新
-node scripts/sync-upstream.mjs --set-base
+# 5. basedOn 更新（endolphin.json の basedOn を、取り込んだ upstream version に手動で書き換える）
 
 # 6. 検証
 pnpm lint
@@ -99,11 +98,24 @@ pnpm --filter backend test:fed
 #    PR タイトル例: "sync: upstream 2026.6.1"
 ```
 
-### 状況確認コマンド
+### upstream の取得（自動ミラー）
+
+upstream の追従元は `.endolphin/` の運用スクリプトが自動で origin 上に用意する（`.github/workflows/endolphin-sync-upstream.yml` が 6 時間ごとに実行。実装は `.endolphin/src/`）:
+
+- `origin/upstream/develop`: upstream develop のミラーブランチ（`sync-upstream`）。
+- `upstream/<version>` タグ: upstream の正式リリースのタグを `upstream/` プレフィクス付きで作成（`fetch-releases`、例 `upstream/2026.6.0`）。fork 独自タグとは prefix で分離。
+
+ローカルで状況確認・取得する場合:
 
 ```bash
-# 現在の basedOn と upstream 最新タグとの差を確認
-node scripts/sync-upstream.mjs --check
+# ミラーとリリースタグを origin から取得
+git fetch origin 'refs/heads/upstream/develop' 'refs/tags/upstream/*:refs/tags/upstream/*'
+
+# 取り込み済みの upstream リリース一覧
+git tag -l 'upstream/*' | sort -V | tail
+
+# 現在の basedOn と upstream develop ミラーの差（何コミット遅れているか）
+git rev-list --count "$(node -e "process.stdout.write(require('./endolphin.json').upstream.basedOn)")"..origin/upstream/develop 2>/dev/null || true
 ```
 
 ### develop ブランチから直接取り込む場合

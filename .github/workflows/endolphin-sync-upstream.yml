@@ -1,0 +1,81 @@
+name: endolphin-sync-upstream
+
+on:
+  workflow_dispatch:
+  schedule:
+    # 6 時間ごと (UTC)。upstream develop ミラーとリリースタグ取得をまとめて実行する。
+    - cron: "0 */6 * * *"
+
+concurrency:
+  group: endolphin-sync-upstream
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      # 手動実行 (workflow_dispatch) のみ実行者が管理者かを確認する。
+      # scheduled 実行では actor が bot になり得るためスキップする。
+      - name: Ensure admin actor (manual dispatch only)
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const actor = context.actor;
+            const { data } = await github.rest.repos.getCollaboratorPermissionLevel({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              username: actor,
+            });
+            if (data.permission !== "admin") {
+              core.setFailed(`このワークフローはリポジトリ管理者のみ実行できます (権限: ${data.permission}).`);
+            }
+
+      # 通常の GITHUB_TOKEN では他ワークフローを trigger できないため専用の GitHub App トークンを使う。
+      - name: Create GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.WORKFLOW_APP_ID }}
+          private-key: ${{ secrets.WORKFLOW_APP_KEY }}
+
+      - name: Checkout
+        uses: actions/checkout@v6.0.2
+        with:
+          fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6.0.3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6.4.0
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+          cache-dependency-path: .endolphin/pnpm-lock.yaml
+
+      - name: Install dependencies
+        working-directory: .endolphin
+        run: pnpm install --frozen-lockfile
+
+      - name: Configure git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Sync upstream develop -> origin/upstream/develop
+        working-directory: .endolphin
+        env:
+          CI: "true"
+        run: pnpm run sync-upstream
+
+      - name: Fetch upstream release tags -> origin upstream/*
+        working-directory: .endolphin
+        env:
+          CI: "true"
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: pnpm run fetch-releases

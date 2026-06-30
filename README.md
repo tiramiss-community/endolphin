@@ -28,7 +28,7 @@ entity、テーブル、migration、JSON schema も温存するため、既存�
 ## 開発・追従
 
 Endolphin は misskey-dev/misskey を継続的に取り込みます。
-追従状況は `node scripts/sync-upstream.mjs --check` で確認できます。詳しいフローは [fork policy の upstream 追従フロー](docs/endolphin/fork-policy.md#upstream-追従フロー) を参照してください。
+upstream develop のミラー（`origin/upstream/develop`）とリリースタグ（`upstream/*`）は `.endolphin/` の運用スクリプトが自動取得します。詳しいフローは [fork policy の upstream 追従フロー](docs/endolphin/fork-policy.md#upstream-追従フロー) を参照してください。
 
 Endolphin 固有の変更履歴は [CHANGELOG-endolphin.md](CHANGELOG-endolphin.md) に記録しています。misskey-dev/misskey 由来の変更は `CHANGELOG.md` を参照してください。
 
