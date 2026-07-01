@@ -266,9 +266,11 @@ export function loadConfig(): Config {
 	const scheme = url.protocol.replace(/:$/, '');
 	const wsScheme = scheme.replace('http', 'ws');
 
-	const dbDb = config.db.db ?? process.env.DATABASE_DB ?? '';
 	const dbUser = config.db.user ?? process.env.DATABASE_USER ?? '';
 	const dbPass = config.db.pass ?? process.env.DATABASE_PASSWORD ?? '';
+	// test/setup.unit.parallel-db.ts がテストファイルごとに作成した使い捨て DB の名前を注入するための上書き。
+	// 他の DATABASE_* と異なり env 側を優先する (test.yml 側は固定値のため、そちらを優先すると上書きできない)。
+	const dbDb = process.env.TEST_PARALLEL_DB_NAME ?? config.db.db ?? process.env.DATABASE_DB ?? '';
 
 	const externalMediaProxy = config.mediaProxy ?
 		config.mediaProxy.endsWith('/') ? config.mediaProxy.substring(0, config.mediaProxy.length - 1) : config.mediaProxy
@@ -357,12 +359,15 @@ function tryCreateUrl(url: string) {
 }
 
 export function convertRedisOptions(options: RedisOptionsSource, host: string): RedisOptions & RedisOptionsSource & { prefix: string } {
+	// test/setup.unit.parallel-db.ts がテストファイルごとに一意な prefix を注入するための上書き。
+	// db.db と同じ理由で env 側を優先する (test.yml は prefix 未設定=host にフォールバックする固定値のため)。
+	const prefix = process.env.TEST_PARALLEL_REDIS_PREFIX ?? options.prefix ?? host;
 	return {
 		...options,
 		password: options.pass,
-		prefix: options.prefix ?? host,
+		prefix,
 		family: options.family ?? 0,
-		keyPrefix: `${options.prefix ?? host}:`,
+		keyPrefix: `${prefix}:`,
 		db: options.db ?? 0,
 	};
 }
