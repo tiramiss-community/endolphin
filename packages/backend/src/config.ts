@@ -195,11 +195,11 @@ export type Config = {
 	mediaProxy: string;
 	externalMediaProxyEnabled: boolean;
 	videoThumbnailGenerator: string | null;
-	redis: RedisOptions & RedisOptionsSource;
-	redisForPubsub: RedisOptions & RedisOptionsSource;
-	redisForJobQueue: RedisOptions & RedisOptionsSource;
-	redisForTimelines: RedisOptions & RedisOptionsSource;
-	redisForReactions: RedisOptions & RedisOptionsSource;
+	redis: RedisOptions & RedisOptionsSource & { prefix: string };
+	redisForPubsub: RedisOptions & RedisOptionsSource & { prefix: string };
+	redisForJobQueue: RedisOptions & RedisOptionsSource & { prefix: string };
+	redisForTimelines: RedisOptions & RedisOptionsSource & { prefix: string };
+	redisForReactions: RedisOptions & RedisOptionsSource & { prefix: string };
 	sentryForBackend: { options: Partial<Sentry.NodeOptions>; enableNodeProfiling: boolean; } | undefined;
 	sentryForFrontend: {
 		options: Partial<SentryVue.BrowserOptions> & { dsn: string };
@@ -214,6 +214,14 @@ export type Config = {
 };
 
 export type FulltextSearchProvider = 'sqlLike' | 'sqlPgroonga' | 'meilisearch';
+
+/**
+ * Redis pub/sub のチャンネル名。publish 側 (GlobalEventService) と subscribe 側 (GlobalModule)
+ * で個別に config.host 等を参照すると将来的に食い違いうるため、単一の関数に集約する。
+ */
+export function getRedisPubsubChannel(config: Pick<Config, 'redisForPubsub'>): string {
+	return config.redisForPubsub.prefix;
+}
 
 const _filename = fileURLToPath(import.meta.url);
 const _dirname = dirname(_filename);
@@ -348,7 +356,7 @@ function tryCreateUrl(url: string) {
 	}
 }
 
-function convertRedisOptions(options: RedisOptionsSource, host: string): RedisOptions & RedisOptionsSource {
+export function convertRedisOptions(options: RedisOptionsSource, host: string): RedisOptions & RedisOptionsSource & { prefix: string } {
 	return {
 		...options,
 		password: options.pass,
