@@ -34,12 +34,19 @@ import { NotificationService } from '@/core/NotificationService.js';
 import { RoleCondFormulaValue } from '@/models/Role.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 
+function clearAllKvCacheEntries(cache: { entries: IterableIterator<[string, unknown]>; delete(key: string): void }) {
+	for (const [key] of [...cache.entries]) {
+		cache.delete(key);
+	}
+}
+
 describe('RoleService', () => {
 	let app: TestingModule;
 	let roleService: RoleService;
 	let usersRepository: UsersRepository;
 	let rolesRepository: RolesRepository;
 	let roleAssignmentsRepository: RoleAssignmentsRepository;
+	let cacheService: CacheService;
 	let meta: Mocked<MiMeta>;
 	let notificationService: Mocked<NotificationService>;
 	let clock: lolex.Clock;
@@ -139,6 +146,7 @@ describe('RoleService', () => {
 		usersRepository = app.get<UsersRepository>(DI.usersRepository);
 		rolesRepository = app.get<RolesRepository>(DI.rolesRepository);
 		roleAssignmentsRepository = app.get<RoleAssignmentsRepository>(DI.roleAssignmentsRepository);
+		cacheService = app.get<CacheService>(CacheService);
 
 		meta = app.get<MiMeta>(DI.meta) as Mocked<MiMeta>;
 		notificationService = app.get<NotificationService>(NotificationService) as Mocked<NotificationService>;
@@ -163,10 +171,12 @@ describe('RoleService', () => {
 		clock.uninstall();
 		vi.clearAllMocks();
 
-		// GlobalModule の $meta / RoleService の rolesCache はモジュール単位のシングルトンなので、テスト間で明示的にリセットする
+		// GlobalModule の $meta / RoleService・CacheService の内部キャッシュはモジュール単位のシングルトンなので、テスト間で明示的にリセットする
 		meta.rootUserId = null;
 		meta.policies = {};
 		(roleService as any).rolesCache.delete();
+		clearAllKvCacheEntries((roleService as any).roleAssignmentByUserIdCache);
+		clearAllKvCacheEntries(cacheService.userByIdCache);
 
 		/**
 		 * Delete meta and roleAssignment first to avoid deadlock due to schema dependencies

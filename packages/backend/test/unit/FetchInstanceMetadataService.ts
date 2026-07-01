@@ -87,6 +87,9 @@ describe('FetchInstanceMetadataService', () => {
 
 	afterEach(async () => {
 		vi.clearAllMocks();
+
+		// tryLock で獲得したロックが早期returnで解除されず残るテストがあるため、テスト間に漏れないよう明示的に解除する
+		await fetchInstanceMetadataService.unlock('example.com');
 	});
 
 	test('Lock and update', async () => {
