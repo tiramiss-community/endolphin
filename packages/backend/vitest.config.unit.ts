@@ -1,4 +1,4 @@
-import { cpus } from 'node:os';
+import { availableParallelism } from 'node:os';
 import { defineConfig, mergeConfig } from 'vitest/config';
 import { baseConfig } from './vitest.config.js';
 
@@ -7,8 +7,9 @@ import { baseConfig } from './vitest.config.js';
 // スキーマ同期 (dropSchema + synchronize、100超のテーブルに対する重い DDL) を
 // 同時に捌ける本数には上限がある。実測では 24 本以上の同時実行で "out of shared memory"
 // が散発したため 8 を上限とする一方、GitHub Actions 等のコア数が少ないマシンでは
-// 8 に固定してしまうとCPUを食い潰すため、実コア数も超えないようにする。
-const maxWorkers = Math.max(1, Math.min(cpus().length, 8));
+// 8 に固定してしまうとCPUを食い潰すため、利用可能な並列度も超えないようにする。
+// cpus().length はコンテナのcgroup CPU制限を考慮しないため availableParallelism() を使う。
+const maxWorkers = Math.max(1, Math.min(availableParallelism(), 8));
 
 export default mergeConfig(
 	baseConfig,
