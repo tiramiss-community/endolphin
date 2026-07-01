@@ -1,22 +1,6 @@
 import { defineConfig, mergeConfig } from 'vitest/config';
 import { baseConfig } from './vitest.config.js';
 
-// pglite (WASM Postgres) 上で実行すると失敗するテスト。pglite プロジェクトからは除外し、
-// unit:shared-pg で従来通り実 Postgres に接続して直列実行する。
-// - chart.ts / RoleService.ts / CheckModeratorsActivityProcessorService.ts:
-//   @sinonjs/fake-timers の shouldClearNativeTimers:true でネイティブタイマーを潰すため、
-//   内部でネイティブタイマーに依存する pglite のクエリ実行がフェイクタイマー適用中に
-//   永久にハングする。
-// - activitypub.ts: fake-timers を使わないが、実 Postgres では常に成功する一方 pglite では
-//   単体実行でも非決定的に失敗する (実測: 5 回中 5 回失敗、失敗箇所は毎回異なる)。
-//   複数エンティティ/JSONB を含む複雑な INSERT 経路で pglite 側に未特定の不具合がある。
-const SHARED_PG_ONLY_TESTS = [
-	'test/unit/chart.ts',
-	'test/unit/RoleService.ts',
-	'test/unit/queue/processors/CheckModeratorsActivityProcessorService.ts',
-	'test/unit/activitypub.ts',
-];
-
 export default mergeConfig(
 	baseConfig,
 	defineConfig({
@@ -27,27 +11,19 @@ export default mergeConfig(
 				{
 					extends: true,
 					test: {
-						name: 'unit:pglite',
+						name: 'unit',
 						include: ['test/unit/**/*.ts', 'src/**/*.test.ts'],
-						exclude: [
-							'node_modules', 'dist', 'test/unit/pure/**/*.ts',
-							...SHARED_PG_ONLY_TESTS,
-						],
-						// ファイルごとに独立した pglite インスタンス (test/setup.unit.pglite.ts) を
+						exclude: ['node_modules', 'dist', 'test/unit/pure/**/*.ts'],
+						// ファイルごとに使い捨ての Postgres データベース (test/setup.unit.parallel-db.ts) を
 						// 接続先として注入するため、共有DBのスキーマ競合を気にせず並列実行できる。
-						setupFiles: ['./test/setup.unit.pglite.ts'],
-						maxWorkers: '100%',
-					},
-				},
-				{
-					extends: true,
-					test: {
-						// pglite では安定して動かないテスト (理由は SHARED_PG_ONLY_TESTS の定義を参照) を
-						// 従来通り共有の実 Postgres に接続し直列実行する。
-						name: 'unit:shared-pg',
-						include: SHARED_PG_ONLY_TESTS,
-						exclude: ['node_modules', 'dist'],
-						maxWorkers: 1,
+						setupFiles: ['./test/setup.unit.parallel-db.ts'],
+						// Postgres のロックテーブルはデータベースをまたいでクラスタ全体で共有される固定サイズの
+						// 共有メモリ (max_locks_per_transaction * max_connections) であり、DBを分けても
+						// スキーマ同期 (dropSchema + synchronize、100超のテーブルに対する重い DDL) を
+						// 同時に捌ける本数には上限がある。実測では 24 本以上の同時実行で "out of shared memory"
+						// が散発したため、確実に安全な本数に固定している (Vitest の maxWorkers: '100%' は
+						// 開発機のコア数に応じて実測より大きくなりうるため使わない)。
+						maxWorkers: 8,
 					},
 				},
 				{
@@ -56,10 +32,12 @@ export default mergeConfig(
 						name: 'unit:pure',
 						include: ['test/unit/pure/**/*.ts'],
 						exclude: ['node_modules', 'dist'],
-						// extends: true で maxWorkers を省略するとルート設定の
-						// maxWorkers: 1 をそのまま継承してしまうため、Vitestの
-						// コア数ベースの並列実行に相当する値を明示する必要がある。
-						maxWorkers: '100%',
+						// DB接続を伴わないため本来は 'unit' より並列度を上げられるが、Vitest は
+						// 同じ sequence.groupOrder (未指定時は共通) のプロジェクト間で maxWorkers が
+						// 異なることを許容しない ("Provide unique 'sequence.groupOrder'" エラー)。
+						// groupOrder を分けると 'unit' と直列実行になり合計時間が伸びるため、
+						// 'unit' と同じ値に揃えて並行実行を優先する。
+						maxWorkers: 8,
 					},
 				},
 			],

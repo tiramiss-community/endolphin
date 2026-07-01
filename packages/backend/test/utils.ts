@@ -603,7 +603,6 @@ export async function initTestDb(justBorrow = false, initEntities?: any[]) {
 		username: config.db.user,
 		password: config.db.pass,
 		database: config.db.db,
-		extra: config.db.extra,
 		synchronize: !justBorrow,
 		dropSchema: !justBorrow,
 		entities: initEntities ?? entities,

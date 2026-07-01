@@ -357,12 +357,6 @@ importers:
         specifier: 3.0.2
         version: 3.0.2
     devDependencies:
-      '@electric-sql/pglite':
-        specifier: 0.5.3
-        version: 0.5.3
-      '@electric-sql/pglite-socket':
-        specifier: 0.2.5
-        version: 0.2.5(@electric-sql/pglite-age@0.0.4(@electric-sql/pglite@0.5.3))(@electric-sql/pglite-pg_hashids@0.0.4(@electric-sql/pglite@0.5.3))(@electric-sql/pglite-pg_ivm@0.0.4(@electric-sql/pglite@0.5.3))(@electric-sql/pglite-pg_textsearch@0.0.5(@electric-sql/pglite@0.5.3))(@electric-sql/pglite-pg_uuidv7@0.0.4(@electric-sql/pglite@0.5.3))(@electric-sql/pglite-pgtap@0.0.4(@electric-sql/pglite@0.5.3))(@electric-sql/pglite-pgvector@0.0.4(@electric-sql/pglite@0.5.3))(@electric-sql/pglite@0.5.3)
       '@kitajs/ts-html-plugin':
         specifier: 4.1.4
         version: 4.1.4(@kitajs/html@4.2.13)(typescript@5.9.3)
@@ -1419,57 +1413,6 @@ packages:
   '@digitalbazaar/http-client@4.3.0':
     resolution: {integrity: sha512-6lMpxpt9BOmqHKGs9Xm6DP4LlZTBFer/ZjHvP3FcW3IaUWYIWC7dw5RFZnvw4fP57kAVcm1dp3IF+Y50qhBvAw==}
     engines: {node: '>=18.0'}
-
-  '@electric-sql/pglite-age@0.0.4':
-    resolution: {integrity: sha512-n8lzYvxKHQbwdaj2/8NLSRRS5dABXZ6e83kd35iTcYMW7fc2oCxvkzFhYa+2XY25UYWfSMH6IYRSXqMKa5pkog==}
-    peerDependencies:
-      '@electric-sql/pglite': 0.5.3
-
-  '@electric-sql/pglite-pg_hashids@0.0.4':
-    resolution: {integrity: sha512-4c9/dtj2bswRVDDpsTcQw65f1hvHWvDlL1oHlqQCSfuKHgdaJGu80tz8RrEAlg1qG8JYUwQsAVafJsAy+CSSUw==}
-    peerDependencies:
-      '@electric-sql/pglite': 0.5.3
-
-  '@electric-sql/pglite-pg_ivm@0.0.4':
-    resolution: {integrity: sha512-dbf9QMAs57qRR28GdUhVG//a6lYd2KCPEVcwPuMenvm6DKQmCAPeqWv9eMh+vnsO2jSqAJCnixI6Mg1CWVtCVQ==}
-    peerDependencies:
-      '@electric-sql/pglite': 0.5.3
-
-  '@electric-sql/pglite-pg_textsearch@0.0.5':
-    resolution: {integrity: sha512-IFdxEafb60QWOiwlXrmG/QeUpw4vyEqRczEtRbUGj3SwXLuxgaJjSzl2ePoZpjReSkKN8EV8u3oAh7fCBsFHvQ==}
-    peerDependencies:
-      '@electric-sql/pglite': 0.5.3
-
-  '@electric-sql/pglite-pg_uuidv7@0.0.4':
-    resolution: {integrity: sha512-bgLxaqzGA+SNI6c6qsFffnBl7/nTzjPJ6Vo78JLyZUWp8GSWHhC7X4G8XBw2w9xX3YOh6seDqotuB8we2HFyRw==}
-    peerDependencies:
-      '@electric-sql/pglite': 0.5.3
-
-  '@electric-sql/pglite-pgtap@0.0.4':
-    resolution: {integrity: sha512-aJx4PJ+FYa6q4wvR3L9EKWyZqH+m4Ef1MBIAOHVKuMr5+TFXBva9DUt271EeB4iGoDo8QKsjjJz+wixr8Nbgww==}
-    peerDependencies:
-      '@electric-sql/pglite': 0.5.3
-
-  '@electric-sql/pglite-pgvector@0.0.4':
-    resolution: {integrity: sha512-oHOQlYMzgxmoFWRbKhhoV0UNfoNUdbTHUD/z/nujr8LrUe4HdiSAUY2+Mv+Z033hZO9UWqOuj3Be2KztwK79ow==}
-    peerDependencies:
-      '@electric-sql/pglite': 0.5.3
-
-  '@electric-sql/pglite-socket@0.2.5':
-    resolution: {integrity: sha512-ukyDKIDKg5+0dx2mcRPoHh7xuOw5Hc9YbxYKF/wcmhJtesYCZYsyIGP1/H0RAXBPmFC0ZYx94USQansB9hOyig==}
-    hasBin: true
-    peerDependencies:
-      '@electric-sql/pglite': 0.5.3
-      '@electric-sql/pglite-age': 0.0.4
-      '@electric-sql/pglite-pg_hashids': 0.0.4
-      '@electric-sql/pglite-pg_ivm': 0.0.4
-      '@electric-sql/pglite-pg_textsearch': 0.0.5
-      '@electric-sql/pglite-pg_uuidv7': 0.0.4
-      '@electric-sql/pglite-pgtap': 0.0.4
-      '@electric-sql/pglite-pgvector': 0.0.4
-
-  '@electric-sql/pglite@0.5.3':
-    resolution: {integrity: sha512-iTTYbA5Uesrl+N7zss0J5LopT7KE4j9aymYo+EZZh+rZbARQCUQOs+n2pay64JRUpc3fCkpfrniTNJnvYzOE+g==}
 
   '@emnapi/core@1.11.1':
     resolution: {integrity: sha512-RSvbQmHzdKzNsLYa/wHrbc3KN4sYLKAdPZxqiM2HATqv/SBk2/ENSHpvXGaLOMcsAyz0poEGqkmmKYG3OWiJEQ==}
@@ -9872,47 +9815,6 @@ snapshots:
     dependencies:
       ky: 1.14.3
       undici: 6.25.0
-
-  '@electric-sql/pglite-age@0.0.4(@electric-sql/pglite@0.5.3)':
-    dependencies:
-      '@electric-sql/pglite': 0.5.3
-
-  '@electric-sql/pglite-pg_hashids@0.0.4(@electric-sql/pglite@0.5.3)':
-    dependencies:
-      '@electric-sql/pglite': 0.5.3
-
-  '@electric-sql/pglite-pg_ivm@0.0.4(@electric-sql/pglite@0.5.3)':
-    dependencies:
-      '@electric-sql/pglite': 0.5.3
-
-  '@electric-sql/pglite-pg_textsearch@0.0.5(@electric-sql/pglite@0.5.3)':
-    dependencies:
-      '@electric-sql/pglite': 0.5.3
-
-  '@electric-sql/pglite-pg_uuidv7@0.0.4(@electric-sql/pglite@0.5.3)':
-    dependencies:
-      '@electric-sql/pglite': 0.5.3
-
-  '@electric-sql/pglite-pgtap@0.0.4(@electric-sql/pglite@0.5.3)':
-    dependencies:
-      '@electric-sql/pglite': 0.5.3
-
-  '@electric-sql/pglite-pgvector@0.0.4(@electric-sql/pglite@0.5.3)':
-    dependencies:
-      '@electric-sql/pglite': 0.5.3
-
-  '@electric-sql/pglite-socket@0.2.5(@electric-sql/pglite-age@0.0.4(@electric-sql/pglite@0.5.3))(@electric-sql/pglite-pg_hashids@0.0.4(@electric-sql/pglite@0.5.3))(@electric-sql/pglite-pg_ivm@0.0.4(@electric-sql/pglite@0.5.3))(@electric-sql/pglite-pg_textsearch@0.0.5(@electric-sql/pglite@0.5.3))(@electric-sql/pglite-pg_uuidv7@0.0.4(@electric-sql/pglite@0.5.3))(@electric-sql/pglite-pgtap@0.0.4(@electric-sql/pglite@0.5.3))(@electric-sql/pglite-pgvector@0.0.4(@electric-sql/pglite@0.5.3))(@electric-sql/pglite@0.5.3)':
-    dependencies:
-      '@electric-sql/pglite': 0.5.3
-      '@electric-sql/pglite-age': 0.0.4(@electric-sql/pglite@0.5.3)
-      '@electric-sql/pglite-pg_hashids': 0.0.4(@electric-sql/pglite@0.5.3)
-      '@electric-sql/pglite-pg_ivm': 0.0.4(@electric-sql/pglite@0.5.3)
-      '@electric-sql/pglite-pg_textsearch': 0.0.5(@electric-sql/pglite@0.5.3)
-      '@electric-sql/pglite-pg_uuidv7': 0.0.4(@electric-sql/pglite@0.5.3)
-      '@electric-sql/pglite-pgtap': 0.0.4(@electric-sql/pglite@0.5.3)
-      '@electric-sql/pglite-pgvector': 0.0.4(@electric-sql/pglite@0.5.3)
-
-  '@electric-sql/pglite@0.5.3': {}
 
   '@emnapi/core@1.11.1':
     dependencies:

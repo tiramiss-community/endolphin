@@ -38,7 +38,7 @@ type Source = {
 		user?: string;
 		pass?: string;
 		disableCache?: boolean;
-		extra?: { [x: string]: string | number };
+		extra?: { [x: string]: string };
 	};
 	dbReplications?: boolean;
 	dbSlaves?: {
@@ -132,7 +132,7 @@ export type Config = {
 		user: string;
 		pass: string;
 		disableCache?: boolean;
-		extra?: { [x: string]: string | number };
+		extra?: { [x: string]: string };
 	};
 	dbReplications: boolean | undefined;
 	dbSlaves: {
@@ -266,17 +266,11 @@ export function loadConfig(): Config {
 	const scheme = url.protocol.replace(/:$/, '');
 	const wsScheme = scheme.replace('http', 'ws');
 
-	const dbDb = config.db.db ?? process.env.DATABASE_DB ?? '';
 	const dbUser = config.db.user ?? process.env.DATABASE_USER ?? '';
 	const dbPass = config.db.pass ?? process.env.DATABASE_PASSWORD ?? '';
-	// test/setup.unit.pglite.ts がテストファイルごとに独立した pglite インスタンスの接続先を注入するための上書き。
+	// test/setup.unit.parallel-db.ts がテストファイルごとに作成した使い捨て DB の名前を注入するための上書き。
 	// 他の DATABASE_* と異なり env 側を優先する (test.yml 側は固定値のため、そちらを優先すると上書きできない)。
-	const dbHost = process.env.TEST_PGLITE_DB_HOST ?? config.db.host;
-	const dbPort = process.env.TEST_PGLITE_DB_PORT ? Number(process.env.TEST_PGLITE_DB_PORT) : config.db.port;
-	// pglite は本質的に単一接続の Postgres 実装 (pglite-socket は複数コネクションを多重化しているだけ)。
-	// プールが複数の物理コネクションを同時に使うと、拡張クエリプロトコルの Parse/Bind が
-	// コネクション間で混線してパラメータが破損する (実測済み)。pglite 接続時はプールを 1 本に固定する。
-	const dbExtra = process.env.TEST_PGLITE_DB_HOST ? { ...config.db.extra, max: 1 } : config.db.extra;
+	const dbDb = process.env.TEST_PARALLEL_DB_NAME ?? config.db.db ?? process.env.DATABASE_DB ?? '';
 
 	const externalMediaProxy = config.mediaProxy ?
 		config.mediaProxy.endsWith('/') ? config.mediaProxy.substring(0, config.mediaProxy.length - 1) : config.mediaProxy
@@ -310,7 +304,7 @@ export function loadConfig(): Config {
 		apiUrl: `${scheme}://${host}/api`,
 		authUrl: `${scheme}://${host}/auth`,
 		driveUrl: `${scheme}://${host}/files`,
-		db: { ...config.db, host: dbHost, port: dbPort, extra: dbExtra, db: dbDb, user: dbUser, pass: dbPass },
+		db: { ...config.db, db: dbDb, user: dbUser, pass: dbPass },
 		dbReplications: config.dbReplications,
 		dbSlaves: config.dbSlaves,
 		fulltextSearch: config.fulltextSearch,
@@ -365,9 +359,9 @@ function tryCreateUrl(url: string) {
 }
 
 export function convertRedisOptions(options: RedisOptionsSource, host: string): RedisOptions & RedisOptionsSource & { prefix: string } {
-	// test/setup.unit.pglite.ts がテストファイルごとに一意な prefix を注入するための上書き。
-	// db.host/port と同じ理由で env 側を優先する (test.yml は prefix 未設定=host にフォールバックする固定値のため)。
-	const prefix = process.env.TEST_PGLITE_REDIS_PREFIX ?? options.prefix ?? host;
+	// test/setup.unit.parallel-db.ts がテストファイルごとに一意な prefix を注入するための上書き。
+	// db.db と同じ理由で env 側を優先する (test.yml は prefix 未設定=host にフォールバックする固定値のため)。
+	const prefix = process.env.TEST_PARALLEL_REDIS_PREFIX ?? options.prefix ?? host;
 	return {
 		...options,
 		password: options.pass,
