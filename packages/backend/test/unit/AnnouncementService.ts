@@ -5,7 +5,7 @@
 
 process.env.NODE_ENV = 'test';
 
-import { describe, expect, beforeEach, afterEach, test, vi } from 'vitest';
+import { describe, expect, beforeAll, afterAll, afterEach, test, vi } from 'vitest';
 import type { Mocked } from 'vitest';
 import { mockDeep } from 'vitest-mock-extended';
 import { Test } from '@nestjs/testing';
@@ -59,7 +59,7 @@ describe('AnnouncementService', () => {
 			.then(x => announcementsRepository.findOneByOrFail(x.identifiers[0]));
 	}
 
-	beforeEach(async () => {
+	beforeAll(async () => {
 		app = await Test.createTestingModule({
 			imports: [
 				GlobalModule,
@@ -97,15 +97,19 @@ describe('AnnouncementService', () => {
 		moderationLogService = app.get<ModerationLogService>(ModerationLogService) as Mocked<ModerationLogService>;
 	});
 
+	afterAll(async () => {
+		await app.close();
+	});
+
 	afterEach(async () => {
+		vi.clearAllMocks();
+
 		await Promise.all([
 			app.get(DI.metasRepository).createQueryBuilder().delete().execute(),
 			usersRepository.createQueryBuilder().delete().execute(),
 			announcementsRepository.createQueryBuilder().delete().execute(),
 			announcementReadsRepository.createQueryBuilder().delete().execute(),
 		]);
-
-		await app.close();
 	});
 
 	describe('getUnreadAnnouncements', () => {
