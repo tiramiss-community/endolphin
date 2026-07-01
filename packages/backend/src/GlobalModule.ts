@@ -9,7 +9,7 @@ import { DataSource } from 'typeorm';
 import { Meilisearch } from 'meilisearch';
 import { MiMeta } from '@/models/Meta.js';
 import { DI } from './di-symbols.js';
-import { Config, loadConfig } from './config.js';
+import { Config, getRedisPubsubChannel, loadConfig } from './config.js';
 import { createPostgresDataSource } from './postgres.js';
 import { RepositoryModule } from './models/RepositoryModule.js';
 import { allSettled } from './misc/promise-tracker.js';
@@ -75,7 +75,7 @@ const $redisForSub: Provider = {
 	provide: DI.redisForSub,
 	useFactory: (config: Config) => {
 		const redis = new Redis.Redis(config.redisForPubsub);
-		redis.subscribe(config.redisForPubsub.prefix);
+		redis.subscribe(getRedisPubsubChannel(config));
 		return redis;
 	},
 	inject: [DI.config],

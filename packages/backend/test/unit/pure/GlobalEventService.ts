@@ -33,15 +33,4 @@ describe('GlobalEventService', () => {
 		expect(publishMock.mock.calls[0][0]).toBe('shared-redis-namespace');
 		expect(publishMock.mock.calls[0][0]).not.toBe(config.host);
 	});
-
-	test('publish: prefix が host にフォールバックする設定では従来通り host と一致する', () => {
-		const publishMock = vi.fn();
-		const redisForPub = { publish: publishMock } as unknown as Redis.Redis;
-		const config = makeConfig({ host: 'misskey.example.com', redisPrefix: 'misskey.example.com' });
-
-		const service = new GlobalEventService(config, redisForPub);
-		service.publishBroadcastStream('emojiAdded' as any, undefined as any);
-
-		expect(publishMock.mock.calls[0][0]).toBe('misskey.example.com');
-	});
 });

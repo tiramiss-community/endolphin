@@ -22,7 +22,7 @@ import type { MiMeta } from '@/models/Meta.js';
 import { MiAvatarDecoration, MiChatMessage, MiChatRoom, MiRole, MiRoleAssignment } from '@/models/_.js';
 import type { Packed } from '@/misc/json-schema.js';
 import { DI } from '@/di-symbols.js';
-import type { Config } from '@/config.js';
+import { getRedisPubsubChannel, type Config } from '@/config.js';
 import { bindThis } from '@/decorators.js';
 import { Serialized } from '@/types.js';
 import type Emitter from 'strict-event-emitter-types';
@@ -314,7 +314,7 @@ export class GlobalEventService {
 			{ type: type, body: null } :
 			{ type: type, body: value };
 
-		this.redisForPub.publish(this.config.redisForPubsub.prefix, JSON.stringify({
+		this.redisForPub.publish(getRedisPubsubChannel(this.config), JSON.stringify({
 			channel: channel,
 			message: message,
 		}));
