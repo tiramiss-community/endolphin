@@ -146,6 +146,8 @@
 		"xev": "3.0.2"
 	},
 	"devDependencies": {
+		"@electric-sql/pglite": "0.5.3",
+		"@electric-sql/pglite-socket": "0.2.5",
 		"@kitajs/ts-html-plugin": "4.1.4",
 		"@nestjs/platform-express": "11.1.27",
 		"@rollup/plugin-esm-shim": "0.1.8",
