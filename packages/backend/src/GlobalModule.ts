@@ -75,7 +75,7 @@ const $redisForSub: Provider = {
 	provide: DI.redisForSub,
 	useFactory: (config: Config) => {
 		const redis = new Redis.Redis(config.redisForPubsub);
-		redis.subscribe(config.host);
+		redis.subscribe(config.redisForPubsub.prefix);
 		return redis;
 	},
 	inject: [DI.config],

@@ -314,7 +314,7 @@ export class GlobalEventService {
 			{ type: type, body: null } :
 			{ type: type, body: value };
 
-		this.redisForPub.publish(this.config.host, JSON.stringify({
+		this.redisForPub.publish(this.config.redisForPubsub.prefix, JSON.stringify({
 			channel: channel,
 			message: message,
 		}));

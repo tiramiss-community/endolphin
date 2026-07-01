@@ -195,11 +195,11 @@ export type Config = {
 	mediaProxy: string;
 	externalMediaProxyEnabled: boolean;
 	videoThumbnailGenerator: string | null;
-	redis: RedisOptions & RedisOptionsSource;
-	redisForPubsub: RedisOptions & RedisOptionsSource;
-	redisForJobQueue: RedisOptions & RedisOptionsSource;
-	redisForTimelines: RedisOptions & RedisOptionsSource;
-	redisForReactions: RedisOptions & RedisOptionsSource;
+	redis: RedisOptions & RedisOptionsSource & { prefix: string };
+	redisForPubsub: RedisOptions & RedisOptionsSource & { prefix: string };
+	redisForJobQueue: RedisOptions & RedisOptionsSource & { prefix: string };
+	redisForTimelines: RedisOptions & RedisOptionsSource & { prefix: string };
+	redisForReactions: RedisOptions & RedisOptionsSource & { prefix: string };
 	sentryForBackend: { options: Partial<Sentry.NodeOptions>; enableNodeProfiling: boolean; } | undefined;
 	sentryForFrontend: {
 		options: Partial<SentryVue.BrowserOptions> & { dsn: string };
@@ -348,7 +348,7 @@ function tryCreateUrl(url: string) {
 	}
 }
 
-function convertRedisOptions(options: RedisOptionsSource, host: string): RedisOptions & RedisOptionsSource {
+function convertRedisOptions(options: RedisOptionsSource, host: string): RedisOptions & RedisOptionsSource & { prefix: string } {
 	return {
 		...options,
 		password: options.pass,
