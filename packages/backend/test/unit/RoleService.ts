@@ -6,7 +6,7 @@
 process.env.NODE_ENV = 'test';
 
 import { setTimeout } from 'node:timers/promises';
-import { describe, beforeEach, afterEach, test, expect, vi } from 'vitest';
+import { describe, beforeAll, afterAll, beforeEach, afterEach, test, expect, vi } from 'vitest';
 import type { Mocked } from 'vitest';
 import { mockDeep } from 'vitest-mock-extended';
 import { Test } from '@nestjs/testing';
@@ -100,14 +100,7 @@ describe('RoleService', () => {
 		return genAidx(Date.now());
 	}
 
-	beforeEach(async () => {
-		clock = lolex.install({
-			// https://github.com/sinonjs/sinon/issues/2620
-			toFake: Object.keys(lolex.timers).filter((key) => !['nextTick', 'queueMicrotask'].includes(key)) as lolex.FakeMethod[],
-			now: new Date(),
-			shouldClearNativeTimers: true,
-		});
-
+	beforeAll(async () => {
 		app = await Test.createTestingModule({
 			imports: [
 				GlobalModule,
@@ -153,8 +146,27 @@ describe('RoleService', () => {
 		await roleService.onModuleInit();
 	});
 
+	afterAll(async () => {
+		await app.close();
+	});
+
+	beforeEach(async () => {
+		clock = lolex.install({
+			// https://github.com/sinonjs/sinon/issues/2620
+			toFake: Object.keys(lolex.timers).filter((key) => !['nextTick', 'queueMicrotask'].includes(key)) as lolex.FakeMethod[],
+			now: new Date(),
+			shouldClearNativeTimers: true,
+		});
+	});
+
 	afterEach(async () => {
 		clock.uninstall();
+		vi.clearAllMocks();
+
+		// GlobalModule の $meta / RoleService の rolesCache はモジュール単位のシングルトンなので、テスト間で明示的にリセットする
+		meta.rootUserId = null;
+		meta.policies = {};
+		(roleService as any).rolesCache.delete();
 
 		/**
 		 * Delete meta and roleAssignment first to avoid deadlock due to schema dependencies
@@ -166,8 +178,6 @@ describe('RoleService', () => {
 			usersRepository.createQueryBuilder().delete().execute(),
 			rolesRepository.createQueryBuilder().delete().execute(),
 		]);
-
-		await app.close();
 	});
 
 	describe('getUserAssigns', () => {

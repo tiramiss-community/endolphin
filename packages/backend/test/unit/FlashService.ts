@@ -5,7 +5,7 @@
  */
 
 import { Test, TestingModule } from '@nestjs/testing';
-import { afterAll, afterEach, beforeEach, describe, expect, test } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, test } from 'vitest';
 import { FlashService } from '@/core/FlashService.js';
 import { IdService } from '@/core/IdService.js';
 import { FlashLikesRepository, FlashsRepository, MiFlash, MiUser, UserProfilesRepository, UsersRepository } from '@/models/_.js';
@@ -64,7 +64,7 @@ describe('FlashService', () => {
 
 	// --------------------------------------------------------------------------------------
 
-	beforeEach(async () => {
+	beforeAll(async () => {
 		app = await Test.createTestingModule({
 			imports: [
 				GlobalModule,
@@ -83,7 +83,9 @@ describe('FlashService', () => {
 		usersRepository = app.get(DI.usersRepository);
 		userProfilesRepository = app.get(DI.userProfilesRepository);
 		idService = app.get(IdService);
+	});
 
+	beforeEach(async () => {
 		root = await createUser({ username: 'root', usernameLower: 'root' });
 		alice = await createUser({ username: 'alice', usernameLower: 'alice' });
 		bob = await createUser({ username: 'bob', usernameLower: 'bob' });

@@ -6,7 +6,7 @@
 process.env.NODE_ENV = 'test';
 
 import * as assert from 'assert';
-import { describe, beforeEach, afterEach, afterAll, test } from 'vitest';
+import { describe, beforeAll, beforeEach, afterEach, afterAll, test } from 'vitest';
 import type { Mocked } from 'vitest';
 import * as lolex from '@sinonjs/fake-timers';
 import { DataSource } from 'typeorm';
@@ -25,7 +25,14 @@ import Logger from '@/logger.js';
 describe('Chart', () => {
 	const config = loadConfig();
 
-	let db: DataSource | undefined;
+	const entities = [
+		TestChartEntity.hour, TestChartEntity.day,
+		TestGroupedChartEntity.hour, TestGroupedChartEntity.day,
+		TestUniqueChartEntity.hour, TestUniqueChartEntity.day,
+		TestIntersectionChartEntity.hour, TestIntersectionChartEntity.day,
+	];
+
+	let db: DataSource;
 	let redisClient = {
 		set: () => Promise.resolve('OK'),
 		get: () => Promise.resolve(null),
@@ -37,9 +44,7 @@ describe('Chart', () => {
 	let testIntersectionChart: TestIntersectionChart;
 	let clock: lolex.Clock;
 
-	beforeEach(async () => {
-		if (db) db.destroy();
-
+	beforeAll(async () => {
 		db = new DataSource({
 			type: 'postgres',
 			host: config.db.host,
@@ -54,17 +59,18 @@ describe('Chart', () => {
 			synchronize: true,
 			dropSchema: true,
 			maxQueryExecutionTime: 300,
-			entities: [
-				TestChartEntity.hour, TestChartEntity.day,
-				TestGroupedChartEntity.hour, TestGroupedChartEntity.day,
-				TestUniqueChartEntity.hour, TestUniqueChartEntity.day,
-				TestIntersectionChartEntity.hour, TestIntersectionChartEntity.day,
-			],
+			entities,
 			migrations: ['../../migration/*.js'],
 		});
 
 		await db.initialize();
+	});
 
+	afterAll(async () => {
+		if (db) await db.destroy();
+	});
+
+	beforeEach(async () => {
 		const logger = new Logger('chart'); // TODO: モックにする
 		testChart = new TestChart(db, redisClient, logger);
 		testGroupedChart = new TestGroupedChart(db, redisClient, logger);
@@ -79,12 +85,10 @@ describe('Chart', () => {
 		});
 	});
 
-	afterEach(() => {
+	afterEach(async () => {
 		clock.uninstall();
-	});
 
-	afterAll(async () => {
-		if (db) await db.destroy();
+		await Promise.all(entities.map(entity => db.getRepository(entity).createQueryBuilder().delete().execute()));
 	});
 
 	test('Can updates', async () => {

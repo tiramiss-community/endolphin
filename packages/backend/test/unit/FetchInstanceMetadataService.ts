@@ -5,7 +5,7 @@
 
 process.env.NODE_ENV = 'test';
 
-import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, test, vi } from 'vitest';
 import type { Mocked } from 'vitest';
 import { Test } from '@nestjs/testing';
 import { Redis } from 'ioredis';
@@ -46,7 +46,7 @@ describe('FetchInstanceMetadataService', () => {
 	let httpRequestService: Mocked<HttpRequestService>;
 	let redisClient: Mocked<Redis>;
 
-	beforeEach(async () => {
+	beforeAll(async () => {
 		app = await Test
 			.createTestingModule({
 				imports: [
@@ -77,11 +77,15 @@ describe('FetchInstanceMetadataService', () => {
 		federatedInstanceService = app.get<FederatedInstanceService>(FederatedInstanceService) as Mocked<FederatedInstanceService>;
 		redisClient = app.get<Redis>(DI.redis) as Mocked<Redis>;
 		httpRequestService = app.get<HttpRequestService>(HttpRequestService) as Mocked<HttpRequestService>;
+
+		// GlobalModule が DI.redis の実プロバイダを export しているため、上記 useMocker の DI.redis 分岐は呼ばれず実 Redis に接続する
+	});
+
+	afterAll(async () => {
+		await app.close();
 	});
 
 	afterEach(async () => {
-		await app.close();
-		vi.resetAllMocks();
 		vi.clearAllMocks();
 	});
 
