@@ -21,6 +21,8 @@ function genHost() {
 	return randomString() + '.example.com';
 }
 
+const waitForPushToTlOptions = { timeout: 3000, interval: 25 };
+
 let redisForTimelines: Redis;
 let root: SignupResponse;
 
@@ -113,7 +115,7 @@ describe('Timelines', () => {
 
 					assert.strictEqual(res.body.some(note => note.id === aliceNote.id), true);
 					assert.strictEqual(res.body.find(note => note.id === aliceNote.id)?.text, 'hi');
-				}, { timeout: 3000, interval: 25 });
+				}, waitForPushToTlOptions);
 			});
 
 			test('フォローしているユーザーのノートが含まれる', async () => {
@@ -128,7 +130,7 @@ describe('Timelines', () => {
 
 					assert.strictEqual(res.body.some(note => note.id === bobNote.id), true);
 					assert.strictEqual(res.body.some(note => note.id === carolNote.id), false);
-				}, { timeout: 3000, interval: 25 });
+				}, waitForPushToTlOptions);
 			});
 
 			test('フォローしているユーザーの visibility: followers なノートが含まれる', async () => {
@@ -144,7 +146,7 @@ describe('Timelines', () => {
 					assert.strictEqual(res.body.some(note => note.id === bobNote.id), true);
 					assert.strictEqual(res.body.find(note => note.id === bobNote.id)?.text, 'hi');
 					assert.strictEqual(res.body.some(note => note.id === carolNote.id), false);
-				}, { timeout: 3000, interval: 25 });
+				}, waitForPushToTlOptions);
 			});
 
 			test('withReplies: false でフォローしているユーザーの他人への返信が含まれない', async () => {
@@ -177,7 +179,7 @@ describe('Timelines', () => {
 
 					assert.strictEqual(res.body.some(note => note.id === bobNote.id), true);
 					assert.strictEqual(res.body.some(note => note.id === carolNote.id), false);
-				}, { timeout: 3000, interval: 25 });
+				}, waitForPushToTlOptions);
 			});
 
 			test('withReplies: true でフォローしているユーザーの他人へのDM返信が含まれない', async () => {
@@ -231,7 +233,7 @@ describe('Timelines', () => {
 					assert.strictEqual(res.body.some(note => note.id === bobNote.id), true);
 					assert.strictEqual(res.body.some(note => note.id === carolNote.id), true);
 					assert.strictEqual(res.body.find(note => note.id === carolNote.id)?.text, 'hi');
-				}, { timeout: 3000, interval: 25 });
+				}, waitForPushToTlOptions);
 			});
 
 			test('withReplies: true でフォローしているユーザーの自分の visibility: followers な投稿への返信が含まれる', async () => {
@@ -250,7 +252,7 @@ describe('Timelines', () => {
 
 					assert.strictEqual(res.body.some((note: any) => note.id === bobNote.id), true);
 					assert.strictEqual(res.body.some((note: any) => note.id === aliceNote.id), true);
-				}, { timeout: 3000, interval: 25 });
+				}, waitForPushToTlOptions);
 			});
 
 			test('withReplies: true でフォローしているユーザーの行った別のフォローしているユーザーの投稿への visibility: specified な返信が含まれない', async () => {
@@ -267,7 +269,7 @@ describe('Timelines', () => {
 
 					assert.strictEqual(res.body.some(note => note.id === bobNote.id), false);
 					assert.strictEqual(res.body.some(note => note.id === carolNote.id), true);
-				}, { timeout: 3000, interval: 25 });
+				}, waitForPushToTlOptions);
 			});
 
 			test('withReplies: false でフォローしているユーザーのそのユーザー自身への返信が含まれる', async () => {
@@ -282,7 +284,7 @@ describe('Timelines', () => {
 
 					assert.strictEqual(res.body.some(note => note.id === bobNote1.id), true);
 					assert.strictEqual(res.body.some(note => note.id === bobNote2.id), true);
-				}, { timeout: 3000, interval: 25 });
+				}, waitForPushToTlOptions);
 			});
 
 			test('withReplies: false でフォローしているユーザーからの自分への返信が含まれる', async () => {
@@ -299,7 +301,7 @@ describe('Timelines', () => {
 
 					assert.strictEqual(res.body.some(note => note.id === aliceNote.id), true);
 					assert.strictEqual(res.body.some(note => note.id === bobNote.id), true);
-				}, { timeout: 3000, interval: 25 });
+				}, waitForPushToTlOptions);
 			});
 
 			test('自分の他人への返信が含まれる', async () => {
@@ -315,7 +317,7 @@ describe('Timelines', () => {
 
 					assert.strictEqual(res.body.some(note => note.id === bobNote.id), false);
 					assert.strictEqual(res.body.some(note => note.id === aliceNote.id), true);
-				}, { timeout: 3000, interval: 25 });
+				}, waitForPushToTlOptions);
 			});
 
 			test('フォローしているユーザーの他人の投稿のリノートが含まれる', async () => {
@@ -330,7 +332,7 @@ describe('Timelines', () => {
 
 					assert.strictEqual(res.body.some(note => note.id === bobNote.id), true);
 					assert.strictEqual(res.body.some(note => note.id === carolNote.id), false);
-				}, { timeout: 3000, interval: 25 });
+				}, waitForPushToTlOptions);
 			});
 
 			test('[withRenotes: false] フォローしているユーザーの投稿が含まれる', async () => {
@@ -348,7 +350,7 @@ describe('Timelines', () => {
 
 					assert.strictEqual(res.body.some(note => note.id === bobNote.id), true);
 					assert.strictEqual(res.body.some(note => note.id === carolNote.id), false);
-				}, { timeout: 3000, interval: 25 });
+				}, waitForPushToTlOptions);
 			});
 
 			test('[withRenotes: false] フォローしているユーザーのファイルのみの投稿が含まれる', async () => {
@@ -370,7 +372,7 @@ describe('Timelines', () => {
 
 					assert.strictEqual(res.body.some(note => note.id === bobNote.id), true);
 					assert.strictEqual(res.body.some(note => note.id === carolNote.id), false);
-				}, { timeout: 3000, interval: 25 });
+				}, waitForPushToTlOptions);
 			});
 
 			test('[withRenotes: false] フォローしているユーザーの他人の投稿のリノートが含まれない', async () => {
@@ -404,7 +406,7 @@ describe('Timelines', () => {
 
 					assert.strictEqual(res.body.some(note => note.id === bobNote.id), true);
 					assert.strictEqual(res.body.some(note => note.id === carolNote.id), false);
-				}, { timeout: 3000, interval: 25 });
+				}, waitForPushToTlOptions);
 			});
 
 			test('フォローしているユーザーの他人への visibility: specified なノートが含まれない', async () => {
@@ -501,7 +503,7 @@ describe('Timelines', () => {
 					const res = await api('notes/timeline', { limit: 100 }, alice);
 
 					assert.strictEqual(res.body.some(note => note.id === bobNote.id), true);
-				}, { timeout: 3000, interval: 25 });
+				}, waitForPushToTlOptions);
 			});
 
 			test('フォローしているリモートユーザーの visibility: home なノートが含まれる', async () => {
@@ -516,7 +518,7 @@ describe('Timelines', () => {
 					const res = await api('notes/timeline', { limit: 100 }, alice);
 
 					assert.strictEqual(res.body.some(note => note.id === bobNote.id), true);
-				}, { timeout: 3000, interval: 25 });
+				}, waitForPushToTlOptions);
 			});
 
 			test('[withFiles: true] フォローしているユーザーのファイル付きノートのみ含まれる', async () => {
@@ -539,7 +541,7 @@ describe('Timelines', () => {
 					assert.strictEqual(res.body.some(note => note.id === bobNote2.id), true);
 					assert.strictEqual(res.body.some(note => note.id === carolNote1.id), false);
 					assert.strictEqual(res.body.some(note => note.id === carolNote2.id), false);
-				}, { timeout: 3000, interval: 25 });
+				}, waitForPushToTlOptions);
 			}, 1000 * 30);
 
 			test('フォローしているユーザーのチャンネル投稿が含まれない', async () => {
@@ -566,7 +568,7 @@ describe('Timelines', () => {
 
 					assert.strictEqual(res.body.some(note => note.id === aliceNote.id), true);
 					assert.strictEqual(res.body.find(note => note.id === aliceNote.id)?.text, 'hi');
-				}, { timeout: 3000, interval: 25 });
+				}, waitForPushToTlOptions);
 			});
 
 			test('フォローしているユーザーの自身を visibleUserIds に指定した visibility: specified なノートが含まれる', async () => {
@@ -580,7 +582,7 @@ describe('Timelines', () => {
 
 					assert.strictEqual(res.body.some(note => note.id === bobNote.id), true);
 					assert.strictEqual(res.body.find(note => note.id === bobNote.id)?.text, 'hi');
-				}, { timeout: 3000, interval: 25 });
+				}, waitForPushToTlOptions);
 			});
 
 			test('フォローしていないユーザーの自身を visibleUserIds に指定した visibility: specified なノートが含まれない', async () => {
@@ -621,7 +623,7 @@ describe('Timelines', () => {
 
 					assert.strictEqual(res.body.some(note => note.id === aliceNote.id), true);
 					assert.strictEqual(res.body.find(note => note.id === aliceNote.id)?.text, 'ok');
-				}, { timeout: 3000, interval: 25 });
+				}, waitForPushToTlOptions);
 			});
 
 			/* TODO
@@ -633,7 +635,7 @@ describe('Timelines', () => {
 					const res = await api('notes/timeline', { limit: 100 }, alice);
 					assert.strictEqual(res.body.some(note => note.id === bobNote.id), true);
 					assert.strictEqual(res.body.find(note => note.id === bobNote.id).text, 'ok');
-				}, { timeout: 3000, interval: 25 });
+				}, waitForPushToTlOptions);
 			});
 			*/
 
@@ -680,7 +682,7 @@ describe('Timelines', () => {
 						const res = await api('notes/timeline', { limit: 100 }, alice);
 
 						assert.strictEqual(res.body.some((note: any) => note.id === bobNote.id), true);
-					}, { timeout: 3000, interval: 25 });
+					}, waitForPushToTlOptions);
 				});
 
 				test('チャンネル未フォロー　＋　ユーザフォロー　＝　TLに流れない', async () => {
@@ -713,7 +715,7 @@ describe('Timelines', () => {
 						const res = await api('notes/timeline', { limit: 100 }, alice);
 
 						assert.strictEqual(res.body.some((note: any) => note.id === bobNote.id), true);
-					}, { timeout: 3000, interval: 25 });
+					}, waitForPushToTlOptions);
 				});
 
 				test('チャンネル未フォロー　＋　ユーザ未フォロー　＋　チャンネルミュート　＝　TLに流れない', async () => {
@@ -831,7 +833,7 @@ describe('Timelines', () => {
 						const res = await api('notes/timeline', { limit: 100 }, alice);
 
 						assert.strictEqual(res.body.some((note: any) => note.id === bobRenote.id), true);
-					}, { timeout: 3000, interval: 25 });
+					}, waitForPushToTlOptions);
 				});
 
 				test('[チャンネル外リノート] チャンネルフォロー　＋　ユーザフォロー　＝　TLに流れる', async () => {
@@ -849,7 +851,7 @@ describe('Timelines', () => {
 						const res = await api('notes/timeline', { limit: 100 }, alice);
 
 						assert.strictEqual(res.body.some((note: any) => note.id === bobRenote.id), true);
-					}, { timeout: 3000, interval: 25 });
+					}, waitForPushToTlOptions);
 				});
 
 				test('[チャンネル外リノート] チャンネル未フォロー　＋　ユーザ未フォロー　＋　チャンネルミュート　＝　TLに流れない', async () => {
@@ -948,7 +950,7 @@ describe('Timelines', () => {
 					} else {
 						assert.strictEqual(await redisForTimelines.exists(`list:homeTimeline:${bob.id}`), 0);
 					}
-				}, { timeout: 3000, interval: 25 });
+				}, waitForPushToTlOptions);
 			});
 
 			test('FTT: リモートユーザーの HTL にはプッシュされない', async () => {
@@ -964,7 +966,7 @@ describe('Timelines', () => {
 				await vi.waitFor(async () => {
 					// NOTE: notes/timeline だと DB へのフォールバックが効くので Redis を直接見て確かめる
 					assert.strictEqual(await redisForTimelines.exists(`list:homeTimeline:${bob.id}`), 0);
-				}, { timeout: 3000, interval: 25 });
+				}, waitForPushToTlOptions);
 			});
 
 			describe('凍結', () => {
@@ -986,7 +988,7 @@ describe('Timelines', () => {
 						assert.strictEqual(res.body.some(note => note.id === aliceNote.id), true);
 						assert.strictEqual(res.body.some(note => note.id === bobNote.id), true);
 						assert.strictEqual(res.body.some(note => note.id === carolNote.id), true);
-					}, { timeout: 3000, interval: 25 });
+					}, waitForPushToTlOptions);
 
 					await api('admin/suspend-user', { userId: carol.id }, root);
 					await setTimeout(100);
@@ -1035,7 +1037,7 @@ describe('Timelines', () => {
 						assert.strictEqual(res.body.some(note => note.id === carolNote.id), true);
 						assert.strictEqual(res.body.some(note => note.id === bobRenote.id), true);
 						assert.strictEqual(res.body.some(note => note.id === carolRenote.id), true);
-					}, { timeout: 3000, interval: 25 });
+					}, waitForPushToTlOptions);
 
 					await api('admin/suspend-user', { userId: carol.id }, root);
 					await setTimeout(100);
@@ -1084,7 +1086,7 @@ describe('Timelines', () => {
 						assert.strictEqual(res.body.some(note => note.id === aliceNote.id), true);
 						assert.strictEqual(res.body.some(note => note.id === bobNote.id), true);
 						assert.strictEqual(res.body.some(note => note.id === carolNote.id), true);
-					}, { timeout: 3000, interval: 25 });
+					}, waitForPushToTlOptions);
 
 					await api('admin/suspend-user', { userId: carol.id }, root);
 					await setTimeout(100);
@@ -1123,7 +1125,7 @@ describe('Timelines', () => {
 
 					assert.strictEqual(res.body.some(note => note.id === bobNote.id), true);
 					assert.strictEqual(res.body.some(note => note.id === carolNote.id), false);
-				}, { timeout: 3000, interval: 25 });
+				}, waitForPushToTlOptions);
 			});
 
 			test('他人の他人への返信が含まれない', async () => {
@@ -1137,7 +1139,7 @@ describe('Timelines', () => {
 
 					assert.strictEqual(res.body.some(note => note.id === bobNote.id), false);
 					assert.strictEqual(res.body.some(note => note.id === carolNote.id), true);
-				}, { timeout: 3000, interval: 25 });
+				}, waitForPushToTlOptions);
 			});
 
 			test('他人のその人自身への返信が含まれる', async () => {
@@ -1151,7 +1153,7 @@ describe('Timelines', () => {
 
 					assert.strictEqual(res.body.some(note => note.id === bobNote1.id), true);
 					assert.strictEqual(res.body.some(note => note.id === bobNote2.id), true);
-				}, { timeout: 3000, interval: 25 });
+				}, waitForPushToTlOptions);
 			});
 
 			test('チャンネル投稿が含まれない', async () => {
@@ -1192,7 +1194,7 @@ describe('Timelines', () => {
 
 					assert.strictEqual(res.body.some(note => note.id === bobNote.id), true);
 					assert.strictEqual(res.body.some(note => note.id === carolNote.id), false);
-				}, { timeout: 3000, interval: 25 });
+				}, waitForPushToTlOptions);
 			});
 
 			test('ミュートしているユーザーのノートが含まれない', async () => {
@@ -1207,7 +1209,7 @@ describe('Timelines', () => {
 
 					assert.strictEqual(res.body.some(note => note.id === bobNote.id), true);
 					assert.strictEqual(res.body.some(note => note.id === carolNote.id), false);
-				}, { timeout: 3000, interval: 25 });
+				}, waitForPushToTlOptions);
 			});
 
 			test('フォローしているユーザーが行ったミュートしているユーザーのリノートが含まれない', async () => {
@@ -1291,7 +1293,7 @@ describe('Timelines', () => {
 
 					assert.strictEqual(res.body.some(note => note.id === aliceNote.id), true);
 					assert.strictEqual(res.body.some(note => note.id === bobNote.id), true);
-				}, { timeout: 3000, interval: 25 });
+				}, waitForPushToTlOptions);
 			});
 
 			test('withReplies: false でフォローしていないユーザーからの自分への返信が含まれる', async () => {
@@ -1307,7 +1309,7 @@ describe('Timelines', () => {
 
 					assert.strictEqual(res.body.some(note => note.id === aliceNote.id), true);
 					assert.strictEqual(res.body.some(note => note.id === bobNote.id), true);
-				}, { timeout: 3000, interval: 25 });
+				}, waitForPushToTlOptions);
 			});
 
 			test('[withReplies: true] 他人の他人への返信が含まれる', async () => {
@@ -1320,7 +1322,7 @@ describe('Timelines', () => {
 					const res = await api('notes/local-timeline', { limit: 100, withReplies: true }, alice);
 
 					assert.strictEqual(res.body.some(note => note.id === bobNote.id), true);
-				}, { timeout: 3000, interval: 25 });
+				}, waitForPushToTlOptions);
 			});
 
 			test('[withFiles: true] ファイル付きノートのみ含まれる', async () => {
@@ -1335,7 +1337,7 @@ describe('Timelines', () => {
 
 					assert.strictEqual(res.body.some(note => note.id === bobNote1.id), false);
 					assert.strictEqual(res.body.some(note => note.id === bobNote2.id), true);
-				}, { timeout: 3000, interval: 25 });
+				}, waitForPushToTlOptions);
 			}, 1000 * 10);
 
 			describe('Channel', () => {
@@ -1484,7 +1486,7 @@ describe('Timelines', () => {
 						const res = await api('notes/local-timeline', { limit: 100 }, alice);
 
 						assert.strictEqual(res.body.some((note: any) => note.id === bobRenote.id), true);
-					}, { timeout: 3000, interval: 25 });
+					}, waitForPushToTlOptions);
 				});
 
 				test('[チャンネル外リノート] チャンネルフォロー　＋　ユーザ未フォロー　＝　TLに流れる', async () => {
@@ -1501,7 +1503,7 @@ describe('Timelines', () => {
 						const res = await api('notes/local-timeline', { limit: 100 }, alice);
 
 						assert.strictEqual(res.body.some((note: any) => note.id === bobRenote.id), true);
-					}, { timeout: 3000, interval: 25 });
+					}, waitForPushToTlOptions);
 				});
 
 				test('[チャンネル外リノート] チャンネル未フォロー　＋　ユーザフォロー　＝　TLに流れる', async () => {
@@ -1518,7 +1520,7 @@ describe('Timelines', () => {
 						const res = await api('notes/local-timeline', { limit: 100 }, alice);
 
 						assert.strictEqual(res.body.some((note: any) => note.id === bobRenote.id), true);
-					}, { timeout: 3000, interval: 25 });
+					}, waitForPushToTlOptions);
 				});
 
 				test('[チャンネル外リノート] チャンネルフォロー　＋　ユーザフォロー　＝　TLに流れる', async () => {
@@ -1536,7 +1538,7 @@ describe('Timelines', () => {
 						const res = await api('notes/local-timeline', { limit: 100 }, alice);
 
 						assert.strictEqual(res.body.some((note: any) => note.id === bobRenote.id), true);
-					}, { timeout: 3000, interval: 25 });
+					}, waitForPushToTlOptions);
 				});
 
 				test('[チャンネル外リノート] チャンネル未フォロー　＋　ユーザ未フォロー　＋　チャンネルミュート　＝　TLに流れない', async () => {
@@ -1623,7 +1625,7 @@ describe('Timelines', () => {
 					const res = await api('notes/hybrid-timeline', { limit: 100 }, alice);
 
 					assert.strictEqual(res.body.some(note => note.id === bobNote.id), true);
-				}, { timeout: 3000, interval: 25 });
+				}, waitForPushToTlOptions);
 			});
 
 			test('ローカルユーザーの visibility: home なノートが含まれない', async () => {
@@ -1648,7 +1650,7 @@ describe('Timelines', () => {
 					const res = await api('notes/hybrid-timeline', { limit: 100 }, alice);
 
 					assert.strictEqual(res.body.some(note => note.id === bobNote.id), true);
-				}, { timeout: 3000, interval: 25 });
+				}, waitForPushToTlOptions);
 			});
 
 			test('withReplies: false でフォローしているユーザーからの自分への返信が含まれる', async () => {
@@ -1666,7 +1668,7 @@ describe('Timelines', () => {
 
 					assert.strictEqual(res.body.some(note => note.id === aliceNote.id), true);
 					assert.strictEqual(res.body.some(note => note.id === bobNote.id), true);
-				}, { timeout: 3000, interval: 25 });
+				}, waitForPushToTlOptions);
 			});
 
 			test('withReplies: true でフォローしているユーザーの他人の visibility: followers な投稿への返信が含まれない', async () => {
@@ -1705,7 +1707,7 @@ describe('Timelines', () => {
 					assert.strictEqual(res.body.some((note: any) => note.id === bobNote.id), true);
 					assert.strictEqual(res.body.some((note: any) => note.id === carolNote.id), true);
 					assert.strictEqual(res.body.find((note: any) => note.id === carolNote.id)?.text, 'hi');
-				}, { timeout: 3000, interval: 25 });
+				}, waitForPushToTlOptions);
 			});
 
 			test('withReplies: true でフォローしているユーザーの自分の visibility: followers な投稿への返信が含まれる', async () => {
@@ -1725,7 +1727,7 @@ describe('Timelines', () => {
 
 					assert.strictEqual(res.body.some((note: any) => note.id === bobNote.id), true);
 					assert.strictEqual(res.body.some((note: any) => note.id === aliceNote.id), true);
-				}, { timeout: 3000, interval: 25 });
+				}, waitForPushToTlOptions);
 			});
 
 			test('他人の他人への返信が含まれない', async () => {
@@ -1739,7 +1741,7 @@ describe('Timelines', () => {
 
 					assert.strictEqual(res.body.some(note => note.id === bobNote.id), false);
 					assert.strictEqual(res.body.some(note => note.id === carolNote.id), true);
-				}, { timeout: 3000, interval: 25 });
+				}, waitForPushToTlOptions);
 			});
 
 			test('リモートユーザーのノートが含まれない', async () => {
@@ -1766,7 +1768,7 @@ describe('Timelines', () => {
 					const res = await api('notes/hybrid-timeline', { limit: 100 }, alice);
 
 					assert.strictEqual(res.body.some(note => note.id === bobNote.id), true);
-				}, { timeout: 3000, interval: 25 });
+				}, waitForPushToTlOptions);
 			});
 
 			test('フォローしているリモートユーザーの visibility: home なノートが含まれる', async () => {
@@ -1781,7 +1783,7 @@ describe('Timelines', () => {
 					const res = await api('notes/hybrid-timeline', { limit: 100 }, alice);
 
 					assert.strictEqual(res.body.some(note => note.id === bobNote.id), true);
-				}, { timeout: 3000, interval: 25 });
+				}, waitForPushToTlOptions);
 			});
 
 			test('withReplies: false でフォローしていないユーザーからの自分への返信が含まれる', async () => {
@@ -1798,7 +1800,7 @@ describe('Timelines', () => {
 
 					assert.strictEqual(res.body.some(note => note.id === aliceNote.id), true);
 					assert.strictEqual(res.body.some(note => note.id === bobNote.id), true);
-				}, { timeout: 3000, interval: 25 });
+				}, waitForPushToTlOptions);
 			});
 
 			test('[withReplies: true] 他人の他人への返信が含まれる', async () => {
@@ -1811,7 +1813,7 @@ describe('Timelines', () => {
 					const res = await api('notes/hybrid-timeline', { limit: 100, withReplies: true }, alice);
 
 					assert.strictEqual(res.body.some(note => note.id === bobNote.id), true);
-				}, { timeout: 3000, interval: 25 });
+				}, waitForPushToTlOptions);
 			});
 
 			test('[withFiles: true] ファイル付きノートのみ含まれる', async () => {
@@ -1826,7 +1828,7 @@ describe('Timelines', () => {
 
 					assert.strictEqual(res.body.some(note => note.id === bobNote1.id), false);
 					assert.strictEqual(res.body.some(note => note.id === bobNote2.id), true);
-				}, { timeout: 3000, interval: 25 });
+				}, waitForPushToTlOptions);
 			}, 1000 * 10);
 
 			describe('Channel', () => {
@@ -1858,7 +1860,7 @@ describe('Timelines', () => {
 						const res = await api('notes/hybrid-timeline', { limit: 100 }, alice);
 
 						assert.strictEqual(res.body.some((note: any) => note.id === bobNote.id), true);
-					}, { timeout: 3000, interval: 25 });
+					}, waitForPushToTlOptions);
 				});
 
 				test('チャンネル未フォロー　＋　ユーザフォロー　＝　TLに流れない', async () => {
@@ -1891,7 +1893,7 @@ describe('Timelines', () => {
 						const res = await api('notes/hybrid-timeline', { limit: 100 }, alice);
 
 						assert.strictEqual(res.body.some((note: any) => note.id === bobNote.id), true);
-					}, { timeout: 3000, interval: 25 });
+					}, waitForPushToTlOptions);
 				});
 
 				test('チャンネル未フォロー　＋　ユーザ未フォロー　＋　チャンネルミュート　＝　TLに流れない', async () => {
@@ -1975,7 +1977,7 @@ describe('Timelines', () => {
 						const res = await api('notes/hybrid-timeline', { limit: 100 }, alice);
 
 						assert.strictEqual(res.body.some((note: any) => note.id === bobRenote.id), true);
-					}, { timeout: 3000, interval: 25 });
+					}, waitForPushToTlOptions);
 				});
 
 				test('[チャンネル外リノート] チャンネルフォロー　＋　ユーザ未フォロー　＝　TLに流れる', async () => {
@@ -1992,7 +1994,7 @@ describe('Timelines', () => {
 						const res = await api('notes/hybrid-timeline', { limit: 100 }, alice);
 
 						assert.strictEqual(res.body.some((note: any) => note.id === bobRenote.id), true);
-					}, { timeout: 3000, interval: 25 });
+					}, waitForPushToTlOptions);
 				});
 
 				test('[チャンネル外リノート] チャンネル未フォロー　＋　ユーザフォロー　＝　TLに流れる', async () => {
@@ -2009,7 +2011,7 @@ describe('Timelines', () => {
 						const res = await api('notes/hybrid-timeline', { limit: 100 }, alice);
 
 						assert.strictEqual(res.body.some((note: any) => note.id === bobRenote.id), true);
-					}, { timeout: 3000, interval: 25 });
+					}, waitForPushToTlOptions);
 				});
 
 				test('[チャンネル外リノート] チャンネルフォロー　＋　ユーザフォロー　＝　TLに流れる', async () => {
@@ -2027,7 +2029,7 @@ describe('Timelines', () => {
 						const res = await api('notes/hybrid-timeline', { limit: 100 }, alice);
 
 						assert.strictEqual(res.body.some((note: any) => note.id === bobRenote.id), true);
-					}, { timeout: 3000, interval: 25 });
+					}, waitForPushToTlOptions);
 				});
 
 				test('[チャンネル外リノート] チャンネル未フォロー　＋　ユーザ未フォロー　＋　チャンネルミュート　＝　TLに流れない', async () => {
@@ -2128,7 +2130,7 @@ describe('Timelines', () => {
 						assert.strictEqual(res.body.some(note => note.id === bobNote.id), true);
 						assert.strictEqual(res.body.some(note => note.id === carolNote.id), true);
 						assert.strictEqual(res.body.some(note => note.id === daveNote.id), true);
-					}, { timeout: 3000, interval: 25 });
+					}, waitForPushToTlOptions);
 
 					await api('admin/suspend-user', { userId: carol.id }, root);
 					await api('admin/suspend-user', { userId: dave.id }, root);
@@ -2178,7 +2180,7 @@ describe('Timelines', () => {
 
 						assert.strictEqual(res.body.some(note => note.id === aliceNote.id), true);
 						assert.strictEqual(res.body.some(note => note.id === elleNote.id), true);
-					}, { timeout: 3000, interval: 25 });
+					}, waitForPushToTlOptions);
 
 					await api('admin/suspend-user', { userId: carol.id }, root);
 					await api('admin/suspend-user', { userId: elle.id }, root);
@@ -2217,7 +2219,7 @@ describe('Timelines', () => {
 					const res = await api('notes/user-list-timeline', { listId: list.id }, alice);
 
 					assert.strictEqual(res.body.some(note => note.id === bobNote.id), true);
-				}, { timeout: 3000, interval: 25 });
+				}, waitForPushToTlOptions);
 			});
 
 			test('リスインしているフォローしていないユーザーの visibility: home なノートが含まれる', async () => {
@@ -2231,7 +2233,7 @@ describe('Timelines', () => {
 					const res = await api('notes/user-list-timeline', { listId: list.id }, alice);
 
 					assert.strictEqual(res.body.some(note => note.id === bobNote.id), true);
-				}, { timeout: 3000, interval: 25 });
+				}, waitForPushToTlOptions);
 			});
 
 			test('リスインしているフォローしていないユーザーの visibility: followers なノートが含まれない', async () => {
@@ -2276,7 +2278,7 @@ describe('Timelines', () => {
 
 					assert.strictEqual(res.body.some(note => note.id === bobNote1.id), true);
 					assert.strictEqual(res.body.some(note => note.id === bobNote2.id), true);
-				}, { timeout: 3000, interval: 25 });
+				}, waitForPushToTlOptions);
 			});
 
 			test('withReplies: false でリスインしているフォローしていないユーザーからの自分への返信が含まれる', async () => {
@@ -2292,7 +2294,7 @@ describe('Timelines', () => {
 					const res = await api('notes/user-list-timeline', { listId: list.id }, alice);
 
 					assert.strictEqual(res.body.some(note => note.id === bobNote.id), true);
-				}, { timeout: 3000, interval: 25 });
+				}, waitForPushToTlOptions);
 			});
 
 			test('withReplies: false でリスインしているフォローしていないユーザーの他人への返信が含まれない', async () => {
@@ -2324,7 +2326,7 @@ describe('Timelines', () => {
 					const res = await api('notes/user-list-timeline', { listId: list.id }, alice);
 
 					assert.strictEqual(res.body.some(note => note.id === bobNote.id), true);
-				}, { timeout: 3000, interval: 25 });
+				}, waitForPushToTlOptions);
 			});
 
 			test('リスインしているフォローしているユーザーの visibility: home なノートが含まれる', async () => {
@@ -2339,7 +2341,7 @@ describe('Timelines', () => {
 					const res = await api('notes/user-list-timeline', { listId: list.id }, alice);
 
 					assert.strictEqual(res.body.some(note => note.id === bobNote.id), true);
-				}, { timeout: 3000, interval: 25 });
+				}, waitForPushToTlOptions);
 			});
 
 			test('リスインしているフォローしているユーザーの visibility: followers なノートが含まれる', async () => {
@@ -2355,7 +2357,7 @@ describe('Timelines', () => {
 
 					assert.strictEqual(res.body.some(note => note.id === bobNote.id), true);
 					assert.strictEqual(res.body.find(note => note.id === bobNote.id)?.text, 'hi');
-				}, { timeout: 3000, interval: 25 });
+				}, waitForPushToTlOptions);
 			});
 
 			test('リスインしている自分の visibility: followers なノートが含まれる', async () => {
@@ -2370,7 +2372,7 @@ describe('Timelines', () => {
 
 					assert.strictEqual(res.body.some(note => note.id === aliceNote.id), true);
 					assert.strictEqual(res.body.find(note => note.id === aliceNote.id)?.text, 'hi');
-				}, { timeout: 3000, interval: 25 });
+				}, waitForPushToTlOptions);
 			});
 
 			test('リスインしているユーザーのチャンネルノートが含まれない', async () => {
@@ -2402,7 +2404,7 @@ describe('Timelines', () => {
 
 					assert.strictEqual(res.body.some(note => note.id === bobNote1.id), false);
 					assert.strictEqual(res.body.some(note => note.id === bobNote2.id), true);
-				}, { timeout: 3000, interval: 25 });
+				}, waitForPushToTlOptions);
 			}, 1000 * 10);
 
 			test('リスインしているユーザーの自身宛ての visibility: specified なノートが含まれる', async () => {
@@ -2417,7 +2419,7 @@ describe('Timelines', () => {
 
 					assert.strictEqual(res.body.some(note => note.id === bobNote.id), true);
 					assert.strictEqual(res.body.find(note => note.id === bobNote.id)?.text, 'hi');
-				}, { timeout: 3000, interval: 25 });
+				}, waitForPushToTlOptions);
 			});
 
 			test('リスインしているユーザーの自身宛てではない visibility: specified なノートが含まれない', async () => {
@@ -2637,7 +2639,7 @@ describe('Timelines', () => {
 						const res = await api('notes/user-list-timeline', { limit: 100, listId: list.id }, alice);
 
 						assert.strictEqual(res.body.some((note: any) => note.id === bobRenote.id), true);
-					}, { timeout: 3000, interval: 25 });
+					}, waitForPushToTlOptions);
 				});
 
 				test('[チャンネル外リノート] チャンネルフォロー　＋　リスインしてる　＝　TLに流れる', async () => {
@@ -2657,7 +2659,7 @@ describe('Timelines', () => {
 						const res = await api('notes/user-list-timeline', { limit: 100, listId: list.id }, alice);
 
 						assert.strictEqual(res.body.some((note: any) => note.id === bobRenote.id), true);
-					}, { timeout: 3000, interval: 25 });
+					}, waitForPushToTlOptions);
 				});
 
 				test('[チャンネル外リノート] チャンネル未フォロー　＋　リスインしてない　＋　チャンネルミュート　＝　TLに流れない', async () => {
@@ -2752,7 +2754,7 @@ describe('Timelines', () => {
 					const res = await api('users/notes', { userId: bob.id }, alice);
 
 					assert.strictEqual(res.body.some(note => note.id === bobNote.id), true);
-				}, { timeout: 3000, interval: 25 });
+				}, waitForPushToTlOptions);
 			});
 
 			test('フォローしていないユーザーの visibility: followers なノートが含まれない', async () => {
@@ -2778,7 +2780,7 @@ describe('Timelines', () => {
 
 					assert.strictEqual(res.body.some(note => note.id === bobNote.id), true);
 					assert.strictEqual(res.body.find(note => note.id === bobNote.id)?.text, 'hi');
-				}, { timeout: 3000, interval: 25 });
+				}, waitForPushToTlOptions);
 			});
 
 			test('自身の visibility: followers なノートが含まれる', async () => {
@@ -2791,7 +2793,7 @@ describe('Timelines', () => {
 
 					assert.strictEqual(res.body.some(note => note.id === aliceNote.id), true);
 					assert.strictEqual(res.body.find(note => note.id === aliceNote.id)?.text, 'hi');
-				}, { timeout: 3000, interval: 25 });
+				}, waitForPushToTlOptions);
 			});
 
 			test('チャンネル投稿が含まれない', async () => {
@@ -2821,7 +2823,7 @@ describe('Timelines', () => {
 
 					assert.strictEqual(res.body.some(note => note.id === bobNote1.id), true);
 					assert.strictEqual(res.body.some(note => note.id === bobNote2.id), false);
-				}, { timeout: 3000, interval: 25 });
+				}, waitForPushToTlOptions);
 			});
 
 			test('[withReplies: true] 他人への返信が含まれる', async () => {
@@ -2836,7 +2838,7 @@ describe('Timelines', () => {
 
 					assert.strictEqual(res.body.some(note => note.id === bobNote1.id), true);
 					assert.strictEqual(res.body.some(note => note.id === bobNote2.id), true);
-				}, { timeout: 3000, interval: 25 });
+				}, waitForPushToTlOptions);
 			});
 
 			test('[withReplies: true] 他人への visibility: specified な返信が含まれない', async () => {
@@ -2851,7 +2853,7 @@ describe('Timelines', () => {
 
 					assert.strictEqual(res.body.some(note => note.id === bobNote1.id), true);
 					assert.strictEqual(res.body.some(note => note.id === bobNote2.id), false);
-				}, { timeout: 3000, interval: 25 });
+				}, waitForPushToTlOptions);
 			});
 
 			test('[withFiles: true] ファイル付きノートのみ含まれる', async () => {
@@ -2866,7 +2868,7 @@ describe('Timelines', () => {
 
 					assert.strictEqual(res.body.some(note => note.id === bobNote1.id), false);
 					assert.strictEqual(res.body.some(note => note.id === bobNote2.id), true);
-				}, { timeout: 3000, interval: 25 });
+				}, waitForPushToTlOptions);
 			}, 1000 * 10);
 
 			test('[withChannelNotes: true] チャンネル投稿が含まれる', async () => {
@@ -2879,7 +2881,7 @@ describe('Timelines', () => {
 					const res = await api('users/notes', { userId: bob.id, withChannelNotes: true }, alice);
 
 					assert.strictEqual(res.body.some(note => note.id === bobNote.id), true);
-				}, { timeout: 3000, interval: 25 });
+				}, waitForPushToTlOptions);
 			});
 
 			test('[withChannelNotes: true] 他人が取得した場合センシティブチャンネル投稿が含まれない', async () => {
@@ -2905,7 +2907,7 @@ describe('Timelines', () => {
 					const res = await api('users/notes', { userId: bob.id, withChannelNotes: true }, bob);
 
 					assert.strictEqual(res.body.some(note => note.id === bobNote.id), true);
-				}, { timeout: 3000, interval: 25 });
+				}, waitForPushToTlOptions);
 			});
 
 			test('ミュートしているユーザーに関連する投稿が含まれない', async () => {
@@ -2971,7 +2973,7 @@ describe('Timelines', () => {
 					assert.strictEqual(res.body.some(note => note.id === bobNote3.id), true);
 					assert.strictEqual(res.body.some(note => note.id === bobNote4.id), true);
 					assert.strictEqual(res.body.some(note => note.id === bobNote5.id), true);
-				}, { timeout: 3000, interval: 25 });
+				}, waitForPushToTlOptions);
 			});
 
 			test('自身の visibility: specified なノートが含まれる', async () => {
@@ -2983,7 +2985,7 @@ describe('Timelines', () => {
 					const res = await api('users/notes', { userId: alice.id, withReplies: true }, alice);
 
 					assert.strictEqual(res.body.some(note => note.id === aliceNote.id), true);
-				}, { timeout: 3000, interval: 25 });
+				}, waitForPushToTlOptions);
 			});
 
 			test('visibleUserIds に指定されてない visibility: specified なノートが含まれない', async () => {
@@ -3038,7 +3040,7 @@ describe('Timelines', () => {
 						const res = await api('users/notes', { userId: bob.id, withChannelNotes: true }, alice);
 
 						assert.strictEqual(res.body.some((note: any) => note.id === bobNote.id), true);
-					}, { timeout: 3000, interval: 25 });
+					}, waitForPushToTlOptions);
 				});
 
 				test('チャンネルミュート　＝　TLに流れない', async () => {
@@ -3070,7 +3072,7 @@ describe('Timelines', () => {
 						const res = await api('users/notes', { userId: bob.id, withChannelNotes: true }, alice);
 
 						assert.strictEqual(res.body.some((note: any) => note.id === bobRenote.id), true);
-					}, { timeout: 3000, interval: 25 });
+					}, waitForPushToTlOptions);
 				});
 
 				test('[チャンネル外リノート] チャンネルミュート　＝　TLに流れない', async () => {
@@ -3106,7 +3108,7 @@ describe('Timelines', () => {
 
 					assert.strictEqual(res.body.some((note: any) => note.id === aliceNote.id), false);
 					assert.strictEqual(res.body.some((note: any) => note.id === bobNote.id), true);
-				}, { timeout: 3000, interval: 25 });
+				}, waitForPushToTlOptions);
 			});
 
 			test('閲覧中チャンネルとは別チャンネルのノートは含まれない', async() => {
@@ -3139,7 +3141,7 @@ describe('Timelines', () => {
 					const res = await api('channels/timeline', { channelId: channel.id }, alice);
 
 					assert.strictEqual(res.body.some((note: any) => note.id === bobRenote.id), true);
-				}, { timeout: 3000, interval: 25 });
+				}, waitForPushToTlOptions);
 			});
 
 			test('閲覧中チャンネルとは別チャンネルからのリノートが含まれる', async() => {
@@ -3156,7 +3158,7 @@ describe('Timelines', () => {
 					const res = await api('channels/timeline', { channelId: channel.id }, alice);
 
 					assert.strictEqual(res.body.some((note: any) => note.id === bobRenote.id), true);
-				}, { timeout: 3000, interval: 25 });
+				}, waitForPushToTlOptions);
 			});
 
 			test('閲覧中チャンネルに自分の他人への返信が含まれる', async () => {
@@ -3171,7 +3173,7 @@ describe('Timelines', () => {
 					const res = await api('channels/timeline', { channelId: channel.id }, alice);
 
 					assert.strictEqual(res.body.some((note: any) => note.id === aliceNote.id), true);
-				}, { timeout: 3000, interval: 25 });
+				}, waitForPushToTlOptions);
 			});
 
 			test('閲覧中チャンネルに他人の自分への返信が含まれる', async () => {
@@ -3186,7 +3188,7 @@ describe('Timelines', () => {
 					const res = await api('channels/timeline', { channelId: channel.id }, alice);
 
 					assert.strictEqual(res.body.some((note: any) => note.id === bobNote.id), true);
-				}, { timeout: 3000, interval: 25 });
+				}, waitForPushToTlOptions);
 			});
 
 			test('閲覧中チャンネルにミュートしているユーザのノートは含まれない', async () => {
@@ -3239,7 +3241,7 @@ describe('Timelines', () => {
 
 					assert.strictEqual(res.body.some((note: any) => note.id === aliceNote.id), false);
 					assert.strictEqual(res.body.some((note: any) => note.id === bobNote.id), true);
-				}, { timeout: 3000, interval: 25 });
+				}, waitForPushToTlOptions);
 			});
 
 			test('閲覧中チャンネルをミュートしていても、同チャンネルのリノートが含まれる', async () => {
@@ -3256,7 +3258,7 @@ describe('Timelines', () => {
 					const res = await api('channels/timeline', { channelId: channel.id }, alice);
 
 					assert.strictEqual(res.body.some((note: any) => note.id === bobRenote.id), true);
-				}, { timeout: 3000, interval: 25 });
+				}, waitForPushToTlOptions);
 			});
 
 			test('閲覧中チャンネルをミュートしていても、同チャンネルのリプライが含まれる', async () => {
@@ -3273,7 +3275,7 @@ describe('Timelines', () => {
 					const res = await api('channels/timeline', { channelId: channel.id }, alice);
 
 					assert.strictEqual(res.body.some((note: any) => note.id === bobRenote.id), true);
-				}, { timeout: 3000, interval: 25 });
+				}, waitForPushToTlOptions);
 			});
 
 			test('閲覧中チャンネルとは別チャンネルをミュートしているとき、そのチャンネルからのリノートは含まれない', async() => {
