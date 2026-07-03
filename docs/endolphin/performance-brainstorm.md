@@ -1,7 +1,7 @@
 # Endolphin パフォーマンス改善ブレスト
 
-- 作成日: 2026-07-02
-- ステータス: **ブレスト（未着手のアイデア集）**。実装判断・優先度確定は別途行う
+- 作成日: 2026-07-02 / 最終更新: 2026-07-03
+- ステータス: **起票済み** — Track A〜G の親 issue (#53〜#59) + sub-issue 45 件として管理中。本文書は調査知見のアーカイブとして追記を続ける（新しいアイデアは issue 起票と同期させる）
 - 対象: バックエンド速度 / バックエンドメモリ / DB・Redis 負荷 / フロントのバッテリー持ち / フロントのデータ更新耐性 + 追加観点
 
 ## 0. 前提と方針
@@ -62,6 +62,60 @@
 - **リモート actor / 公開鍵キャッシュのヒット率計測**: 署名検証のたびに Person resolve →リモートフェッチが起きていないか。キャッシュミス時のフェッチがキュー詰まりの原因になりやすい [効果:中 / コスト:小 / 乖離:低]
 - **inbox concurrency の動的調整**: バーストで大量受信した際、16 のままだと処理待ちが伸びる。CPU 空きに応じて config で上げられることを負荷試験で確認し、推奨値を docs 化 [効果:小〜中 / コスト:小 / 乖離:低]
 - **LD-Signature フォールバックの頻度計測**: LD 署名検証は高価。どの実装由来のリクエストでフォールバックが起きているか集計し、多ければ原因側の対処（HTTP 署名の互換性改善）を検討 [効果:小 / コスト:小 / 乖離:低]
+
+### 1.4 EntityService の pack 詳細度・内部効率（2026-07-03 追記）
+
+現状（調査で確認）:
+
+- `UserDetailed` 分岐で追加される profile / memo / relation 判定は `packMany` でバッチ化済み（`getRelations` は対象人数に関わらず固定 8 クエリ。ただし me のフォロー・ブロック等の全件ロード方式のため、フォロー数が多い me では行数側で重い）。最重量は **pinnedNotes**（必ず `detail: true` で note pack 連鎖、`UserEntityService.ts:550-552`）
+- 非バッチの穴: `populatePoll` は `packMany` の `_hint_` 対象外で poll 付きノート N 件 = N クエリ（`NoteEntityService.ts:194-230`）。`iAmModerator` は閲覧者固定なのに `packMany` ループ内で毎回再計算（`UserEntityService.ts:424`）。badgeRoles / roles / policies / isSilenced はユーザーごと個別呼び出し（5 分キャッシュ頼み）
+- アンテナチャンネルは配信イベントを**接続ごとに** `detail: true` で再 pack（`stream/channels/antenna.ts:65`）。ノート作成配信の「1 回 pack して全員に配る」方式と非対称
+- `detail`（デフォルト true）パラメータの既存イディオム: `users/search` / `users/search-by-username-and-host` / `meta`。専用軽量エンドポイントの前例: `notes/show-partial-bulk`（id/reactions のみの射影）
+- detail 切替を持たず常に Detailed を返す高トラフィック endpoint: `users/show`（userIds 一括含む）、`users/followers` / `following`（`UserDetailedNotMe` 固定）、`users/recommendation`
+- フロントの過剰取得実例: `MkAvatars.vue`（`users/show` をアバター表示のみに使用、型は `UserLite[]` と記述済み）、`WidgetUserList.vue`、`MkPostForm.vue` の visibleUsers（acct 表示のみ）
+
+アイデア（起票済み）:
+
+- **pack 内部の純最適化**（populatePoll バッチ化・iAmModerator hoist・アンテナ再 pack 共有・role 系一括化）: API レスポンス不変で互換リスクゼロ、本家還流の最有力候補 [効果:中 / コスト:小〜中 / 乖離:低] → **C-8 (#103)**
+- **`detail` パラメータの横展開 + フロント opt-in**: additive でデフォルト不変（P3 維持）、既存イディオムの横展開 [効果:中 / コスト:中 / 乖離:中] → **C-9 (#104)**
+- 原則: デフォルトレスポンスを Lite に落とすのは REST API 互換（P3）違反なのでやらない。`withoutXXX` 型の細粒度 opt-out は型・テスト面が複雑化するため、計測で単独支配的と分かった項目（現状候補は pinnedNotes のみ）に限定する
+
+### 1.5 投稿後処理（NoteCreateService.postNoteCreated）の HTTP プロセス負荷（2026-07-03 追記）
+
+現状（調査で確認）:
+
+- `create()` は `insertNote` まで await し、`postNoteCreated` は `setImmediate` の fire-and-forget（`NoteCreateService.ts:605-613`）。**HTTP レスポンスは投稿後処理を待たない**（レイテンシには直接効いていない）
+- ただし本番のプロセス構成は **primary プロセス = HTTP 専任、cluster worker = ジョブキュー専任**（`boot/master.ts:97-108` / `boot/worker.ts:38-42`）のため、`postNoteCreated` は **HTTP プロセスの CPU/コネクションを消費し続ける**
+- HTTP プロセス内で走る規模比例の処理: `pushToTl`（ローカルフォロワー全件 DB 取得 → 1 件ごとに Redis pipeline へ lpush/ltrim を積み最後に exec・未 await、`NoteCreateService.ts:1030-1163`）、**アンテナ照合（インスタンス全体のアクティブアンテナを投稿ごとに全件チェック**、`AntennaService.ts:98-111,212-219`）、フォロワー通知作成ループ（`:757-778`）、AP 配送準備（リモートフォロワー全件 find。実配送は deliverQueue へ addBulk）
+- 検索インデックス（Meilisearch への HTTP 呼び出し）もキューを経ず HTTP プロセスから直接発火（`:909` / `SearchService.ts:135-155`）
+- fire-and-forget の大半が**未 catch**（`trackPromise` は本番では no-op、`misc/promise-tracker.ts:12-19`）で unhandled rejection リスクあり
+- リモートノート受信は inbox キュー経由で別プロセス実行のため本件の対象外（`disableClustering: true` の単一プロセス構成を除く）。`NoteDeleteService.delete` は逆にレスポンス前に全体 await される構造（`notes/delete.ts:73`）
+
+アイデア:
+
+- **fire-and-forget の catch 整備**: 未 catch promise 全てにエラーログ付き catch を付ける。挙動不変 [効果:小（安全性・可観測性） / コスト:小 / 乖離:低（本家 PR 候補）]
+- **重量級投稿後処理のジョブ化検討**: `pushToTl`・アンテナ照合・フォロワー通知を BullMQ ジョブへ移し、HTTP プロセスから queue worker へ切り離す。高 churn コアの改変のため、まず C-3（#74）のプロファイルで「投稿バースト時に API レイテンシがどれだけ劣化するか」を定量化してから判断 [効果:中〜大（規模時） / コスト:大 / 乖離:高]
+- **アンテナ照合のスケール改善**: 全アクティブアンテナ × 全投稿の照合はアンテナ数でスケールが壊れる。src 条件（user/list 指定）による事前絞り込み、アンテナ数のロールポリシー運用ガイド [効果:中（アンテナ多用時） / コスト:中 / 乖離:中]
+- **検索インデックスのキュー化**: Meilisearch 使用時の外部 HTTP 呼び出しをジョブへ [効果:小〜中 / コスト:小〜中 / 乖離:中]
+
+### 1.6 その他 EntityService の pack 効率・横断調査（2026-07-03 追記）
+
+現状（調査で確認）: 大半のサービスは `userEntityService.packMany` + Map hint の統一パターンでバッチ化済みで健全（DriveFile / DriveFolder / Following / FollowRequest / Blocking / Muting / RenoteMuting / Flash / 管理系各種）。N+1 が確認できたのは以下:
+
+1. **NotificationEntityService** — note / user はバッチ化済みだが、`roleAssigned` 型通知だけ通知ごとに `RoleEntityService.pack`（内部で roleAssignments への COUNT クエリ）を個別発行（`NotificationEntityService.ts:153` / `RoleEntityService.ts:38-45`）。`i/notifications*` は最高頻度 endpoint
+2. **ChannelEntityService** — `packMany` 自体は banner/フォロー/お気に入り/ミュート/ピン留めを IN 一括取得する良実装なのに、`channels/featured`・`followed`・`my-favorites`・`owned`・`search` の 5 endpoint が `Promise.all(map(pack))` で**バイパス**しており、チャンネル数分の個別クエリが発行される（`packMany` を使うのは `channels/mute/list` のみ）
+3. **ClipEntityService** — `favoritedCount` / `isFavorited` / `notesCount` が clip ごとに個別クエリ（`ClipEntityService.ts:54-56`。`clips/list` 等の中頻度 endpoint）
+4. **AnnouncementEntityService** — 既読判定の countBy が announcement ごとに個別 + `packMany` は `map(pack)` の素通し（`:38-43,63-70`。認証不要 `announcements` で中〜高頻度）
+5. **UserListEntityService** — `pack` が list ごとに membership を findBy（`:36-38`。`users/lists/list` が `map(pack)`）
+6. **NoteReactionEntityService** — `packManyWithNote` が note の pack を hint なしで個別呼び出し（`:100-119`。`users/reactions`）
+7. **RoleEntityService** — `pack` ごとに COUNT クエリ、`packMany` も `map(pack)`（`roles/list` / `admin/show-user` 等）
+
+低頻度のため優先度低: App / FlashLike / NoteDraft / Emoji 管理バルク操作。Page は fork で機能削除済みのため実質影響なし。
+
+アイデア:
+
+- **packMany バイパスの是正**: channels 系 5 endpoint を既存の `packMany` 呼び出しに切り替えるだけ。実装済みバッチの取り込み忘れの是正であり最安 [効果:小〜中 / コスト:小 / 乖離:低（本家 PR 候補）]
+- **hint 機構の追加**: Notification の role、Clip / Announcement / UserList / NoteReaction / Role の集計・参照系を IN / GROUP BY で一括化。いずれも API レスポンス不変の純最適化で C-8（#103）と同型 [効果:小〜中（endpoint による） / コスト:小〜中 / 乖離:低]
 
 ---
 
@@ -198,6 +252,7 @@
 5. `ApDeliverManagerService.ts:116` の DISTINCT ON TODO — §1.2
 6. pg_stat_statements 導入手順の docs 化 — §3.1
 7. `prefers-reduced-motion` ライブ追従 — §4
+8. EntityService pack の純最適化（populatePoll バッチ化ほか、API 不変）— §1.4 / #103
 
 ### 中期（設計が要る・効果大）
 
