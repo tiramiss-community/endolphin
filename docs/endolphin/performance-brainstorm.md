@@ -117,6 +117,24 @@
 - **packMany バイパスの是正**: channels 系 5 endpoint を既存の `packMany` 呼び出しに切り替えるだけ。実装済みバッチの取り込み忘れの是正であり最安 [効果:小〜中 / コスト:小 / 乖離:低（本家 PR 候補）]
 - **hint 機構の追加**: Notification の role、Clip / Announcement / UserList / NoteReaction / Role の集計・参照系を IN / GROUP BY で一括化。いずれも API レスポンス不変の純最適化で C-8（#103）と同型 [効果:小〜中（endpoint による） / コスト:小〜中 / 乖離:低]
 
+### 1.7 キャッシュ機構の活用漏れ — DB 直参照の置換候補（2026-07-03 追記）
+
+現状（調査で確認）: `CacheService` には userById / localUserByNativeToken / userProfile / userMutings / userBlocking / userBlocked / renoteMutings / userFollowings の二層キャッシュがあり、`FanoutTimelineEndpointService` の TL フィルタは模範的に活用している（`FanoutTimelineEndpointService.ts:120-124`）。一方、同じデータを DB 直参照している箇所が複数見つかった:
+
+1. **ChannelEntityService.pack** — isFollowing / isMuting をチャンネルごとに exists 直読み（`:72,86`）。`userFollowingChannelsCache` / `mutingChannelsCache` がキー方向完全一致で存在し、`pack` の `opts.followings` / `opts.muting` はまさにそのための引数なのに、呼出元 8 箇所すべてが未指定。無効化はイベント購読で担保済みで stale リスクなし。C-11（#106）の channels 系是正と同時対応が自然
+2. **NoteEntityService.isVisibleForMe** — following を count 直読み + users 直読み（`:302-311`）。**同一ファイルの `shouldHideNote` は同じ判定を `userFollowingsCache` で実装済み**という不整合。呼出元はリアクション作成・リプライ投稿・リモート Renote 受信で高頻度
+3. **NoteCreateService** — renote/reply 先ユーザーによるブロック判定を blockings の exists 直読み（`:332,385`）。`userBlockedCache`（blockee→blocker の Set）がキー方向完全一致で、`UserBlockingService.checkBlocked` に置換前例あり
+4. **GetterService.getUser** — usersRepository 直読み（`GetterService.ts:68-69`）。`CacheService.findUserById`（userByIdCache 経由・suspend/update 系イベントで無効化）の確立パターンが未適用のまま、32 endpoint がここを経由。※メモリ 5 分 TTL のため、呼出元ごとの鮮度要件の監査は必要
+5. **UserEntityService.getRelation/getRelations** — isFollowing / isBlocking / isBlocked / isMuted / isRenoteMuted の 5 判定はキャッシュのキー方向一致で置換可能。ただし `following.notify`・isFollowed・フォロリク往復は対応キャッシュが存在せず全置換は不可（部分置換、または followed 系キャッシュの追加検討）
+6. **ReactionService** — リモートカスタム絵文字リアクションで emojisRepository を**同一リクエスト内に 2 回**直読み（`:135,235`）。`CustomEmojiService.emojisCache` は private かつ返却情報不足で転用不可、しかも絵文字編集イベントを購読しておらず stale リスクを内包（キャッシュ設計自体の見直しが必要）
+
+キャッシュ自体が無い高頻度読み（参考）:
+
+- channel 情報を `NoteEntityService.ts:386`・NoteCreateService 内 4 箇所で都度 findOneBy → `localEmojisCache` 型の channelsCache 追加候補
+- user-list ストリーミングチャンネルが**接続ごとに 5 秒間隔**で membership を DB ポーリング（`stream/channels/user-list.ts:75-90`）。`UserListService.membersCache` がイベント購読で同種データを保持済みだが withReplies 欠落で転用できていない
+
+アイデア: 1〜4（+ 5 の部分置換）は挙動不変・無効化整備済みキャッシュへの置換のみで、C-8 / C-11 と同系の本家還流候補 [効果:中 / コスト:小〜中 / 乖離:低]。6・channelsCache 追加・user-list ポーリングのイベント化は設計を伴うため個別判断 [効果:中 / コスト:中 / 乖離:中]
+
 ---
 
 ## 2. バックエンド: メモリ使用量
