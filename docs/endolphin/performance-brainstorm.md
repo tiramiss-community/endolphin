@@ -133,7 +133,7 @@
 - channel 情報を `NoteEntityService.ts:386`・NoteCreateService 内 4 箇所で都度 findOneBy → `localEmojisCache` 型の channelsCache 追加候補
 - user-list ストリーミングチャンネルが**接続ごとに 5 秒間隔**で membership を DB ポーリング（`stream/channels/user-list.ts:75-90`）。`UserListService.membersCache` がイベント購読で同種データを保持済みだが withReplies 欠落で転用できていない
 
-アイデア: 1〜4（+ 5 の部分置換）は挙動不変・無効化整備済みキャッシュへの置換のみで、C-8 / C-11 と同系の本家還流候補 [効果:中 / コスト:小〜中 / 乖離:低]。6・channelsCache 追加・user-list ポーリングのイベント化は設計を伴うため個別判断 [効果:中 / コスト:中 / 乖離:中]
+アイデア（起票済み → **C-12 (#107)**）: 1〜4（+ 5 の部分置換）は挙動不変・無効化整備済みキャッシュへの置換のみで、C-8 / C-11 と同系の本家還流候補 [効果:中 / コスト:小〜中 / 乖離:低]。6・user-list ポーリングのイベント化は設計を伴うため C-12 の段階 3 として扱う [効果:中 / コスト:中 / 乖離:中]。channelsCache の新規追加のみ未起票（必要になったら個別判断）
 
 ---
 
