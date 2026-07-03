@@ -159,6 +159,30 @@
 - 本家マージされればマージ追従でほぼタダで手に入る
 - **再検討トリガ**: (a) #16250 の Blocked 解除・本家マージ → 早期追従（§1.2 の方針どおり）(b) C-3（#74）のプロファイルで deliver 署名がホットと判明した場合
 
+### 1.9 ネイティブ化の候補棚卸し（2026-07-03 追記）
+
+現状（調査で確認）— **既にネイティブなもの**（追加提案は不要な領域）:
+
+- `sharp`（libvips）/ `@napi-rs/canvas`（identicon 生成含む）/ `re2` / **`slacc`（Misskey 内製 NAPI-RS アドオン: AhoCorasick・RSA 署名・ZipReader）** / `ws` の native addon（`bufferutil`・`utf-8-validate` 導入済み）/ jemalloc（`Dockerfile:132-133,163` で LD_PRELOAD 済み → E-6 #90 の前提を訂正、コメント反映済み）
+- ワードミュートは単一キーワード = slacc AhoCorasick、正規表現 = re2（`misc/check-word-mute.ts`）で、**ユーザー入力正規表現が JS RegExp で実行される箇所は無し**（ReDoS リスクなし）
+- 対象外と判断: bcryptjs（純 JS だがログイン時のみで低頻度）/ JSON.parse・stringify（V8 native）/ JSON-LD 正規化（`jsonld` は純 JS だが LD-Signature フォールバック経路のみで低頻度）
+
+純 JS のまま高頻度な CPU 仕事（頻度 × 重さ順）:
+
+1. **mfm-js パース** — ノート作成で 2〜4 回、リモート受信で HTML 解析（node-html-parser）+ パース、AP 配信で再パース、フィード生成はリクエスト毎に全ノート再パース（`NoteCreateService.ts:562-565` / `ApMfmService.ts:32` / `FeedService.ts:89`）
+2. **アンテナ照合のキーワード走査** — 投稿ごとに全アクティブアンテナ × `String.includes` の純 JS ループ（`AntennaService.ts:96-111,157-199`）
+3. **blurhash.encode** — アップロード毎に DCT 計算が JS ループ。デコードは sharp（native）済みなのに後段だけ JS（`FileInfoService.ts:499`）
+4. summaly（cheerio）の HTML 解析 — URL プレビュー毎（ネイティブ化よりプレビュー結果キャッシュの確認が先）
+
+アイデア（起票・反映済み）:
+
+- **アンテナ照合への slacc AhoCorasick 横展開**: check-word-mute で実績のある内製 native の適用で新規依存ゼロ。全アンテナのキーワードを 1 オートマトンに束ねて 1 回の走査にする構成まで検討。C-10 の事前絞り込みと補完関係 [効果:中 / コスト:中 / 乖離:低〜中] → **C-13 (#108)**
+- **blurhash エンコードのネイティブ/WASM 化**: optionalDependencies + 純 JS フォールバック構成・出力互換前提 [効果:小〜中 / コスト:小〜中 / 乖離:低] → **C-14 (#109)**
+- **mfm-js のネイティブ化は見送り**: 最大の純 JS CPU だが、パース結果の完全互換が必須（1 ノードのズレで mentions・連合 HTML が変わる = P3 リスク）のため本家が動かない限り fork 単独では非推奨。先に安い代替として **FeedService のリクエスト毎再パースのキャッシュ化**を検討する
+- **ランタイム設定の残り**: `NODE_OPTIONS`（V8 フラグ）・`UV_THREADPOOL_SIZE` が未設定 → E-6（#90）の残スコープとしてコメント反映済み
+- 小ネタ: `UtilityService` の RE2 を毎回 `new` している本家 TODO（`UtilityService.ts:99-100`）→ C-6（#77）の監査項目にコメントで追加済み
+- **backend-rs 型の全面ネイティブ化は方針として不採用**（P2: アーキテクチャを本家から離すほど追従が「翻訳」になる）
+
 ---
 
 ## 2. バックエンド: メモリ使用量
