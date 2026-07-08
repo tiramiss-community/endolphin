@@ -10,13 +10,10 @@ const __dirname = dirname(__filename);
 
 export const ADMIN_PARAMS = { username: 'admin', password: 'admin' };
 const ADMIN_CACHE = new Map<Host, SigninResponse>();
-
-await Promise.all([
-	fetchAdmin('a.test'),
-	fetchAdmin('b.test'),
-]);
+const streamEventTimeoutMs = 3_000;
 
 type SigninResponse = Omit<Misskey.entities.SigninFlowResponse & { finished: true }, 'finished'>;
+type SignupResponse = Pick<Misskey.entities.SignupResponse, 'id' | 'token'>;
 
 export type LoginUser = SigninResponse & {
 	client: Misskey.api.APIClient;
@@ -40,6 +37,16 @@ export async function sleep(ms = 250): Promise<void> {
 	return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+async function waitForStreamConnected(stream: Misskey.Stream): Promise<void> {
+	if (stream.state === 'connected') {
+		return;
+	}
+
+	await new Promise<void>(resolve => {
+		stream.once('_connected_', resolve);
+	});
+}
+
 async function signin(
 	host: Host,
 	params: Misskey.entities.SigninFlowRequest,
@@ -60,7 +67,17 @@ async function signin(
 				return await signin(host, params);
 			}
 			throw err;
-		});
+	});
+}
+
+function createLoginUserFromSignup(host: Host, params: Misskey.entities.SignupRequest, signup: SignupResponse): LoginUser {
+	return {
+		id: signup.id,
+		i: signup.token,
+		client: new Misskey.api.APIClient({ origin: `https://${host}`, credential: signup.token }),
+		username: params.username,
+		password: params.password,
+	};
 }
 
 async function createAdmin(host: Host): Promise<Misskey.entities.SignupResponse | undefined> {
@@ -92,7 +109,13 @@ export async function fetchAdmin(host: Host): Promise<LoginUser> {
 	const admin = ADMIN_CACHE.get(host) ?? await signin(host, ADMIN_PARAMS)
 		.catch(async err => {
 			if (err.id === '6cc579cc-885d-43d8-95c2-b8c7fc963280') {
-				await createAdmin(host);
+				const createdAdmin = await createAdmin(host);
+				if (createdAdmin != null) {
+					return {
+						id: createdAdmin.id,
+						i: createdAdmin.token,
+					};
+				}
 				return await signin(host, ADMIN_PARAMS);
 			}
 			throw err;
@@ -109,15 +132,9 @@ export async function createAccount(host: Host): Promise<LoginUser> {
 	const username = crypto.randomUUID().replaceAll('-', '').substring(0, 20);
 	const password = crypto.randomUUID().replaceAll('-', '');
 	const admin = await fetchAdmin(host);
-	await admin.client.request('admin/accounts/create', { username, password });
-	const signinRes = await signin(host, { username, password });
+	const account = await admin.client.request('admin/accounts/create', { username, password });
 
-	return {
-		...signinRes,
-		client: new Misskey.api.APIClient({ origin: `https://${host}`, credential: signinRes.i }),
-		username,
-		password,
-	};
+	return createLoginUserFromSignup(host, { username, password }, account);
 }
 
 export async function createModerator(host: Host): Promise<LoginUser> {
@@ -237,6 +254,7 @@ export async function isFired<C extends keyof Misskey.Channels, T extends keyof 
 	const stream = new Misskey.Stream(`wss://${host}`, { token: user.i }, { WebSocket });
 	try {
 		const connection = stream.useChannel(channel, params);
+		await waitForStreamConnected(stream);
 
 		const receivePromise = new Promise<boolean>((resolve) => {
 			connection.on(type as never, ((msg: any) => {
@@ -249,7 +267,9 @@ export async function isFired<C extends keyof Misskey.Channels, T extends keyof 
 		await trigger();
 		return await Promise.race([
 			receivePromise,
-			sleep(500).then(() => false),
+			// federation の配送と streaming 反映は Docker host の負荷で 500ms を超えることがある。
+			// 短すぎる timeout は正常な配送を flaky にするため、専用 helper 側で余裕を持たせる。
+			sleep(streamEventTimeoutMs).then(() => false),
 		]);
 	} finally {
 		stream.close();
@@ -265,7 +285,9 @@ export async function isNoteUpdatedEventFired(
 ): Promise<boolean> {
 	const stream = new Misskey.Stream(`wss://${host}`, { token: user.i }, { WebSocket });
 	try {
+		await waitForStreamConnected(stream);
 		stream.send('s', { id: noteId });
+		await sleep(100);
 
 		const receivePromise = new Promise<boolean>((resolve) => {
 			stream.on('noteUpdated', msg => {
@@ -279,7 +301,7 @@ export async function isNoteUpdatedEventFired(
 
 		return await Promise.race([
 			receivePromise,
-			sleep(500).then(() => false),
+			sleep(streamEventTimeoutMs).then(() => false),
 		]);
 	} finally {
 		stream.close();

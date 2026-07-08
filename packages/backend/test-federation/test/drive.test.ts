@@ -3,9 +3,13 @@ import assert, { strictEqual } from 'node:assert';
 import * as Misskey from 'misskey-js';
 import { createAccount, deepStrictEqualWithExcludedFields, fetchAdmin, type LoginUser, resolveRemoteNote, resolveRemoteUser, sleep, uploadFile } from './utils.js';
 
-const bAdmin = await fetchAdmin('b.test');
-
 describe('Drive', () => {
+	let bAdmin: LoginUser;
+
+	beforeAll(async () => {
+		bAdmin = await fetchAdmin('b.test');
+	});
+
 	describe('Upload image in a.test and resolve from b.test', () => {
 		let uploader: LoginUser;
 
