@@ -109,6 +109,10 @@
 	},
 	"include": [
 		"daemon.ts",
+		"run.ts",
+		"run.test.ts",
+		"run-vitest.ts",
+		"vitest-result-reporter.ts",
 		"./test/**/*.ts"
 	]
 }

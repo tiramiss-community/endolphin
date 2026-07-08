@@ -15,7 +15,7 @@ services:
     networks:
       external_network:
       internal_network:
-        ipv4_address: 172.20.1.1
+        ipv4_address: ${MISSKEY_TEST_FEDERATION_TESTER_IP:-10.210.1.1}
     volumes:
       - type: volume
         source: node_modules_dev
@@ -88,15 +88,15 @@ networks:
     driver: bridge
     ipam:
       config:
-        - subnet: 172.23.0.0/16
-          ip_range: 172.23.0.0/24
+        - subnet: ${MISSKEY_TEST_FEDERATION_EXTERNAL_SUBNET:-10.213.0.0/16}
+          ip_range: ${MISSKEY_TEST_FEDERATION_EXTERNAL_IP_RANGE:-10.213.0.0/24}
   internal_network:
     internal: true
     driver: bridge
     ipam:
       config:
-        - subnet: 172.20.0.0/16
-          ip_range: 172.20.0.0/24
+        - subnet: ${MISSKEY_TEST_FEDERATION_INTERNAL_SUBNET:-10.210.0.0/16}
+          ip_range: ${MISSKEY_TEST_FEDERATION_INTERNAL_IP_RANGE:-10.210.0.0/24}
 
 volumes:
   node_modules:

@@ -1,6 +1,6 @@
 certificates
 volumes
 .env
-docker.env
-*.test.conf
-*.test.default.yml
+.config/docker.env
+.config/*.test.conf
+.config/*.test.config.json

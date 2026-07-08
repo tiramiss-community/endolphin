@@ -115,4 +115,6 @@
 | 全体ビルド | `pnpm build` |
 | 開発サーバー (backend + frontend watch) | `pnpm dev` |
 
-**注意:** backend テスト (`test` / `test:e2e` / `test:fed`) 実行前に `.config/test.yml` が必要 (`ncp .github/misskey/test.yml .config/test.yml` または `cp .github/misskey/test.yml .config/test.yml` で作成)。
+**注意:**
+backend unit / e2e テスト (`test` / `test:e2e`) 実行前に `.config/test.yml` が必要 (`ncp .github/misskey/test.yml .config/test.yml` または `cp .github/misskey/test.yml .config/test.yml` で作成)。
+Federation test (`test:fed`) は専用 runner が `packages/backend/test-federation/.config/` の設定と証明書を生成し、Docker Compose の起動/終了まで管理するため `.config/test.yml` は不要。

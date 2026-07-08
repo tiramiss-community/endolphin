@@ -22,6 +22,7 @@ endolphin 固有の変更を記録する。本家 Misskey 由来の変更は ups
 - Fix: distroless イメージの ffmpeg/ffprobe が全 libav* 共有ライブラリを読めず動作不能だった問題を修正（`Dockerfile.distroless` の lddtree トレース複製で、lddtree が報告する SONAME シンボリックリンク（例 `libavdevice.so.59` → `libavdevice.so.59.7.100`）を `cp -a` がリンクのまま複製し実体ファイルが欠落＝dangling していた。`cp -aL` で実体を解決して複製する）。動画サムネ生成は失敗を `DriveService` が握り潰す（`thumbnailUrl=null` になりアップロード自体は成功する）ため従来は無症状だった。Debian 版（BtbN static）は影響なし
 - Enhance: Playwright e2e にメディアアップロードの接合点（クライアント前処理 → サーバ処理）検証を追加（`playwright/tests/core/media-upload.spec.ts` / `playwright/fixtures/media/`）。静止画=クライアントが WebP に圧縮（`type` が `image/webp`）/ アニメ GIF=圧縮スキップで原本維持（`image/gif`）/ 動画=サーバ ffmpeg のサムネ生成を `thumbnailUrl` 付与と実配信で確認。併せて Docker ランタイム同梱 ffmpeg/ffprobe を Debian・distroless 両イメージで検証する smoke スクリプト `scripts/docker-ffmpeg-smoke.sh`（バイナリ存在 / PATH 解決 / 実サンプルの decode・probe）を追加
 - Feat: upstream 追従を自動化する運用スクリプト群 `.endolphin/`（ルート workspace から独立した tsx + yargs CLI）を追加。`sync-upstream`（upstream develop を `origin/upstream/develop` ブランチへミラー）と `fetch-releases`（upstream の正式リリースのタグを `upstream/<version>` として origin に作成。例 `upstream/2026.6.0`）を 6 時間ごとに実行する GitHub Actions ワークフロー `endolphin-sync-upstream.yml` を同梱（upstream は readonly、書き込みは origin のみ）。旧 `scripts/sync-upstream.mjs`（手動 basedOn 追跡ヘルパ）は撤去し fork-policy / README の追従手順を更新
+- Enhance: Federation test の外側 runner を追加し、`pnpm --filter backend test:fed` で証明書・設定生成、Docker Compose 起動、tester 実行、失敗時ログ出力（サービス絞り込み対応）、compose 終了、DB/Redis ボリューム掃除までローカル/CI共通で自動化
 
 ### Client
 - Fix: 非ログイン時トップページのスクロールバーがドラッグ操作でスクロールできない問題を修正
