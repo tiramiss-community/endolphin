@@ -14,7 +14,9 @@ Misskey backend のテスト構成、`.config/test.yml` の前提、e2e テス�
 
 ## 前提: `.config/test.yml`
 
-backend のテストスクリプト (`test` / `test:e2e` / `test:fed`) はすべて内部で `cross-env NODE_ENV=test pnpm compile-config` を実行し、`.config/test.yml` を読み込む ([packages/backend/package.json](../../../../../packages/backend/package.json), [packages/backend/scripts/compile_config.js](../../../../../packages/backend/scripts/compile_config.js))。**未作成だとテスト自体が起動しない**。
+backend の unit / e2e テストスクリプト (`test` / `test:e2e`) は内部で `cross-env NODE_ENV=test pnpm compile-config` を実行し、`.config/test.yml` を読み込む ([packages/backend/package.json](../../../../../packages/backend/package.json), [packages/backend/scripts/compile_config.js](../../../../../packages/backend/scripts/compile_config.js))。**未作成だとテスト自体が起動しない**。
+
+Federation test (`pnpm --filter backend test:fed`) は専用 runner が `packages/backend/test-federation/.config/` の設定ファイルと証明書を生成し、Docker Compose の起動/終了まで管理するため、`.config/test.yml` の手動作成は不要。
 
 未作成なら以下を 1 回だけ手動コピーする (どちらでも可):
 
@@ -27,7 +29,7 @@ cp .github/misskey/test.yml .config/test.yml
 補足:
 
 - ルートの `pnpm start:test` (Cypress 用にテストサーバーを起動するコマンド) を使う経路では実行時に `ncp` で自動コピーされる ([package.json](../../../../../package.json))。それ以外で backend テストを直接走らせる時は上記の手動コピーが必要
-- すでに `.config/test.yml` があれば各テストスクリプトの内部 `compile-config` で十分なので、追加で `pnpm --filter backend compile-config` を叩く必要はない
+- すでに `.config/test.yml` があれば unit / e2e テストスクリプトの内部 `compile-config` で十分なので、追加で `pnpm --filter backend compile-config` を叩く必要はない
 - `pnpm start:test` は backend e2e テスト (`pnpm --filter backend test:e2e`) の前提ではない (ポート競合の元になるため使わないこと)
 
 ## テスト種別と実行コマンド
@@ -37,6 +39,8 @@ cp .github/misskey/test.yml .config/test.yml
 | Unit | `packages/backend/vitest.config.unit.ts` | `pnpm --filter backend test` |
 | E2E (HTTP / DB) | `packages/backend/vitest.config.e2e.ts` | `pnpm --filter backend test:e2e` |
 | Federation | `packages/backend/vitest.config.fed.ts` | `pnpm --filter backend test:fed` |
+
+Federation は host 側 runner (`packages/backend/test-federation/run.ts`) が build、証明書/設定生成、Docker Compose 起動、tester 実行、失敗時ログ出力、compose 終了、DB/Redis bind volume cleanup を行う。build 済みで再実行する場合は `MISSKEY_TEST_FEDERATION_SKIP_BUILD=1 pnpm --filter backend test:fed` を使える。
 
 - 配置: `packages/backend/test/` 配下
 - カバレッジ: `pnpm --filter backend test-and-coverage`
@@ -195,7 +199,8 @@ backend の **テスト** と **開発** では用途別に別の compose ファ
 
 | 用途 | compose ファイル | host ポート (db / redis) |
 | --- | --- | --- |
-| テスト (`test` / `test:e2e` / `test:fed`) | [packages/backend/test/compose.yml](../../../../../packages/backend/test/compose.yml) | `54312` / `56312` ([.github/misskey/test.yml](../../../../../.github/misskey/test.yml) のポート設定と一致) |
+| Unit / e2e (`test` / `test:e2e`) | [packages/backend/test/compose.yml](../../../../../packages/backend/test/compose.yml) | `54312` / `56312` ([.github/misskey/test.yml](../../../../../.github/misskey/test.yml) のポート設定と一致) |
+| Federation (`test:fed`) | [packages/backend/test-federation/compose.yml](../../../../../packages/backend/test-federation/compose.yml) | Docker 内部ネットワーク (`a.test` / `b.test`) |
 | 開発 (`pnpm dev` 等) | `compose.local-db.yml` (リポジトリルート) | `5432` / `6379` |
 
 ```bash

@@ -26,6 +26,7 @@ services:
       misskey.b.test:
         condition: service_healthy
     environment:
+      - CI=true
       - NODE_ENV=development
       - NODE_EXTRA_CA_CERTS=/usr/local/share/ca-certificates/rootCA.crt
     volumes:
@@ -40,6 +41,14 @@ services:
       - type: bind
         source: ./test
         target: /misskey/packages/backend/test-federation/test
+        read_only: true
+      - type: bind
+        source: ./run-vitest.ts
+        target: /misskey/packages/backend/test-federation/run-vitest.ts
+        read_only: true
+      - type: bind
+        source: ./vitest-result-reporter.ts
+        target: /misskey/packages/backend/test-federation/vitest-result-reporter.ts
         read_only: true
       - type: bind
         source: ../vitest.config.ts
@@ -97,7 +106,7 @@ services:
         pnpm -F backend i --frozen-lockfile
         exec "$0" "$@"
       '
-    command: pnpm -F backend test:fed
+    command: pnpm -F backend test:fed:vitest
 
   daemon:
     image: node:${NODE_VERSION}

@@ -77,7 +77,7 @@
 - Migration 差分検査: `pnpm --filter backend check-migrations`
 - `misskey-js` 再生成 (API 変更後必須): `pnpm build-misskey-js-with-types`
 
-**注意:** backend テスト (`test` / `test:e2e` / `test:fed`) 実行前に `.config/test.yml` が必要。未作成の場合は `ncp .github/misskey/test.yml .config/test.yml` (または `cp .github/misskey/test.yml .config/test.yml`) を実行してから走らせる。各テストスクリプトが内部で `cross-env NODE_ENV=test pnpm compile-config` を呼ぶため、コピー済みであれば追加の compile-config は不要。
+**注意:** backend unit / e2e テスト (`test` / `test:e2e`) 実行前に `.config/test.yml` が必要。未作成の場合は `ncp .github/misskey/test.yml .config/test.yml` (または `cp .github/misskey/test.yml .config/test.yml`) を実行してから走らせる。Federation test (`test:fed`) は専用 runner が `packages/backend/test-federation/.config/` の設定と証明書を生成し、Docker Compose の起動/終了まで管理するため `.config/test.yml` は不要。
 
 変更範囲に応じて最も近いコマンドから優先して検証し、必要なら全体コマンドに広げること。
 

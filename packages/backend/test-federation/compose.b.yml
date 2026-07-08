@@ -60,5 +60,5 @@ networks:
     driver: bridge
     ipam:
       config:
-        - subnet: 172.22.0.0/16
-          ip_range: 172.22.0.0/24
+        - subnet: ${MISSKEY_TEST_FEDERATION_INTERNAL_B_SUBNET:-10.212.0.0/16}
+          ip_range: ${MISSKEY_TEST_FEDERATION_INTERNAL_B_IP_RANGE:-10.212.0.0/24}
