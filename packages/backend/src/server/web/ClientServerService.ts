@@ -29,12 +29,13 @@ import type {
 	UserProfilesRepository,
 	UsersRepository,
 } from '@/models/_.js';
-import type Logger from '@/logger.js';
 import { handleRequestRedirectToOmitSearch } from '@/misc/fastify-hook-handlers.js';
 import { htmlSafeJsonStringify } from '@/misc/json-stringify-html-safe.js';
 import { bindThis } from '@/decorators.js';
 import { FlashEntityService } from '@/core/entities/FlashEntityService.js';
 import { AnnouncementEntityService } from '@/core/entities/AnnouncementEntityService.js';
+import { TelemetryService } from '@/core/telemetry/TelemetryService.js';
+import { createClientRequestFailedEvent } from '@/logging/OperationalLogEvents.js';
 import { FeedService } from './FeedService.js';
 import { UrlPreviewService } from './UrlPreviewService.js';
 import { ClientLoggerService } from './ClientLoggerService.js';
@@ -104,6 +105,7 @@ export class ClientServerService {
 		private feedService: FeedService,
 		private htmlTemplateService: HtmlTemplateService,
 		private clientLoggerService: ClientLoggerService,
+		private telemetryService: TelemetryService,
 	) {
 		//this.createServer = this.createServer.bind(this);
 		const backendRootdir = resolve(this.config.rootDir, 'packages/backend');
@@ -729,14 +731,9 @@ export class ClientServerService {
 
 		fastify.setErrorHandler<FastifyError>(async (error, request, reply) => {
 			const errId = randomUUID();
-			this.clientLoggerService.logger.error(`Internal error occurred in ${request.routeOptions.url}: ${error.message}`, {
-				path: request.routeOptions.url,
-				params: request.params,
-				query: request.query,
-				code: error.name,
-				stack: error.stack,
-				id: errId,
-			});
+			const event = createClientRequestFailedEvent(request.routeOptions.url ?? '*', 500, error, errId);
+			this.clientLoggerService.logger.write(event);
+			this.telemetryService.captureOperationalEvent(event);
 			reply.code(500);
 			reply.header('Cache-Control', 'max-age=10, must-revalidate');
 			return await HtmlTemplateService.replyHtml(reply, ErrorPage({
