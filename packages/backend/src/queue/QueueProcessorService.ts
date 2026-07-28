@@ -9,10 +9,11 @@ import type { Config } from '@/config.js';
 import { DI } from '@/di-symbols.js';
 import type Logger from '@/logger.js';
 import { bindThis } from '@/decorators.js';
+import { OperationContextService } from '@/core/OperationContextService.js';
 import { TelemetryService } from '@/core/telemetry/TelemetryService.js';
 import { CheckModeratorsActivityProcessorService } from '@/queue/processors/CheckModeratorsActivityProcessorService.js';
 import { createQueueJobFailedEvent } from '@/logging/OperationalLogEvents.js';
-import { runQueueJobWithTraceContext } from './queue-job-runner.js';
+import { runQueueJob } from './queue-job-runner.js';
 import { UserWebhookDeliverProcessorService } from './processors/UserWebhookDeliverProcessorService.js';
 import { SystemWebhookDeliverProcessorService } from './processors/SystemWebhookDeliverProcessorService.js';
 import { EndedPollNotificationProcessorService } from './processors/EndedPollNotificationProcessorService.js';
@@ -106,6 +107,7 @@ export class QueueProcessorService implements OnApplicationShutdown {
 		private config: Config,
 
 		private queueLoggerService: QueueLoggerService,
+		private operationContextService: OperationContextService,
 		private telemetryService: TelemetryService,
 		private userWebhookDeliverProcessorService: UserWebhookDeliverProcessorService,
 		private systemWebhookDeliverProcessorService: SystemWebhookDeliverProcessorService,
@@ -175,15 +177,16 @@ export class QueueProcessorService implements OnApplicationShutdown {
 			const logger = this.logger.createSubLogger('system');
 
 			this.systemQueueWorker = new Bull.Worker(QUEUE.SYSTEM, (job) => {
-				return runQueueJobWithTraceContext(
-					this.telemetryService,
-					'Queue: System: ' + job.name,
-					job.data,
-					() => processer(job) as Promise<void>,
-					err => {
+				return runQueueJob({
+					operationContext: { mode: 'none' },
+					telemetryService: this.telemetryService,
+					spanName: 'Queue: System: ' + job.name,
+					jobData: job.data,
+					processJob: () => processer(job) as Promise<void>,
+					onError: err => {
 						captureQueueFailure(logger, QUEUE.SYSTEM, job, err);
 					},
-				);
+				});
 			}, {
 				...baseWorkerOptions(this.config, QUEUE.SYSTEM),
 				autorun: false,
@@ -225,15 +228,16 @@ export class QueueProcessorService implements OnApplicationShutdown {
 			const logger = this.logger.createSubLogger('db');
 
 			this.dbQueueWorker = new Bull.Worker(QUEUE.DB, (job) => {
-				return runQueueJobWithTraceContext(
-					this.telemetryService,
-					'Queue: DB: ' + job.name,
-					job.data,
-					() => processer(job),
-					err => {
+				return runQueueJob({
+					operationContext: { mode: 'none' },
+					telemetryService: this.telemetryService,
+					spanName: 'Queue: DB: ' + job.name,
+					jobData: job.data,
+					processJob: () => processer(job),
+					onError: err => {
 						captureQueueFailure(logger, QUEUE.DB, job, err);
 					},
-				);
+				});
 			}, {
 				...baseWorkerOptions(this.config, QUEUE.DB),
 				autorun: false,
@@ -252,15 +256,16 @@ export class QueueProcessorService implements OnApplicationShutdown {
 			const logger = this.logger.createSubLogger('deliver');
 
 			this.deliverQueueWorker = new Bull.Worker(QUEUE.DELIVER, (job) => {
-				return runQueueJobWithTraceContext(
-					this.telemetryService,
-					'Queue: Deliver',
-					job.data,
-					() => this.deliverProcessorService.process(job),
-					err => {
+				return runQueueJob({
+					operationContext: { mode: 'none' },
+					telemetryService: this.telemetryService,
+					spanName: 'Queue: Deliver',
+					jobData: job.data,
+					processJob: () => this.deliverProcessorService.process(job),
+					onError: err => {
 						captureQueueFailure(logger, QUEUE.DELIVER, job, err, job.data.to);
 					},
-				);
+				});
 			}, {
 				...baseWorkerOptions(this.config, QUEUE.DELIVER),
 				autorun: false,
@@ -287,15 +292,17 @@ export class QueueProcessorService implements OnApplicationShutdown {
 			const logger = this.logger.createSubLogger('inbox');
 
 			this.inboxQueueWorker = new Bull.Worker(QUEUE.INBOX, (job) => {
-				return runQueueJobWithTraceContext(
-					this.telemetryService,
-					'Queue: Inbox',
-					job.data,
-					() => this.inboxProcessorService.process(job),
-					err => {
+				return runQueueJob({
+					// Inboxは1 Activity単位の短命処理で、NoteCreateのOperation境界として扱う。
+					operationContext: { mode: 'per-job', service: this.operationContextService },
+					telemetryService: this.telemetryService,
+					spanName: 'Queue: Inbox',
+					jobData: job.data,
+					processJob: () => this.inboxProcessorService.process(job),
+					onError: err => {
 						captureQueueFailure(logger, QUEUE.INBOX, job, err);
 					},
-				);
+				});
 			}, {
 				...baseWorkerOptions(this.config, QUEUE.INBOX),
 				autorun: false,
@@ -322,15 +329,16 @@ export class QueueProcessorService implements OnApplicationShutdown {
 			const logger = this.logger.createSubLogger('user-webhook');
 
 			this.userWebhookDeliverQueueWorker = new Bull.Worker(QUEUE.USER_WEBHOOK_DELIVER, (job) => {
-				return runQueueJobWithTraceContext(
-					this.telemetryService,
-					'Queue: UserWebhookDeliver',
-					job.data,
-					() => this.userWebhookDeliverProcessorService.process(job),
-					err => {
+				return runQueueJob({
+					operationContext: { mode: 'none' },
+					telemetryService: this.telemetryService,
+					spanName: 'Queue: UserWebhookDeliver',
+					jobData: job.data,
+					processJob: () => this.userWebhookDeliverProcessorService.process(job),
+					onError: err => {
 						captureQueueFailure(logger, QUEUE.USER_WEBHOOK_DELIVER, job, err, job.data.to);
 					},
-				);
+				});
 			}, {
 				...baseWorkerOptions(this.config, QUEUE.USER_WEBHOOK_DELIVER),
 				autorun: false,
@@ -357,15 +365,16 @@ export class QueueProcessorService implements OnApplicationShutdown {
 			const logger = this.logger.createSubLogger('system-webhook');
 
 			this.systemWebhookDeliverQueueWorker = new Bull.Worker(QUEUE.SYSTEM_WEBHOOK_DELIVER, (job) => {
-				return runQueueJobWithTraceContext(
-					this.telemetryService,
-					'Queue: SystemWebhookDeliver',
-					job.data,
-					() => this.systemWebhookDeliverProcessorService.process(job),
-					err => {
+				return runQueueJob({
+					operationContext: { mode: 'none' },
+					telemetryService: this.telemetryService,
+					spanName: 'Queue: SystemWebhookDeliver',
+					jobData: job.data,
+					processJob: () => this.systemWebhookDeliverProcessorService.process(job),
+					onError: err => {
 						captureQueueFailure(logger, QUEUE.SYSTEM_WEBHOOK_DELIVER, job, err, job.data.to);
 					},
-				);
+				});
 			}, {
 				...baseWorkerOptions(this.config, QUEUE.SYSTEM_WEBHOOK_DELIVER),
 				autorun: false,
@@ -401,15 +410,16 @@ export class QueueProcessorService implements OnApplicationShutdown {
 			const logger = this.logger.createSubLogger('relationship');
 
 			this.relationshipQueueWorker = new Bull.Worker(QUEUE.RELATIONSHIP, (job) => {
-				return runQueueJobWithTraceContext(
-					this.telemetryService,
-					'Queue: Relationship: ' + job.name,
-					job.data,
-					() => processer(job),
-					err => {
+				return runQueueJob({
+					operationContext: { mode: 'none' },
+					telemetryService: this.telemetryService,
+					spanName: 'Queue: Relationship: ' + job.name,
+					jobData: job.data,
+					processJob: () => processer(job),
+					onError: err => {
 						captureQueueFailure(logger, QUEUE.RELATIONSHIP, job, err);
 					},
-				);
+				});
 			}, {
 				...baseWorkerOptions(this.config, QUEUE.RELATIONSHIP),
 				autorun: false,
@@ -440,15 +450,16 @@ export class QueueProcessorService implements OnApplicationShutdown {
 			const logger = this.logger.createSubLogger('objectStorage');
 
 			this.objectStorageQueueWorker = new Bull.Worker(QUEUE.OBJECT_STORAGE, (job) => {
-				return runQueueJobWithTraceContext(
-					this.telemetryService,
-					'Queue: ObjectStorage: ' + job.name,
-					job.data,
-					() => processer(job) as Promise<void>,
-					err => {
+				return runQueueJob({
+					operationContext: { mode: 'none' },
+					telemetryService: this.telemetryService,
+					spanName: 'Queue: ObjectStorage: ' + job.name,
+					jobData: job.data,
+					processJob: () => processer(job) as Promise<void>,
+					onError: err => {
 						captureQueueFailure(logger, QUEUE.OBJECT_STORAGE, job, err);
 					},
-				);
+				});
 			}, {
 				...baseWorkerOptions(this.config, QUEUE.OBJECT_STORAGE),
 				autorun: false,
@@ -468,15 +479,16 @@ export class QueueProcessorService implements OnApplicationShutdown {
 			const logger = this.logger.createSubLogger('ended-poll-notification');
 
 			this.endedPollNotificationQueueWorker = new Bull.Worker(QUEUE.ENDED_POLL_NOTIFICATION, (job) => {
-				return runQueueJobWithTraceContext(
-					this.telemetryService,
-					'Queue: EndedPollNotification',
-					job.data,
-					() => this.endedPollNotificationProcessorService.process(job),
-					err => {
+				return runQueueJob({
+					operationContext: { mode: 'none' },
+					telemetryService: this.telemetryService,
+					spanName: 'Queue: EndedPollNotification',
+					jobData: job.data,
+					processJob: () => this.endedPollNotificationProcessorService.process(job),
+					onError: err => {
 						captureQueueFailure(logger, QUEUE.ENDED_POLL_NOTIFICATION, job, err);
 					},
-				);
+				});
 			}, {
 				...baseWorkerOptions(this.config, QUEUE.ENDED_POLL_NOTIFICATION),
 				autorun: false,
@@ -489,15 +501,17 @@ export class QueueProcessorService implements OnApplicationShutdown {
 			const logger = this.logger.createSubLogger('post-scheduled-note');
 
 			this.postScheduledNoteQueueWorker = new Bull.Worker(QUEUE.POST_SCHEDULED_NOTE, (job) => {
-				return runQueueJobWithTraceContext(
-					this.telemetryService,
-					'Queue: PostScheduledNote',
-					job.data,
-					() => this.postScheduledNoteProcessorService.process(job),
-					err => {
+				return runQueueJob({
+					// 予約投稿は1 Note単位の短命処理で、NoteCreateのOperation境界として扱う。
+					operationContext: { mode: 'per-job', service: this.operationContextService },
+					telemetryService: this.telemetryService,
+					spanName: 'Queue: PostScheduledNote',
+					jobData: job.data,
+					processJob: () => this.postScheduledNoteProcessorService.process(job),
+					onError: err => {
 						captureQueueFailure(logger, QUEUE.POST_SCHEDULED_NOTE, job, err);
 					},
-				);
+				});
 			}, {
 				...baseWorkerOptions(this.config, QUEUE.POST_SCHEDULED_NOTE),
 				autorun: false,
