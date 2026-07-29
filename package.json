@@ -7,6 +7,18 @@
 		"url": "https://github.com/tiramiss-community/endolphin.git"
 	},
 	"packageManager": "pnpm@11.11.0",
+	"workspaces": [
+		"packages/backend",
+		"packages/frontend-shared",
+		"packages/frontend",
+		"packages/frontend-builder",
+		"packages/i18n",
+		"packages/icons-subsetter",
+		"packages/sw",
+		"packages/misskey-js",
+		"packages/misskey-js/generator",
+		"packages-private/*"
+	],
 	"private": true,
 	"scripts": {
 		"compile-config": "cd packages/backend && pnpm compile-config",
