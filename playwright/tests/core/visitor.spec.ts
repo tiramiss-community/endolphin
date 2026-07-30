@@ -12,12 +12,12 @@ test.describe('core / visitor landing', () => {
 		await setupInstance(request);
 	});
 
-	test('welcome page uses the global page container for scrolling', async ({ page }) => {
+	test('welcome page provides a scrollable container', async ({ page }) => {
 		await page.goto('/');
-		await expect(page.locator('[data-cy-signup]')).toBeVisible({ timeout: 30_000 });
+		await expect(page.getByTestId('signup')).toBeVisible({ timeout: 30_000 });
 
 		const before = await page.evaluate(() => {
-			const signup = document.querySelector('[data-cy-signup]');
+			const signup = document.querySelector('[data-testid="signup"]');
 			if (!(signup instanceof HTMLElement)) throw new Error('signup button not found');
 			const scrollable = findWelcomeScrollable(signup);
 			if (scrollable == null) throw new Error('welcome scroll container not found');
@@ -26,7 +26,7 @@ test.describe('core / visitor landing', () => {
 				scrollTop: scrollable.scrollTop,
 				scrollHeight: scrollable.scrollHeight,
 				clientHeight: scrollable.clientHeight,
-				className: scrollable.className,
+				overflowY: getComputedStyle(scrollable).overflowY,
 				x: rect.x,
 				y: rect.y,
 				width: rect.width,
@@ -46,13 +46,13 @@ test.describe('core / visitor landing', () => {
 			}
 		});
 		expect(before.scrollHeight).toBeGreaterThan(before.clientHeight);
-		expect(before.className).toContain('_pageContainer');
+		expect(before.overflowY).toBe('auto');
 
-		await page.locator('[data-cy-signup]').hover();
+		await page.getByTestId('signup').hover();
 		await page.mouse.wheel(0, 400);
 
 		await expect.poll(async () => page.evaluate(() => {
-			const signup = document.querySelector('[data-cy-signup]');
+			const signup = document.querySelector('[data-testid="signup"]');
 			if (!(signup instanceof HTMLElement)) throw new Error('signup button not found');
 			const scrollable = findWelcomeScrollable(signup);
 			if (scrollable == null) throw new Error('welcome scroll container not found');

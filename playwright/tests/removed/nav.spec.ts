@@ -28,7 +28,7 @@ test.describe('removed / no UI entry points', () => {
 
 	test('no nav / page links point to removed features', async ({ page }) => {
 		// home 描画完了を待つ（ナビが揃ってから href を数える）
-		await expect(page.locator('[data-cy-open-post-form]')).toBeVisible({ timeout: 30_000 });
+		await expect(page.getByTestId('open-post-form')).toBeVisible({ timeout: 30_000 });
 
 		for (const href of REMOVED_LINK_HREFS) {
 			// 完全一致と prefix（/gallery/edit 等）両方を弾く

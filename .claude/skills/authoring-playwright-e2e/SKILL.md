@@ -1,6 +1,6 @@
 ---
 name: authoring-playwright-e2e
-description: Use whenever authoring, exploring, or debugging the fork-owned Playwright e2e specs under the `playwright/` directory of this endolphin Misskey fork — the LLM-driven loop of exploring a running instance with the Playwright MCP `browser_*` tools, drafting via `codegen`, distilling into a committed spec, and triaging flakes with the trace viewer. Covers which flows belong in the suite (fork removal contracts, fork-built screens, must-keep core happy-paths), reuse of the `fixtures/misskey.ts` helpers and upstream `data-cy-*` selectors, and the rule that raw MCP logs and codegen output are never committed (only the distilled spec is). Must be consulted before writing or fixing any Playwright e2e test or running MCP browser exploration against the local instance, even when the user only says "add an e2e test", "explore the UI", or "this test is flaky".
+description: Use whenever authoring, exploring, or debugging the fork-owned Playwright e2e specs under the `playwright/` directory of this endolphin Misskey fork — the LLM-driven loop of exploring a running instance with the Playwright MCP `browser_*` tools, drafting via `codegen`, distilling into a committed spec, and triaging flakes with the trace viewer. Covers which flows belong in the suite (fork removal contracts, fork-built screens, must-keep core happy-paths), reuse of the `fixtures/misskey.ts` helpers and upstream `data-testid` selectors, and the rule that raw MCP logs and codegen output are never committed (only the distilled spec is). Must be consulted before writing or fixing any Playwright e2e test or running MCP browser exploration against the local instance, even when the user only says "add an e2e test", "explore the UI", or "this test is flaky".
 ---
 
 # authoring-playwright-e2e
@@ -30,7 +30,7 @@ SKILL.md 本体は references への索引だけ。具体的な手順や規約�
 ループのどこでも踏みうる背景知識。
 
 - Playwright MCP (`browser_*`) の使い方・プラグイン構成・探索ログ非 commit 規約 → [references/knowledge/playwright-mcp.md](references/knowledge/playwright-mcp.md)
-- `fixtures/misskey.ts` のヘルパ一覧と `data-cy-*` セレクタ戦略 → [references/knowledge/fixtures-and-selectors.md](references/knowledge/fixtures-and-selectors.md)
+- `fixtures/misskey.ts` のヘルパ一覧と `data-testid` セレクタ戦略 → [references/knowledge/fixtures-and-selectors.md](references/knowledge/fixtures-and-selectors.md)
 - pw に入れる / 入れないの採否判定 (fork 固有 or 基幹 happy-path) と Stage 分類 → [references/knowledge/what-belongs-in-pw.md](references/knowledge/what-belongs-in-pw.md)
 
 ## 鉄則 (この fork でだけ価値が出る一点)

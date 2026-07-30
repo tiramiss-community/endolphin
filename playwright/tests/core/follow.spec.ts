@@ -26,7 +26,7 @@ test.describe('core / follow', () => {
 		await followButton.click();
 		// alwaysConfirmFollow（既定 true）でクリック後に確認ダイアログが必ず出る → OK。
 		// 直前の dismissUserSetup の skip 確認ダイアログが DOM に残留することがあるため visible に限定する。
-		await page.locator('[data-cy-modal-dialog-ok]:visible').last().click();
+		await page.locator('[data-testid="modal-dialog-ok"]:visible').last().click();
 
 		// following/create が 200 を返す = UI 操作からフォローが成立した（成功の真値）。
 		// ボタンの「フォロー中」表示は streaming 依存（profile では isFollowing!=null で

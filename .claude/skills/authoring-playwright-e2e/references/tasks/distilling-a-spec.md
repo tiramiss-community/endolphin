@@ -12,7 +12,7 @@ MCP ループの 2 周目。[exploring-with-mcp.md](exploring-with-mcp.md) で�
 | `playwright/tests/removed/` | 2 | 削除コントラクト回帰 (UI 導線除去・スタブ API の 410/空) |
 | `playwright/tests/fork/` | 3 | fork 自作の低 churn 画面 (デッキ多カラム / About / fork 設定) |
 
-upstream 全機能の網羅は **入れない** (Cypress = 継承の領分)。
+upstream 全機能の網羅は **入れない** (upstream の Playwright e2e = 継承の領分)。
 
 ## ステップ 2: codegen の生出力を house style に作り替える
 
@@ -22,7 +22,7 @@ codegen 出力は素材であって成果物ではない。次へ作り替える
   - `import { test, expect, prepareLoggedInUser, dismissUserSetup } from '../../fixtures/misskey';`
   - ログイン済の前提なら `beforeEach` で `prepareLoggedInUser(page, request)` → 遷移後に `dismissUserSetup(page)`。
 - **`test.describe('category / name', …)` 形式**にする (既存 spec は `'core / note'` `'removed / API stub contracts'` 等)。
-- **セレクタは `data-cy-*` 優先**。codegen が吐く脆い CSS/XPath を、`page.locator('[data-cy-…]')` / `getByRole` / `getByText` に置換する (方針は [knowledge/fixtures-and-selectors.md](../knowledge/fixtures-and-selectors.md))。
+- **セレクタは upstream の `data-testid` 優先**。codegen が吐く脆い CSS/XPath を、`getByTestId` / `getByRole` / `getByText` に置換する (方針は [knowledge/fixtures-and-selectors.md](../knowledge/fixtures-and-selectors.md))。
 - **固定 `sleep` / `waitForTimeout` を消す**。codegen が挿す任意待ちは flake の元。`waitFor({ state: 'visible' })` / `waitForResponse` など**正しいシグナル待ち**に置き換える (理由は [triaging-flakes.md](triaging-flakes.md))。
 - **タイムアウトは既存慣習に合わせる**。重い初回描画は `30_000`、TL 反映など伝播待ちは `15_000` 程度 (`tests/core/note.spec.ts` 参照)。
 - **直列前提を壊さない**。rig は `workers: 1` / `fullyParallel: false`、`resetDb` は共有 DB を初期化する。並列分離を前提にした書き方をしない。
@@ -70,15 +70,15 @@ test.describe('core / note', () => {
 
 	test('posting a note shows it on the timeline', async ({ page }) => {
 		const body = 'Hello, Playwright e2e!';
-		await page.locator('[data-cy-open-post-form]').click();
-		await page.locator('[data-cy-post-form-text]').fill(body);
-		await page.locator('[data-cy-open-post-form-submit]').click();
+		await page.getByTestId('open-post-form').click();
+		await page.getByTestId('post-form-text').fill(body);
+		await page.getByTestId('post-form-submit').click();
 		await expect(page.getByText(body).first()).toBeVisible({ timeout: 15_000 });
 	});
 });
 ```
 
-`goto` / ログインは fixtures に、脆いセレクタは `data-cy-*` に、`waitForTimeout(3000)` は「投稿が TL に見える」という**結果の可視待ち**に置き換わっている。
+`goto` / ログインは fixtures に、脆いセレクタは upstream の `data-testid` に、`waitForTimeout(3000)` は「投稿が TL に見える」という**結果の可視待ち**に置き換わっている。
 
 ## ステップ 5: 検証
 

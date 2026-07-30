@@ -1,6 +1,6 @@
 ---
 name: authoring-playwright-e2e
-description: Use whenever authoring, exploring, or debugging the fork-owned Playwright e2e specs under the `playwright/` directory — distilling explorations into committed specs, reusing `fixtures/misskey.ts` helpers and `data-cy-*` selectors, and triaging flakes, while keeping raw exploration logs and codegen output out of commits.
+description: Use whenever authoring, exploring, or debugging the fork-owned Playwright e2e specs under the `playwright/` directory — distilling explorations into committed specs, reusing `fixtures/misskey.ts` helpers and upstream `data-testid` selectors, and triaging flakes, while keeping raw exploration logs and codegen output out of commits.
 ---
 
 # authoring-playwright-e2e

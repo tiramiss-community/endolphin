@@ -9,19 +9,19 @@ endolphin に **fork 所有の Playwright 環境**を導入するための正本
 
 ---
 
-## 大前提: 上流（upstream）を一切触らない
+## 大前提: upstream 所有の E2E を一切触らない
 
-既存の Cypress（`cypress/` / `cypress.config.ts` / `.github/workflows/test-frontend.yml`）と起動スクリプト（root `package.json` の `start:test` / `e2e`）は **upstream 所有**。endolphin はこれらを **継承・凍結** として扱い、改変・撤去しない。
+既存の Playwright E2E（`packages/frontend/test/e2e/` / `packages/frontend/playwright.config.ts` / `.github/workflows/test-frontend.yml`）と起動スクリプト（root `package.json` の `start:test` / `e2e`）は **upstream 所有**。endolphin はこれらを **継承・凍結** として扱い、改変・撤去しない。
 
 - Playwright は **fork 所有の新規ディレクトリ `playwright/` に閉じる**。upstream マージで競合が出ない。
-- セレクタは upstream が自分の Cypress 用に維持する **`data-cy-*` 属性を再利用**（`getByTestId`）。無い箇所のみ role / text ベース。`data-cy-*` は upstream が保守する低 churn の契約なので DOM 変更に巻き込まれにくい。
+- セレクタは upstream が自分の Playwright E2E 用に維持する **`data-testid` 属性を再利用**（`getByTestId`）。無い箇所のみ role / text ベース。`data-testid` は upstream が保守する低 churn の契約なので DOM 変更に巻き込まれにくい。
 - CI は既存 `test-frontend.yml` に job 追加せず、**新規 fork 所有 workflow ファイル**を作る。
 
 所有境界:
 
 | 領域 | 所有 | 扱い |
 |---|---|---|
-| `cypress/` `cypress.config.ts` | upstream | 継承・凍結（触らない） |
+| `packages/frontend/test/e2e/` `packages/frontend/playwright.config.ts` | upstream | 継承・凍結（触らない） |
 | `start:test` / `e2e` script（root package.json） | upstream | 無改変で**呼ぶだけ** |
 | `.github/workflows/test-frontend.yml` | upstream | 触らない |
 | `playwright/**` | endolphin | fork 所有 |
@@ -47,10 +47,10 @@ Playwright run
 ```
 
 - ライフサイクルが Playwright run に完全に紐づく（テスト終了で infra も落ちる）= 案2 の狙い。
-- `start-server-and-test` 依存は Playwright リグからは不要（`e2e` script 自体は Cypress 用に温存）。
+- `start-server-and-test` 依存は fork 所有 Playwright リグからは不要（root `e2e` script は upstream Playwright 用に温存）。
 - **Misskey 本体はコンテナ化しない**: ビルド済み `built/entry.js` をホストでそのまま使えて inner loop が速く、CI の現行（pg/redis のみ service コンテナ・Misskey はランナー上）とも一致し divergence ゼロ。
 - **前提**: `start:test` は `node built/entry.js` を起動するので事前に `pnpm build` が必要。CI は明示ステップ、ローカルは一度ビルドする（webServer コマンドに build を埋めると reuse 時に遅くなるため埋めない）。
-- **CI**: infra は GitHub の **service container**（postgres/redis・固定ポート・upstream cypress と同方式）で用意し、webServer は `PW_SKIP_COMPOSE=1` で compose をスキップして `start:test` を起動する。compose の公開ポートが GH runner から `start:test`（ホスト）へ届かないことがあるため、**ローカル=compose / CI=service container** と使い分ける。`reuseExistingServer` はローカルのみ true。
+- **CI**: infra は GitHub の **service container**（postgres/redis・固定ポート・upstream e2e と同方式）で用意し、webServer は `PW_SKIP_COMPOSE=1` で compose をスキップして `start:test` を起動する。compose の公開ポートが GH runner から `start:test`（ホスト）へ届かないことがあるため、**ローカル=compose / CI=service container** と使い分ける。`reuseExistingServer` はローカルのみ true。
 - **Node**: Playwright 1.61 の TS loader は Node 22.15.0（`.node-version`）で `context.conditions?.includes is not a function` を起こすため、e2e ジョブのみ Node を 22.22.x に固定する。ローカルでも Node ≥ 22.22 で実行すること（`playwright/pnpm-workspace.yaml` の `engineStrict` で install 時に強制）。
 
 ### なぜ compose（testcontainers ではない）か
@@ -71,7 +71,7 @@ playwright/
 ├─ compose.test.yml            # postgres:18→:54312 / redis:8→:56312（fork 所有・固定ポート）
 ├─ global-teardown.ts          # compose down -v
 ├─ fixtures/
-│  └─ misskey.ts               # resetDb / setupInstance / registerUser / login / dismissUserSetup（Cypress support から移植）
+│  └─ misskey.ts               # resetDb / setupInstance / registerUser / login / dismissUserSetup（upstream e2e helper を基に実装）
 ├─ tests/
 │  ├─ smoke.spec.ts            # Stage 0: ホーム描画
 │  ├─ core/                    # Stage 1: 基幹 happy-path
@@ -80,14 +80,14 @@ playwright/
 └─ tsconfig.json
 ```
 
-移植する Cypress ヘルパ（`cypress/support/commands.ts` 由来）:
+upstream E2E の helper を基にするヘルパ:
 
 | ヘルパ | 内容 |
 |---|---|
 | `resetDb` | `POST /api/reset-db` → 204 を確認（テスト DB 初期化） |
 | `registerUser(name, pass, isAdmin)` | admin は `POST /api/admin/accounts/create`（`setupPassword` 同梱）、一般は `POST /api/signup`。作成 body（`token` 含む）を返す |
 | `setupInstance` | `registerUser('admin', _, true)` で初期管理者を作成しインスタンスをセットアップ |
-| `login(name, pass)` | `data-cy-signin*` 経由の UI ログインフロー |
+| `login(name, pass)` | upstream の `data-testid` 経由の UI ログインフロー |
 | `dismissUserSetup` | 新規ユーザーがログイン直後に出す初期設定ウィザードを閉じる |
 
 ---
@@ -141,9 +141,9 @@ Claude Code は公式プラグイン `playwright@claude-plugins-official`（`.cl
 - **gate**: 新規 workflow が CI で緑
 
 ### Stage 1 — 基幹フロー スモーク（品質底上げの背骨）
-endolphin が絶対壊してはいけない happy-path を固定: インスタンス初期セットアップ / signup / login / **ノート投稿 → TL 反映 → ノート詳細** / ドライブにアップロード / ユーザーフォロー / 設定画面が開く。全て `data-cy-*` 再利用で短く・速く・安定に。
+endolphin が絶対壊してはいけない happy-path を固定: インスタンス初期セットアップ / signup / login / **ノート投稿 → TL 反映 → ノート詳細** / ドライブにアップロード / ユーザーフォロー / 設定画面が開く。全て upstream の `data-testid` 再利用で短く・速く・安定に。
 
-### Stage 2 — 削除コントラクト回帰（★ Playwright 固有価値・Cypress と非重複）
+### Stage 2 — 削除コントラクト回帰（★ fork 所有 Playwright 固有価値・upstream E2E と非重複）
 「機能を削っても基幹が壊れない」を機械保証する。fork にしか無いニーズ。
 - 削除機能（gallery / pages / achievements / games / favorites / embed / charts / admin統計 / retention / ads / chat）の導線除去を UI 側で確認
 - スタブ契約を e2e ハーネス内の API 呼び出しで検証: read 系=`[]`/`null`、write 系=410（`FEATURE_REMOVED`）
@@ -160,8 +160,8 @@ MCP を「探索 → spec 蒸留」の定常ループに乗せる。
 - この「探索 → 蒸留 → flake 切り分け」ループの手順は [.claude/skills/authoring-playwright-e2e/](../../.claude/skills/authoring-playwright-e2e/SKILL.md) スキルに成文化済（Codex 向けスタブは `.agents/skills/authoring-playwright-e2e/`）。`playwright/` の e2e を書く・直すときの入口
 
 ### 継続運用 — メンテ規律（育成を負債化させない）
-- upstream sync のたびに pw スイートを実行。落ちたら `data-cy-*` のズレを直す（安価）
-- pw に足すか迷ったら判定: 「fork 固有（削除契約 / 自作画面）か、絶対死守の基幹 happy-path」なら入れる。upstream 全機能網羅は入れない（Cypress = 継承の領分）
+- upstream sync のたびに fork 所有 pw スイートを実行。落ちたら `data-testid` のズレを直す（安価）
+- fork 所有 pw に足すか迷ったら判定: 「fork 固有（削除契約 / 自作画面）か、絶対死守の基幹 happy-path」なら入れる。upstream 全機能網羅は入れない（upstream Playwright E2E = 継承の領分）
 - flake は trace / video アーティファクトで切り分け、retry は CI のみ
 
 ---

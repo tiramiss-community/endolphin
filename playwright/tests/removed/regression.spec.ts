@@ -26,10 +26,10 @@ test.describe('removed / core still works after touching removed features', () =
 		// 基幹: ノート投稿 → TL 反映が依然として動く
 		await dismissUserSetup(page);
 		const body = 'core survives removal';
-		await expect(page.locator('[data-cy-open-post-form]')).toBeVisible({ timeout: 30_000 });
-		await page.locator('[data-cy-open-post-form]').click();
-		await page.locator('[data-cy-post-form-text]').fill(body);
-		await page.locator('[data-cy-open-post-form-submit]').click();
+		await expect(page.getByTestId('open-post-form')).toBeVisible({ timeout: 30_000 });
+		await page.getByTestId('open-post-form').click();
+		await page.getByTestId('post-form-text').fill(body);
+		await page.getByTestId('post-form-submit').click();
 		await expect(page.getByText(body).first()).toBeVisible({ timeout: 15_000 });
 	});
 });

@@ -12,7 +12,7 @@ LLM / エージェントが起動中の Misskey を**実ブラウザで駆動**�
 
 1. ローカルで Misskey を起動する。探索用途は **`pnpm build && pnpm -C playwright explore`** が最短 (compose + start:test を上げて `:61812` を保持し、Ctrl-C で自動撤去)。`pnpm dev` でも可。起動と初期状態づくりは [tasks/exploring-with-mcp.md](../tasks/exploring-with-mcp.md)。
 2. エージェントに `browser_*` で `http://localhost:61812` を探索・操作させる。代表的な操作: ページ遷移 (navigate)、DOM スナップショット取得 (snapshot)、クリック / 入力、スクリーンショット取得など。正確なツール名・引数はプラグインが提供するスキーマに従う (ツール一覧はセッションの利用可能ツールを参照)。
-3. snapshot で `data-cy-*` 属性や role を拾い、操作列と待ちの正体を採取する → [tasks/exploring-with-mcp.md](../tasks/exploring-with-mcp.md)。
+3. snapshot で `data-testid` 属性や role を拾い、操作列と待ちの正体を採取する → [tasks/exploring-with-mcp.md](../tasks/exploring-with-mcp.md)。
 
 ## codegen との関係
 
@@ -22,7 +22,7 @@ LLM / エージェントが起動中の Misskey を**実ブラウザで駆動**�
 pnpm -C playwright codegen   # http://localhost:61812 に対して（playwright/package.json の script）
 ```
 
-どちらも出力は**使い捨ての素材**。fixtures・`data-cy-*`・describe 構造へ作り替える → [tasks/distilling-a-spec.md](../tasks/distilling-a-spec.md)。
+どちらも出力は**使い捨ての素材**。fixtures・`data-testid`・describe 構造へ作り替える → [tasks/distilling-a-spec.md](../tasks/distilling-a-spec.md)。
 
 ## 鉄則: 探索ログは commit しない
 
