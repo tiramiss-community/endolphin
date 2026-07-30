@@ -5,7 +5,15 @@ endolphin 固有の変更を記録する。本家 Misskey 由来の変更は ups
 書式は本家 `CHANGELOG.md` に倣い、`### General` / `### Client` / `### Server` の下に
 `- <Feat|Enhance|Fix|Remove>: <概要>` を 1 行で追記する（機能削除は `Remove:`）。
 
-## Unreleased
+## 2026.7.0
+
+### 先行導入
+
+- https://github.com/misskey-dev/misskey/pull/17821
+- https://github.com/misskey-dev/misskey/pull/17808
+- ほか数点
+
+## 2026.6.0
 
 ### General
 - Feat: endolphin fork の基盤を整備（fork メタデータ / upstream 追従フロー / changelog 分離 / fork policy）
