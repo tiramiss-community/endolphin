@@ -17,25 +17,25 @@ test.describe('core / auth', () => {
 		await request.post('/api/admin/update-meta', { data: { i: admin.token, disableRegistration: false } });
 
 		await page.goto('/');
-		await page.locator('[data-cy-signup]').click();
+		await page.getByTestId('signup').click();
 
 		// 利用規約への同意
-		await page.locator('[data-cy-signup-rules-notes-agree] [data-cy-switch-toggle]').click();
-		await page.locator('[data-cy-modal-dialog-ok]').click();
-		await page.locator('[data-cy-signup-rules-continue]').click();
+		await page.getByTestId('signup-rules-notes-agree').getByTestId('switch-toggle').click();
+		await page.getByTestId('modal-dialog-ok').click();
+		await page.getByTestId('signup-rules-continue').click();
 
 		// アカウント情報
-		await page.locator('[data-cy-signup-username] input').fill('bob');
-		await page.locator('[data-cy-signup-password] input').fill('bob12345');
-		await page.locator('[data-cy-signup-password-retype] input').fill('bob12345');
+		await page.getByTestId('signup-username').locator('input').fill('bob');
+		await page.getByTestId('signup-password').locator('input').fill('bob12345');
+		await page.getByTestId('signup-password-retype').locator('input').fill('bob12345');
 
 		await Promise.all([
 			page.waitForResponse((r) => r.url().includes('/api/signup') && r.request().method() === 'POST'),
-			page.locator('[data-cy-signup-submit]').click(),
+			page.getByTestId('signup-submit').click(),
 		]);
 
 		// サインアップ成功なら初期設定ウィザードが開く
-		await expect(page.locator('[data-cy-user-setup-continue]')).toBeVisible({ timeout: 30_000 });
+		await expect(page.getByTestId('user-setup-continue')).toBeVisible({ timeout: 30_000 });
 	});
 
 	test('registered user can sign in via UI', async ({ page, request }) => {
@@ -45,6 +45,6 @@ test.describe('core / auth', () => {
 		await login(page, 'alice', 'alice1234');
 
 		// 新規ユーザーはサインイン直後に初期設定ウィザードが出る = サインイン成功の証左
-		await expect(page.locator('[data-cy-user-setup-continue]')).toBeVisible({ timeout: 30_000 });
+		await expect(page.getByTestId('user-setup-continue')).toBeVisible({ timeout: 30_000 });
 	});
 });

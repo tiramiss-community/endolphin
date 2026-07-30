@@ -25,7 +25,7 @@ CI で落ちた場合は、その run の `playwright-report` artifact を落と
 
 trace viewer のタイムラインで、**落ちたアクションの直前に「何を待っていたか / 何が来なかったか」**を見る。典型の見分け:
 
-- アクションが **要素を待ち続けてタイムアウト** → セレクタが合っていない (data-cy のズレ) か、要素がまだ描画されていない (待ちが早すぎ)。
+- アクションが **要素を待ち続けてタイムアウト** → セレクタが合っていない (`data-testid` のズレ) か、要素がまだ描画されていない (待ちが早すぎ)。
 - クリックが **別要素に当たる / intercept される** → モーダル backdrop が乗っている。
 - ネットワーク完了前に次へ進んでいる → API 応答待ちが抜けている。
 
@@ -36,7 +36,7 @@ trace viewer のタイムラインで、**落ちたアクションの直前に�
 | login 直後の操作が welcome 画面に飛ぶ | signin 成功後にクライアントが token を localStorage に保存して home へ**リロード**する。これと競合 | `fixtures/misskey.ts` の `login()` が `signin-flow` 応答 + home 要素の可視を待つ。自前ログインせず fixtures を使う |
 | クリックが効かない / backdrop に阻まれる | 新規ユーザーの初期設定ウィザードが全ページ共通 popup で割り込む | **遷移先に着いた後**に `dismissUserSetup(page)` を 1 回呼ぶ (遷移前に閉じても再オープンする) |
 | 投稿したノートが TL に出ない (たまに) | TL 反映に伝播ラグがある | `waitForTimeout` でなく `expect(page.getByText(body).first()).toBeVisible({ timeout: 15_000 })` で**結果**を待つ |
-| upstream sync 後に急に全滅 | `data-cy-*` 属性が upstream 側で変わった | セレクタを現行 DOM に合わせて直す (安価)。詳細は [knowledge/what-belongs-in-pw.md](../knowledge/what-belongs-in-pw.md) のメンテ規律 |
+| upstream sync 後に急に全滅 | `data-testid` 属性が upstream 側で変わった | セレクタを現行 DOM に合わせて直す (安価)。詳細は [knowledge/what-belongs-in-pw.md](../knowledge/what-belongs-in-pw.md) のメンテ規律 |
 
 ## 原則: sleep でなくシグナルを待つ
 

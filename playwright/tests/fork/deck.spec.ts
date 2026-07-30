@@ -42,7 +42,7 @@ test.describe('fork / deck multi-column UI', () => {
 		// addColumn は os.select（MkDialog + MkSelect）でカラム種別を尋ねる。
 		// MkSelect の既定値は null なので、種別を選ばず OK すると addColumn が早期 return する。
 		// → MkSelect を開いて種別を 1 つ選んでから OK する必要がある。
-		const okButton = page.locator('[data-cy-modal-dialog-ok]').last();
+		const okButton = page.getByTestId('modal-dialog-ok').last();
 		await okButton.waitFor({ state: 'visible', timeout: 15_000 });
 
 		// MkSelect コンテナ（chevron-down を内包する tabindex=0 の入力枠）を開く → os.popupMenu

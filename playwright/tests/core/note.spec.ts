@@ -16,11 +16,11 @@ test.describe('core / note', () => {
 	test('posting a note shows it on the timeline', async ({ page }) => {
 		const body = 'Hello, Playwright e2e!';
 
-		await expect(page.locator('[data-cy-open-post-form]')).toBeVisible({ timeout: 30_000 });
-		await page.locator('[data-cy-open-post-form]').click();
+		await expect(page.getByTestId('open-post-form')).toBeVisible({ timeout: 30_000 });
+		await page.getByTestId('open-post-form').click();
 
-		await page.locator('[data-cy-post-form-text]').fill(body);
-		await page.locator('[data-cy-open-post-form-submit]').click();
+		await page.getByTestId('post-form-text').fill(body);
+		await page.getByTestId('post-form-submit').click();
 
 		// 投稿がタイムラインに反映される
 		await expect(page.getByText(body).first()).toBeVisible({ timeout: 15_000 });

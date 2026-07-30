@@ -41,7 +41,7 @@ curl -s -X POST localhost:61812/api/signup -d '{"username":"alice","password":"a
 
 Claude Code は `playwright@claude-plugins-official` プラグイン経由で `browser_*` ツールを使える (詳細・規約は [knowledge/playwright-mcp.md](../knowledge/playwright-mcp.md))。`http://localhost:61812` を起点に、テストしたいフローを 1 回通す。歩きながら次を採取する:
 
-- **各操作で使うセレクタ**。優先順位は `data-cy-*` 再利用 → role/text → 安定 CSS class (理由とフォールバック方針は [knowledge/fixtures-and-selectors.md](../knowledge/fixtures-and-selectors.md))。snapshot で DOM を見て `data-cy-*` 属性を拾う。
+- **各操作で使うセレクタ**。優先順位は upstream の `data-testid` 再利用 → role/text → 安定 CSS class (理由とフォールバック方針は [knowledge/fixtures-and-selectors.md](../knowledge/fixtures-and-selectors.md))。snapshot で DOM を見て `data-testid` 属性を拾う。
 - **待ちの正体**。「TL に出るまで」「signin 後 home に戻るまで」など、何が出たら次に進めるのかを観察する (これが spec の `waitFor` / `waitForResponse` になり、flake を防ぐ → [triaging-flakes.md](triaging-flakes.md))。
 - **モーダル / ウィザードの割り込み**。新規ユーザーは login 直後に初期設定ウィザードが出る (fixtures の `dismissUserSetup` が閉じる)。割り込みの有無と順序を記録する。
 
@@ -53,7 +53,7 @@ Claude Code は `playwright@claude-plugins-official` プラグイン経由で `b
 pnpm -C playwright codegen   # http://localhost:61812 に対して起動（package.json の codegen script）
 ```
 
-codegen の出力は**生のセレクタ羅列で boilerplate まみれ**なので、そのままでは commit しない。[distilling-a-spec.md](distilling-a-spec.md) で fixtures・data-cy・describe 構造へ作り替える素材として使う。
+codegen の出力は**生のセレクタ羅列で boilerplate まみれ**なので、そのままでは commit しない。[distilling-a-spec.md](distilling-a-spec.md) で fixtures・`data-testid`・describe 構造へ作り替える素材として使う。
 
 ## 出力 = 次の段への受け渡し
 

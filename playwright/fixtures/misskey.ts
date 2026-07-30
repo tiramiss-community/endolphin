@@ -5,8 +5,8 @@
 
 import { test as base, expect, type APIRequestContext, type Page } from '@playwright/test';
 
-// cypress/support/commands.ts から移植したヘルパ群。
-// セレクタは upstream が維持する data-cy-* を再利用する（DOM 変更に巻き込まれにくい）。
+// upstream の frontend e2e helper を基にしたヘルパ群。
+// セレクタは upstream が維持する data-testid を再利用する（DOM 変更に巻き込まれにくい）。
 
 export const ADMIN_SETUP_PASSWORD = 'example_password_please_change_this_or_you_will_get_hacked';
 
@@ -52,14 +52,15 @@ export async function setupInstance(request: APIRequestContext): Promise<any> {
  * 1 度だけ呼ぶこと（遷移直後に再オープンして backdrop がクリックを遮るため、遷移前に閉じても無駄）。
  */
 export async function dismissUserSetup(page: Page): Promise<void> {
-	const close = page.locator('[data-cy-user-setup] [data-cy-modal-window-close]');
+	const setupDialog = page.getByTestId('user-setup-dialog');
+	const close = setupDialog.getByTestId('modal-window-close');
 	await close.waitFor({ state: 'visible', timeout: 30_000 });
 	await close.click();
 	// 「スキップしますか？」確認ダイアログの OK
-	const ok = page.locator('[data-cy-modal-dialog-ok]');
+	const ok = page.getByTestId('modal-dialog-ok');
 	await ok.waitFor({ state: 'visible', timeout: 10_000 });
 	await ok.click();
-	await page.locator('[data-cy-user-setup]').waitFor({ state: 'hidden', timeout: 10_000 }).catch(() => {});
+	await setupDialog.waitFor({ state: 'hidden', timeout: 10_000 }).catch(() => {});
 }
 
 /** reset → 初期管理者作成 → 対象ユーザー作成 → UI ログイン まで（ウィザードは遷移先で completeUserSetup する）。 */
@@ -75,23 +76,25 @@ export async function prepareLoggedInUser(
 	await login(page, username, password);
 }
 
-/** UI フローでサインインする（data-cy-signin* 経由）。 */
+/** UI フローでサインインする（upstream の data-testid 経由）。 */
 export async function login(page: Page, username: string, password: string): Promise<void> {
 	await page.goto('/');
-	await page.locator('[data-cy-signin]').click();
-	await page.locator('[data-cy-signin-username] input').fill(username);
-	await page.locator('[data-cy-signin-username] input').press('Enter');
-	await page.locator('[data-cy-signin-password] input').waitFor({ state: 'visible' });
-	await page.locator('[data-cy-signin-password] input').fill(password);
+	await page.getByTestId('signin').click();
+	const usernameInput = page.getByTestId('signin-username').locator('input');
+	await usernameInput.fill(username);
+	await usernameInput.press('Enter');
+	const passwordInput = page.getByTestId('signin-password').locator('input');
+	await passwordInput.waitFor({ state: 'visible' });
+	await passwordInput.fill(password);
 	await Promise.all([
 		page.waitForResponse((r) => r.url().includes('/api/signin-flow')),
-		page.locator('[data-cy-signin-password] input').press('Enter'),
+		passwordInput.press('Enter'),
 	]);
 
 	// signin 成功後、クライアントはトークンを localStorage に保存して home にリロードする。
 	// これを待たずに goto するとリロードと競合し、未ログインの welcome 画面へ飛ぶ。
 	// ログイン後 home（post ボタン or 初期設定ウィザード）が出るまで待ち、セッション確立を保証する。
-	await page.locator('[data-cy-open-post-form], [data-cy-user-setup]').first()
+	await page.getByTestId('open-post-form').or(page.getByTestId('user-setup-dialog')).first()
 		.waitFor({ state: 'visible', timeout: 30_000 });
 }
 

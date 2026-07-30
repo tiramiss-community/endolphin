@@ -6,7 +6,7 @@
 import path from 'node:path';
 import { defineConfig, devices } from '@playwright/test';
 
-// endolphin fork 所有の e2e リグ。upstream の cypress/ は触らない（docs/endolphin/playwright-e2e.md 参照）。
+// endolphin fork 所有の e2e リグ。upstream の frontend e2e は触らない（docs/endolphin/playwright-e2e.md 参照）。
 const ROOT = path.resolve(__dirname, '..');
 const BASE_URL = 'http://localhost:61812';
 
@@ -29,7 +29,7 @@ export default defineConfig({
 		screenshot: 'only-on-failure',
 	},
 	projects: [
-		// locale を固定して i18n テキストベースのセレクタを決定的にする（data-cy が無い画面用）
+		// locale を固定して i18n テキストベースのセレクタを決定的にする（data-testid が無い画面用）
 		{ name: 'chromium', use: { ...devices['Desktop Chrome'], locale: 'en-US' } },
 	],
 	// 案1+2: 先に compose で infra を上げ（Playwright は webServer を globalSetup より先に
