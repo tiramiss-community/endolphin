@@ -8,7 +8,7 @@ import {
 	// const
 	ADMIN_SETUP_PASSWORD, BASE_URL,
 	// locator helper
-	locateMkInput, locateMkSwitch, locateMkTextarea,
+	locateMkInput, locateMkSwitch,
 	// utils
 	registerUser, resetState, visitHome, closeUserSetupDialog, postNote,
 	// page utils
@@ -165,24 +165,18 @@ test.describe('After user signed in', () => {
 
 	test('account setup wizard', async ({ page }) => {
 		// 表示に時間がかかるのでデフォルト秒数だとタイムアウトする
+		// welcome
 		await page.getByTestId('user-setup-continue').click({ timeout: 30000 });
 
-		await locateMkInput(page, 'user-setup-user-name').fill('ありす');
-		await locateMkTextarea(page, 'user-setup-user-description').fill('ほげ');
-		// TODO: アイコン設定のテスト
+		// フォローはスキップ
 		await page.getByTestId('user-setup-continue').click();
 
-		// プライバシー設定
-		await page.getByTestId('user-setup-continue').click();
-
-		// フォロー設定
-		await page.getByTestId('user-setup-continue').click();
-
-		// プッシュ通知設定
+		// プッシュ通知設定はスキップ
 		await page.getByTestId('user-setup-continue').click();
 
 		// 完了
 		await page.getByTestId('user-setup-continue').click();
+		await test.expect(page.getByTestId('user-setup-dialog')).toBeHidden();
 	});
 });
 
