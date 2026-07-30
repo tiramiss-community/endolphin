@@ -5,6 +5,7 @@
 
 // OTLP への再出力判定が依存する、Sentry SDK の span 形式を固定する契約テスト。
 // SDK の公開 API を実際に駆動し、kind・name・属性の組み合わせを確認する。
+// Sentry の自動計装より先に pg を読み込まないよう、DB setup のない unit:pure で実行する。
 // assumption が失敗した場合は、まず依存 SDK の挙動が変わり、Misskey 側の実装前提が崩れたと判断する。
 // 期待値だけを更新せず、各 assumption のコメントに記した影響箇所を確認すること。
 // Sentry 自身が収集する内容は Sentry の計装と運用者の設定に委ね、このテストでは制限しない。
@@ -17,8 +18,8 @@ import { describe, expect, test } from 'vitest';
 import Fastify from 'fastify';
 import { context, propagation, trace } from '@opentelemetry/api';
 import * as Sentry from '@sentry/node';
-import { SentryTelemetryAdapter } from '@/core/telemetry/adapters/SentryTelemetryAdapter.js';
 import type { ReadableSpan, SpanProcessor } from '@opentelemetry/sdk-trace-base';
+import { SentryTelemetryAdapter } from '@/core/telemetry/adapters/SentryTelemetryAdapter.js';
 
 /**
  * 次の `Sentry.init()` が独自 processor を登録できるよう、テスト間で global OTel API を初期化する。
