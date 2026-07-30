@@ -81,14 +81,16 @@ RUN cd /misskey-deploy/node_modules \
 # (codec libraries) pulls in ~400 MB even with --no-install-recommends. Misskey only decodes frames
 # for thumbnails / sensitive-media analysis (no GPL encoders), so the lgpl build is sufficient.
 # Runs on $BUILDPLATFORM and selects the target arch via $TARGETARCH so cross-builds don't emulate.
-# Pinned to an immutable BtbN autobuild + SHA256; to upgrade, pick a newer autobuild-* tag and refresh
-# both digests from the GitHub release API (`.assets[].digest`).
+# Pinned to a retained BtbN month-end autobuild + SHA256. Daily builds are pruned after 14 releases,
+# while month-end builds are kept for two years. To upgrade, pick a newer retained month-end tag and
+# refresh the version, source revision, and both digests from the GitHub release API.
 FROM --platform=$BUILDPLATFORM node:${NODE_VERSION} AS ffmpeg-fetch
 ARG TARGETARCH
-ARG FFMPEG_VERSION=n8.1.2
-ARG FFMPEG_BASE_URL=https://github.com/BtbN/FFmpeg-Builds/releases/download/autobuild-2026-06-27-13-21
-ARG FFMPEG_SHA256_amd64=e4b3e7a92ff8a0713f961e2fa99d2a70fcabb26ca22f354a88d2973c226f94d4
-ARG FFMPEG_SHA256_arm64=eabf197f1815f638f9f62c9220154e857dcadc9888f8e006d33d230e85a11e18
+ARG FFMPEG_VERSION=n8.1.2-21-gce3c09c101
+ARG FFMPEG_SOURCE_REV=ce3c09c101c83add623774d414a9f9498caf5c25
+ARG FFMPEG_BASE_URL=https://github.com/BtbN/FFmpeg-Builds/releases/download/autobuild-2026-06-30-13-34
+ARG FFMPEG_SHA256_amd64=92a85718296516045e3d08a971f346f111971a2f9cba7e8191e5454eb05e4305
+ARG FFMPEG_SHA256_arm64=b70a4ad2df3cb7f25524c45be4591de59a81eb737285717d91e7f611d234d406
 # (1) download the tarball for the target arch and verify its pinned SHA256 (build fails on mismatch)
 RUN <<EOF
 set -eux
@@ -117,7 +119,7 @@ standalone program invoked via subprocess -- it is not linked into Misskey, and 
 was not modified.
 
 License:                 see LICENSE.txt in this directory (GNU LGPL v3).
-Corresponding source:    https://github.com/FFmpeg/FFmpeg/releases/tag/${FFMPEG_VERSION}
+Corresponding source:    https://github.com/FFmpeg/FFmpeg/archive/${FFMPEG_SOURCE_REV}.tar.gz
 Build recipe / config:   https://github.com/BtbN/FFmpeg-Builds
 Upstream binary release: ${FFMPEG_BASE_URL}
 EOF
