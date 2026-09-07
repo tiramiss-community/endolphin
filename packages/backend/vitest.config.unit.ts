@@ -23,24 +23,10 @@ export default mergeConfig(
 					test: {
 						name: 'unit',
 						include: ['test/unit/**/*.ts', 'src/**/*.test.ts'],
-						exclude: ['node_modules', 'dist', 'test/unit/pure/**/*.ts'],
+						exclude: ['node_modules', 'dist'],
 						// ファイルごとに使い捨ての Postgres データベース (test/setup.unit.parallel-db.ts) を
 						// 接続先として注入するため、共有DBのスキーマ競合を気にせず並列実行できる。
 						setupFiles: ['./test/setup.unit.parallel-db.ts'],
-						maxWorkers,
-					},
-				},
-				{
-					extends: true,
-					test: {
-						name: 'unit:pure',
-						include: ['test/unit/pure/**/*.ts'],
-						exclude: ['node_modules', 'dist'],
-						// DB接続を伴わないため本来は 'unit' より並列度を上げられるが、Vitest は
-						// 同じ sequence.groupOrder (未指定時は共通) のプロジェクト間で maxWorkers が
-						// 異なることを許容しない ("Provide unique 'sequence.groupOrder'" エラー)。
-						// groupOrder を分けると 'unit' と直列実行になり合計時間が伸びるため、
-						// 'unit' と同じ値に揃えて並行実行を優先する。
 						maxWorkers,
 					},
 				},
