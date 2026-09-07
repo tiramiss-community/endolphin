@@ -257,7 +257,11 @@ const configDir = resolve(rootDir, '.config');
 /** Path of built directory */
 const projectBuiltDir = resolve(rootDir, 'built');
 
-const compiledConfigFilePathForTest = resolve(projectBuiltDir, '._config_.json');
+// Federation test は A/B が同じ built/ を共有するため、設定 JSON は各コンテナ専用の mount から読む。
+// built/ 配下への nested bind mount を避けることで、並列コンテナ起動時の mountpoint 競合を防ぐ。
+const compiledConfigFilePathForTest = process.env.MISSKEY_TEST_FEDERATION_CONFIG
+	? resolve(configDir, process.env.MISSKEY_TEST_FEDERATION_CONFIG)
+	: resolve(projectBuiltDir, '._config_.json');
 
 export const compiledConfigFilePath = fs.existsSync(compiledConfigFilePathForTest)
 	? compiledConfigFilePathForTest
