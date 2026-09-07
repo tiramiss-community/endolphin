@@ -1,6 +1,7 @@
-# CHANGELOG.md の Unreleased セクションに 1 行追記する
+# CHANGELOG-endolphin.md の Unreleased セクションを更新する
 
-ユーザー影響のある変更 (機能追加・修正・改善) は `CHANGELOG.md` の冒頭 `## Unreleased` セクションに 1 行追加する。リファクタリング等の内部変更は不要。
+ユーザーから見える endolphin 固有の変更を記録するときに読む書式リファレンス。
+upstream 所有の `CHANGELOG.md` は手編集しない。
 
 ## セクション構造
 
@@ -36,12 +37,12 @@
 
 ## 作業手順 (手で書く場合)
 
-1. `CHANGELOG.md` を開いて `## Unreleased` セクションを探す
+1. `CHANGELOG-endolphin.md` を開いて `## Unreleased` セクションを探す
 2. 対象サブセクション (`### General` / `### Client` / `### Server`) の状態を確認
    - **空 (placeholder のみ)**: 見出し直下に `-` 単独行のみがある → これを `- Feat: ...` 等で **置換**
    - **既存エントリあり**: `- Enhance: ...` / `- Fix: ...` 等の行が 1 つ以上ある → 既存エントリ群の **末尾** に **追記**
 3. 順序入れ替えはしない (差分レビューしやすさのため)
-4. `git diff CHANGELOG.md` で 1 行のみ追加されていることを確認
+4. `git diff CHANGELOG-endolphin.md` で 1 行のみ追加されていることを確認
 
 ## 例
 
