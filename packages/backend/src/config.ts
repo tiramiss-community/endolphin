@@ -260,7 +260,11 @@ const configDir = resolve(rootDir, '.config');
 /** Path of built directory */
 const projectBuiltDir = resolve(rootDir, 'built');
 
-const compiledConfigFilePathForTest = resolve(projectBuiltDir, '._config_.json');
+// Federation test は A/B が同じ built/ を共有するため、設定 JSON は各コンテナ専用の mount から読む。
+// built/ 配下への nested bind mount を避けることで、並列コンテナ起動時の mountpoint 競合を防ぐ。
+const compiledConfigFilePathForTest = process.env.MISSKEY_TEST_FEDERATION_CONFIG
+	? resolve(configDir, process.env.MISSKEY_TEST_FEDERATION_CONFIG)
+	: resolve(projectBuiltDir, '._config_.json');
 
 export const compiledConfigFilePath = fs.existsSync(compiledConfigFilePathForTest)
 	? compiledConfigFilePathForTest
@@ -294,7 +298,10 @@ export function loadConfig(): Config {
 		config.mediaProxy.endsWith('/') ? config.mediaProxy.substring(0, config.mediaProxy.length - 1) : config.mediaProxy
 		: null;
 	const internalMediaProxy = `${scheme}://${host}/proxy`;
-	const redis = convertRedisOptions(config.redis, host);
+	// 並列 unit test の Redis namespace は設定を読み込む入口でだけ注入する。
+	// convertRedisOptions 自体は config 値だけを変換する純粋関数として保つ。
+	const redisPrefixOverride = process.env.TEST_PARALLEL_REDIS_PREFIX;
+	const redis = convertRedisOptions(config.redis, host, redisPrefixOverride);
 
 	return {
 		version,
@@ -328,10 +335,10 @@ export function loadConfig(): Config {
 		fulltextSearch: config.fulltextSearch,
 		meilisearch: config.meilisearch,
 		redis,
-		redisForPubsub: config.redisForPubsub ? convertRedisOptions(config.redisForPubsub, host) : redis,
-		redisForJobQueue: config.redisForJobQueue ? convertRedisOptions(config.redisForJobQueue, host) : redis,
-		redisForTimelines: config.redisForTimelines ? convertRedisOptions(config.redisForTimelines, host) : redis,
-		redisForReactions: config.redisForReactions ? convertRedisOptions(config.redisForReactions, host) : redis,
+		redisForPubsub: config.redisForPubsub ? convertRedisOptions(config.redisForPubsub, host, redisPrefixOverride) : redis,
+		redisForJobQueue: config.redisForJobQueue ? convertRedisOptions(config.redisForJobQueue, host, redisPrefixOverride) : redis,
+		redisForTimelines: config.redisForTimelines ? convertRedisOptions(config.redisForTimelines, host, redisPrefixOverride) : redis,
+		redisForReactions: config.redisForReactions ? convertRedisOptions(config.redisForReactions, host, redisPrefixOverride) : redis,
 		sentryForBackend: config.sentryForBackend,
 		sentryForFrontend: config.sentryForFrontend,
 		id: config.id,
@@ -376,10 +383,8 @@ function tryCreateUrl(url: string) {
 	}
 }
 
-export function convertRedisOptions(options: RedisOptionsSource, host: string): RedisOptionsResolved {
-	// test/setup.unit.parallel-db.ts がテストファイルごとに一意な prefix を注入するための上書き。
-	// db.db と同じ理由で env 側を優先する (test.yml は prefix 未設定=host にフォールバックする固定値のため)。
-	const prefix = process.env.TEST_PARALLEL_REDIS_PREFIX ?? options.prefix ?? host;
+export function convertRedisOptions(options: RedisOptionsSource, host: string, prefixOverride?: string): RedisOptionsResolved {
+	const prefix = prefixOverride ?? options.prefix ?? host;
 	return {
 		...options,
 		password: options.pass,
