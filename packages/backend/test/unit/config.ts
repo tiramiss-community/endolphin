@@ -4,7 +4,7 @@
  */
 
 import { describe, test, expect } from 'vitest';
-import { convertRedisOptions, getRedisPubsubChannel } from '@/config.js';
+import { convertRedisOptions, getRedisPubsubChannel, loadConfig } from '@/config.js';
 import type { Config } from '@/config.js';
 
 describe('convertRedisOptions', () => {
@@ -22,6 +22,24 @@ describe('convertRedisOptions', () => {
 
 		expect(result.prefix).toBe('shared-redis-namespace');
 		expect(result.keyPrefix).toBe('shared-redis-namespace:');
+	});
+
+	test('prefix override は明示的に渡したときだけ優先する', () => {
+		const options = { host: 'redis.internal', port: 6379, pass: '', prefix: 'shared-redis-namespace' };
+		const result = convertRedisOptions(options, 'misskey.example.com', 'test-parallel-namespace');
+
+		expect(result.prefix).toBe('test-parallel-namespace');
+		expect(result.keyPrefix).toBe('test-parallel-namespace:');
+	});
+});
+
+describe('loadConfig', () => {
+	test('並列 unit test 用の Redis prefix override を Redis 設定へ注入する', () => {
+		const prefix = process.env.TEST_PARALLEL_REDIS_PREFIX;
+		expect(prefix).toBeDefined();
+
+		const config = loadConfig();
+		expect(config.redis.prefix).toBe(prefix);
 	});
 });
 
