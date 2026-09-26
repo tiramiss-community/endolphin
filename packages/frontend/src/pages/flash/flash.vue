@@ -231,6 +231,13 @@ async function run() {
 		out: () => {
 			// nop
 		},
+		err: (err) => {
+			os.alert({
+				type: 'error',
+				title: 'AiScript Error',
+				text: String(err),
+			});
+		},
 		log: () => {
 			// nop
 		},
@@ -244,7 +251,8 @@ async function run() {
 	} catch (err) {
 		os.alert({
 			type: 'error',
-			text: 'Syntax error :(',
+			title: 'Syntax Error',
+			text: String(err),
 		});
 		return;
 	}
@@ -253,8 +261,8 @@ async function run() {
 	} catch (err: any) {
 		os.alert({
 			type: 'error',
-			title: 'AiScript Error',
-			text: err.message,
+			title: 'AiScript Internal Error',
+			text: String(err),
 		});
 	}
 }
