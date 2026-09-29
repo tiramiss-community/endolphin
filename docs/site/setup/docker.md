@@ -254,45 +254,54 @@ sudo docker compose ps
 sudo docker compose logs --tail=100 web
 ```
 
-本体起動時に DB migration が実行されます。ログ、公開 URL、ログイン、アップロード済みファイル、`/healthz` を確認します。DB やファイル形式を変更するリリースでは、リリースノートの移行案内も確認してください。問題が起きた場合、同じ時点の DB・設定・ファイルのバックアップを復元してから、互換性のある旧イメージタグに戻します。
+本体起動時に DB migration が実行されます。ログ、公開 URL、ログイン、アップロード済みファイル、`/healthz` を確認します。DB やファイル形式を変更するリリースでは、リリースノートの移行案内も確認してください。問題が起きた場合、バックアップした compose.yml に記録されたイメージタグと、同じ時点の DB・設定・ファイルを復元します。
 
 ## 7. バックアップと復元
 
-バックアップは DB、`.config`、`files/` を同じ時点で保存します。DB の一貫性を保つため、バックアップ時はアプリを停止します。バックアップ先は別ホストまたは別ディスクにし、アクセス権を制限してください。
+バックアップは DB、`.config`、`files/` と、実行イメージタグを含む `compose.yml` を同じ時点で保存します。DB の一貫性を保つため、バックアップ時はアプリを停止します。バックアップ先は別ホストまたは別ディスクにし、アクセス権を制限してください。途中で失敗した場合は `web` を停止したままにし、原因を解消してから再実行してください。
 
 ```sh
-cd /srv/endolphin
-sudo docker compose stop web
-BACKUP_DIR=/var/backups/endolphin
-sudo install -d -o "$USER" -g "$(id -gn)" -m 700 "$BACKUP_DIR"
+(
+  set -e
+  cd /srv/endolphin
+  sudo docker compose stop web
+  BACKUP_DIR=/var/backups/endolphin
+  sudo install -d -o "$USER" -g "$(id -gn)" -m 700 "$BACKUP_DIR"
 
-sudo docker compose exec -T db sh -c 'pg_dump -U "$POSTGRES_USER" -Fc "$POSTGRES_DB"' > "$BACKUP_DIR/db.dump"
-sudo tar -czf - compose.yml .config/default.yml .config/docker.env > "$BACKUP_DIR/config.tgz"
-sudo tar -czf - files/ > "$BACKUP_DIR/files.tgz"
-chmod 600 "$BACKUP_DIR"/*
-sudo docker compose start web
+  sudo docker compose exec -T db sh -c 'pg_dump -U "$POSTGRES_USER" -Fc "$POSTGRES_DB"' > "$BACKUP_DIR/db.dump"
+  sudo tar -czf - compose.yml .config/default.yml .config/docker.env > "$BACKUP_DIR/config.tgz"
+  sudo tar -czf - files/ > "$BACKUP_DIR/files.tgz"
+  chmod 600 "$BACKUP_DIR"/*
+  sudo docker compose start web
+)
 ```
 
 復元は対象インスタンスを停止し、DB を作り直せることを確認してから行います。次の処理は現在の DB 内容を削除します。
 
-```sh
-cd /srv/endolphin
-sudo docker compose stop web
-sudo docker compose exec -T db sh -c 'dropdb -U "$POSTGRES_USER" --if-exists "$POSTGRES_DB"'
-sudo docker compose exec -T db sh -c 'createdb -U "$POSTGRES_USER" -O "$POSTGRES_USER" "$POSTGRES_DB"'
-sudo docker compose exec -T db sh -c 'pg_restore -U "$POSTGRES_USER" --no-owner --role="$POSTGRES_USER" -d "$POSTGRES_DB"' < /var/backups/endolphin/db.dump
+復元中にコマンドが失敗した場合は処理が止まり、`web` は停止したままです。原因を解消してから再開してください。
 
-sudo tar --no-same-owner -xzf /var/backups/endolphin/config.tgz
-sudo tar --no-same-owner -xzf /var/backups/endolphin/files.tgz
-sudo chown "$USER":"$(id -gn)" compose.yml .config/docker.env
-sudo chmod 600 .config/docker.env
-sudo chown 991:991 .config/default.yml
-sudo chown -R 991:991 files/
-sudo docker compose start web
-sudo docker compose logs --tail=100 web
+```sh
+(
+  set -e
+  cd /srv/endolphin
+  sudo docker compose stop web
+  sudo docker compose exec -T db sh -c 'dropdb -U "$POSTGRES_USER" --if-exists "$POSTGRES_DB"'
+  sudo docker compose exec -T db sh -c 'createdb -U "$POSTGRES_USER" -O "$POSTGRES_USER" "$POSTGRES_DB"'
+  sudo docker compose exec -T db sh -c 'pg_restore -U "$POSTGRES_USER" --no-owner --role="$POSTGRES_USER" -d "$POSTGRES_DB"' < /var/backups/endolphin/db.dump
+
+  sudo tar --no-same-owner -xzf /var/backups/endolphin/config.tgz
+  sudo tar --no-same-owner -xzf /var/backups/endolphin/files.tgz
+  sudo chown "$USER":"$(id -gn)" compose.yml .config/docker.env
+  sudo chmod 600 .config/docker.env
+  sudo chown 991:991 .config/default.yml
+  sudo chown -R 991:991 files/
+  sudo docker compose pull --policy missing web
+  sudo docker compose up -d --no-deps web
+  sudo docker compose logs --tail=100 web
+)
 ```
 
-DB ユーザーや DB 名をバックアップ後に変更した場合は、復元先の Compose 環境と設定ファイルを先に整合させてください。復元後にトップページ、ログイン、過去のアップロードを確認します。定期的に復元訓練を行い、実際に戻せるバックアップであることを確かめてください。
+復元した compose.yml が指定するイメージ版と DB をそろえて起動してください。別のイメージ版で運用する場合は、DB migration やデータ形式の互換性を事前に確認します。DB ユーザーや DB 名をバックアップ後に変更した場合は、復元先の Compose 環境と設定ファイルを先に整合させてください。復元後にトップページ、ログイン、過去のアップロードを確認します。定期的に復元訓練を行い、実際に戻せるバックアップであることを確かめてください。
 
 ## 8. ログと確認
 

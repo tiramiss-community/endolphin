@@ -236,7 +236,7 @@ sudo -u endolphin curl --unix-socket /run/endolphin/endolphin.sock http://localh
 
 ## 6. 更新
 
-更新前に「バックアップと復元」の手順で DB、設定、`files/` を退避します。新しい正式リリースのタグに置き換えてビルドし、サービスを再開します。ユニットの `ExecStartPre` が `pnpm migrate` を実行してから本体を起動します。
+更新前に「バックアップと復元」の手順で DB、設定、`files/` と現在のリリースタグを退避します。新しい正式リリースのタグに置き換えてビルドし、サービスを再開します。ユニットの `ExecStartPre` が `pnpm migrate` を実行してから本体を起動します。
 
 ```sh
 sudo systemctl stop endolphin
@@ -250,34 +250,50 @@ sudo systemctl status endolphin --no-pager
 sudo journalctl -u endolphin -n 100 --no-pager
 ```
 
-起動時の migration が完了し、ログにエラーがなく、ブラウザーと `/healthz` で動作することを確認します。失敗した場合はサービスを停止し、バックアップから DB、設定、ファイルを同じ時点の組み合わせで復元します。
+起動時の migration が完了し、ログにエラーがなく、ブラウザーと `/healthz` で動作することを確認します。失敗した場合はサービスを停止し、バックアップに記録したリリースタグと DB、設定、ファイルを同じ時点の組み合わせで復元します。
 
 ## 7. バックアップと復元
 
-この例ではサービス停止中にバックアップし、DB の一貫性を保ちます。バックアップ先はアクセスを制限した別ディスクまたは別ホストにしてください。DB dump に加えて、設定とアップロードファイルを必ず同じ時点で保存します。
+この例ではサービス停止中にバックアップし、DB の一貫性を保ちます。バックアップ先はアクセスを制限した別ディスクまたは別ホストにしてください。DB dump、設定、アップロードファイルに加えて、実行中のリリースタグも同じ時点で保存します。途中で失敗した場合はサービスを停止したままにし、原因を解消してから再実行してください。
 
 ```sh
-sudo systemctl stop endolphin
-sudo install -d -o "$USER" -g "$(id -gn)" -m 700 /var/backups/endolphin
-sudo -u postgres pg_dump -Fc endolphin > /var/backups/endolphin/db.dump
-sudo tar -C /opt/endolphin -czf - .config/default.yml > /var/backups/endolphin/config.tgz
-sudo tar -C /var/lib/endolphin -czf - files > /var/backups/endolphin/files.tgz
-sudo systemctl start endolphin
-chmod 600 /var/backups/endolphin/*
+(
+  set -e
+  sudo systemctl stop endolphin
+  sudo install -d -o "$USER" -g "$(id -gn)" -m 700 /var/backups/endolphin
+  sudo -u endolphin git -C /opt/endolphin describe --tags --exact-match > /var/backups/endolphin/release.txt
+  sudo -u postgres pg_dump -Fc endolphin > /var/backups/endolphin/db.dump
+  sudo tar -C /opt/endolphin -czf - .config/default.yml > /var/backups/endolphin/config.tgz
+  sudo tar -C /var/lib/endolphin -czf - files > /var/backups/endolphin/files.tgz
+  chmod 600 /var/backups/endolphin/*
+  sudo systemctl start endolphin
+)
 ```
 
-復元は、対象インスタンスを停止し、復元先の DB を作り直せることを確認してから行います。次の例は既存 DB を削除します。DB 名は `endolphin` を想定しています。
+復元先の DB を作り直せることを確認してから実行してください。次の例は既存 DB を削除し、バックアップ時と同じアプリのリリースを復元します。DB 名は `endolphin` を想定しています。復元中にコマンドが失敗した場合は処理が止まり、サービスは停止したままです。原因を解消してから再開してください。
 
 ```sh
-sudo systemctl stop endolphin
-sudo -u postgres dropdb --if-exists endolphin
-sudo -u postgres createdb --owner=endolphin endolphin
-sudo -u postgres pg_restore --no-owner --role=endolphin --dbname=endolphin - < /var/backups/endolphin/db.dump
-sudo tar --no-same-owner -C /opt/endolphin -xzf /var/backups/endolphin/config.tgz
-sudo tar --no-same-owner -C /var/lib/endolphin -xzf /var/backups/endolphin/files.tgz
-sudo chown -R endolphin:endolphin /var/lib/endolphin/files /opt/endolphin/.config
-sudo systemctl start endolphin
+(
+  set -e
+  sudo systemctl stop endolphin
+  RELEASE_TAG=$(cat /var/backups/endolphin/release.txt)
+  if ! sudo -u endolphin git -C /opt/endolphin show-ref --verify --quiet "refs/tags/$RELEASE_TAG"; then
+    sudo -u endolphin git -C /opt/endolphin fetch --tags origin "$RELEASE_TAG"
+  fi
+  sudo -u endolphin git -C /opt/endolphin checkout --detach "$RELEASE_TAG"
+  sudo -u endolphin /usr/local/bin/pnpm --dir /opt/endolphin install --frozen-lockfile
+  sudo -u endolphin /usr/local/bin/pnpm --dir /opt/endolphin build
+  sudo -u postgres dropdb --if-exists endolphin
+  sudo -u postgres createdb --owner=endolphin endolphin
+  sudo -u postgres pg_restore --no-owner --role=endolphin --dbname=endolphin - < /var/backups/endolphin/db.dump
+  sudo tar --no-same-owner -C /opt/endolphin -xzf /var/backups/endolphin/config.tgz
+  sudo tar --no-same-owner -C /var/lib/endolphin -xzf /var/backups/endolphin/files.tgz
+  sudo chown -R endolphin:endolphin /var/lib/endolphin/files /opt/endolphin/.config
+  sudo systemctl start endolphin
+)
 ```
+
+記録されたタグがサーバーにない場合は GitHub から取得するため、復元時にネットワーク接続が必要です。復元した DB と設定にはバックアップ時のアプリ版を合わせてください。別の版で起動する場合は、DB migration やデータ形式の互換性を事前に確認してください。
 
 ロール `endolphin` がまだない新しい PostgreSQL へ復元する場合は、先に「DB と実行ユーザー」の手順で作成してください。復元後はログ、トップページ、ログイン、過去のアップロード画像を確認します。復元訓練を定期的に行い、バックアップが読めることを確かめてください。
 
