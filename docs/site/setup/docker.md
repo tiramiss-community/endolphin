@@ -258,12 +258,27 @@ sudo docker compose logs --tail=100 web
 
 ## 7. バックアップと復元
 
-バックアップは DB、`.config`、`files/` と、実行イメージタグを含む `compose.yml` を同じ時点で保存します。DB の一貫性を保つため、バックアップ時はアプリを停止します。バックアップ先は別ホストまたは別ディスクにし、アクセス権を制限してください。途中で失敗した場合は `web` を停止したままにし、原因を解消してから再実行してください。
+バックアップは DB、`.config`、`files/` と、実行イメージタグを含む `compose.yml` を同じ時点で保存します。DB の一貫性を保つため、バックアップ時はアプリを停止します。バックアップ先は別ホストまたは別ディスクにし、アクセス権を制限してください。途中で失敗しても `web` の再起動を試み、バックアップと再起動の両方に失敗した場合は元のバックアップ失敗を終了ステータスとして返します。
 
 ```sh
 (
+  restart_web() {
+    backup_status=$?
+    trap - EXIT
+    if sudo docker compose start web; then
+      :
+    else
+      restart_status=$?
+      echo "Endolphin web コンテナの再起動に失敗しました" >&2
+      if [ "$backup_status" -eq 0 ]; then
+        backup_status=$restart_status
+      fi
+    fi
+    exit "$backup_status"
+  }
   set -e
   cd /srv/endolphin
+  trap restart_web EXIT
   sudo docker compose stop web
   BACKUP_DIR=/var/backups/endolphin
   sudo install -d -o "$USER" -g "$(id -gn)" -m 700 "$BACKUP_DIR"
@@ -272,22 +287,31 @@ sudo docker compose logs --tail=100 web
   sudo tar -czf - compose.yml .config/default.yml .config/docker.env > "$BACKUP_DIR/config.tgz"
   sudo tar -czf - files/ > "$BACKUP_DIR/files.tgz"
   chmod 600 "$BACKUP_DIR"/*
-  sudo docker compose start web
 )
 ```
 
-復元は対象インスタンスを停止し、DB を作り直せることを確認してから行います。次の処理は現在の DB 内容を削除します。
-
-復元中にコマンドが失敗した場合は処理が止まり、`web` は停止したままです。原因を解消してから再開してください。
+復元前に DB ダンプと設定・ファイルのアーカイブを検査し、DB を一時名の DB へ復元してから稼働 DB と切り替えます。稼働 DB は確認が終わるまで `endolphin_before_restore_<UTC時刻>` という名前で保持します。復元には一時 DB と旧 DB の分だけ追加のディスク容量が必要です。DB 名は Compose の `POSTGRES_DB` を使います。事前検査で失敗した場合は `web` を停止しません。停止後に失敗した場合は自動再起動しないため、原因を調べてから再開してください。切り替え後に問題があれば、`web` を停止し、旧 DB を `POSTGRES_DB` の名前に戻して手動で切り戻せます。
 
 ```sh
 (
   set -e
   cd /srv/endolphin
+  sudo docker compose exec -T db pg_restore --list < /var/backups/endolphin/db.dump > /dev/null
+  sudo tar -tzf /var/backups/endolphin/config.tgz > /dev/null
+  sudo tar -tzf /var/backups/endolphin/files.tgz > /dev/null
   sudo docker compose stop web
-  sudo docker compose exec -T db sh -c 'dropdb -U "$POSTGRES_USER" --if-exists "$POSTGRES_DB"'
-  sudo docker compose exec -T db sh -c 'createdb -U "$POSTGRES_USER" -O "$POSTGRES_USER" "$POSTGRES_DB"'
-  sudo docker compose exec -T db sh -c 'pg_restore -U "$POSTGRES_USER" --no-owner --role="$POSTGRES_USER" -d "$POSTGRES_DB"' < /var/backups/endolphin/db.dump
+
+  RESTORE_ID=$(date -u +%Y%m%d%H%M%S)
+  STAGE_DB="endolphin_restore_$RESTORE_ID"
+  OLD_DB="endolphin_before_restore_$RESTORE_ID"
+  OLD_EXISTS=$(sudo docker compose exec -T db sh -c 'psql -U "$POSTGRES_USER" -d postgres -Atqc "$1"' sh "SELECT 1 FROM pg_database WHERE datname = '$OLD_DB'")
+  if [ -n "$OLD_EXISTS" ]; then
+    echo "退避先 DB $OLD_DB が既に存在します。時刻名を変更して再実行してください" >&2
+    exit 1
+  fi
+
+  sudo docker compose exec -T db sh -c 'createdb -U "$POSTGRES_USER" -O "$POSTGRES_USER" "$1"' sh "$STAGE_DB"
+  sudo docker compose exec -T db sh -c 'pg_restore -U "$POSTGRES_USER" --exit-on-error --no-owner --role="$POSTGRES_USER" --dbname="$1"' sh "$STAGE_DB" < /var/backups/endolphin/db.dump
 
   sudo tar --no-same-owner -xzf /var/backups/endolphin/config.tgz
   sudo tar --no-same-owner -xzf /var/backups/endolphin/files.tgz
@@ -295,6 +319,10 @@ sudo docker compose logs --tail=100 web
   sudo chmod 600 .config/docker.env
   sudo chown 991:991 .config/default.yml
   sudo chown -R 991:991 files/
+  sudo docker compose exec -T db sh -c 'psql -U "$POSTGRES_USER" -d postgres -v ON_ERROR_STOP=1 -v live_db="$POSTGRES_DB" -v stage_db="$1" -v old_db="$2" -f -' sh "$STAGE_DB" "$OLD_DB" <<'SQL'
+ALTER DATABASE :"live_db" RENAME TO :"old_db";
+ALTER DATABASE :"stage_db" RENAME TO :"live_db";
+SQL
   sudo docker compose pull --policy missing web
   sudo docker compose up -d --no-deps web
   sudo docker compose logs --tail=100 web

@@ -254,10 +254,25 @@ sudo journalctl -u endolphin -n 100 --no-pager
 
 ## 7. バックアップと復元
 
-この例ではサービス停止中にバックアップし、DB の一貫性を保ちます。バックアップ先はアクセスを制限した別ディスクまたは別ホストにしてください。DB dump、設定、アップロードファイルに加えて、実行中のリリースタグも同じ時点で保存します。途中で失敗した場合はサービスを停止したままにし、原因を解消してから再実行してください。
+この例ではサービス停止中にバックアップし、DB の一貫性を保ちます。バックアップ先はアクセスを制限した別ディスクまたは別ホストにしてください。DB dump、設定、アップロードファイルに加えて、実行中のリリースタグも同じ時点で保存します。途中で失敗してもサービスの再起動を試み、バックアップと再起動の両方に失敗した場合は元のバックアップ失敗を終了ステータスとして返します。
 
 ```sh
 (
+  restart_service() {
+    backup_status=$?
+    trap - EXIT
+    if sudo systemctl start endolphin; then
+      :
+    else
+      restart_status=$?
+      echo "Endolphin の再起動に失敗しました" >&2
+      if [ "$backup_status" -eq 0 ]; then
+        backup_status=$restart_status
+      fi
+    fi
+    exit "$backup_status"
+  }
+  trap restart_service EXIT
   set -e
   sudo systemctl stop endolphin
   sudo install -d -o "$USER" -g "$(id -gn)" -m 700 /var/backups/endolphin
@@ -266,29 +281,42 @@ sudo journalctl -u endolphin -n 100 --no-pager
   sudo tar -C /opt/endolphin -czf - .config/default.yml > /var/backups/endolphin/config.tgz
   sudo tar -C /var/lib/endolphin -czf - files > /var/backups/endolphin/files.tgz
   chmod 600 /var/backups/endolphin/*
-  sudo systemctl start endolphin
 )
 ```
 
-復元先の DB を作り直せることを確認してから実行してください。次の例は既存 DB を削除し、バックアップ時と同じアプリのリリースを復元します。DB 名は `endolphin` を想定しています。復元中にコマンドが失敗した場合は処理が止まり、サービスは停止したままです。原因を解消してから再開してください。
+復元前に DB ダンプと設定・ファイルのアーカイブを検査し、DB を一時名の DB へ復元してから稼働 DB と切り替えます。稼働 DB は確認が終わるまで `endolphin_before_restore_<UTC時刻>` という名前で保持します。復元には一時 DB と旧 DB の分だけ追加のディスク容量が必要です。事前検査で失敗した場合はサービスを停止しません。停止後に失敗した場合は自動再起動しないため、原因を調べてから再開してください。切り替え後に問題があれば、サービスを停止し、旧 DB を `endolphin` に戻して手動で切り戻せます。
 
 ```sh
 (
   set -e
-  sudo systemctl stop endolphin
   RELEASE_TAG=$(cat /var/backups/endolphin/release.txt)
+  sudo -u postgres pg_restore --list < /var/backups/endolphin/db.dump > /dev/null
+  sudo tar -tzf /var/backups/endolphin/config.tgz > /dev/null
+  sudo tar -tzf /var/backups/endolphin/files.tgz > /dev/null
+  sudo systemctl stop endolphin
   if ! sudo -u endolphin git -C /opt/endolphin show-ref --verify --quiet "refs/tags/$RELEASE_TAG"; then
     sudo -u endolphin git -C /opt/endolphin fetch --tags origin "$RELEASE_TAG"
   fi
   sudo -u endolphin git -C /opt/endolphin checkout --detach "$RELEASE_TAG"
   sudo -u endolphin /usr/local/bin/pnpm --dir /opt/endolphin install --frozen-lockfile
   sudo -u endolphin /usr/local/bin/pnpm --dir /opt/endolphin build
-  sudo -u postgres dropdb --if-exists endolphin
-  sudo -u postgres createdb --owner=endolphin endolphin
-  sudo -u postgres pg_restore --no-owner --role=endolphin --dbname=endolphin - < /var/backups/endolphin/db.dump
+  RESTORE_ID=$(date -u +%Y%m%d%H%M%S)
+  STAGE_DB="endolphin_restore_$RESTORE_ID"
+  OLD_DB="endolphin_before_restore_$RESTORE_ID"
+  OLD_EXISTS=$(sudo -u postgres psql -v ON_ERROR_STOP=1 -Atqc "SELECT 1 FROM pg_database WHERE datname = '$OLD_DB'")
+  if [ -n "$OLD_EXISTS" ]; then
+    echo "退避先 DB $OLD_DB が既に存在します。時刻名を変更して再実行してください" >&2
+    exit 1
+  fi
+  sudo -u postgres createdb --owner=endolphin "$STAGE_DB"
+  sudo -u postgres pg_restore --exit-on-error --no-owner --role=endolphin --dbname="$STAGE_DB" < /var/backups/endolphin/db.dump
   sudo tar --no-same-owner -C /opt/endolphin -xzf /var/backups/endolphin/config.tgz
   sudo tar --no-same-owner -C /var/lib/endolphin -xzf /var/backups/endolphin/files.tgz
   sudo chown -R endolphin:endolphin /var/lib/endolphin/files /opt/endolphin/.config
+  sudo -u postgres psql -v ON_ERROR_STOP=1 -v stage_db="$STAGE_DB" -v old_db="$OLD_DB" -f - <<'SQL'
+ALTER DATABASE endolphin RENAME TO :"old_db";
+ALTER DATABASE :"stage_db" RENAME TO endolphin;
+SQL
   sudo systemctl start endolphin
 )
 ```
