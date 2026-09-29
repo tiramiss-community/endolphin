@@ -254,13 +254,48 @@ sudo journalctl -u endolphin -n 100 --no-pager
 
 ## 7. バックアップと復元
 
-この例ではサービス停止中にバックアップし、DB の一貫性を保ちます。バックアップ先はアクセスを制限した別ディスクまたは別ホストにしてください。DB dump、設定、アップロードファイルに加えて、実行中のリリースタグも同じ時点で保存します。途中で失敗してもサービスの再起動を試み、バックアップと再起動の両方に失敗した場合は元のバックアップ失敗を終了ステータスとして返します。
+この例ではサービス停止中にバックアップし、DB の一貫性を保ちます。バックアップ先はアクセスを制限した別ディスクまたは別ホストにしてください。DB dump、設定、アップロードファイル、実行中のリリースタグを backup-<UTC時刻> ディレクトリに書き込み、各ファイルの検査が通った後で /var/backups/endolphin/latest シンボリックリンクを原子的に切り替えます。途中で失敗した場合は作成中のセットを削除し、前回の latest を維持します。サービスの再起動にも失敗した場合は、元のバックアップ失敗を終了ステータスとして返します。
 
 ```sh
 (
+  BACKUP_ROOT=/var/backups/endolphin
+  BACKUP_DIR=
+  LATEST_TMP=
+  BACKUP_ID=
+  BACKUP_PUBLISHED=0
+  BACKUP_DIR_CREATED=0
+  LATEST_TMP_CREATED=0
   restart_service() {
     backup_status=$?
     trap - EXIT
+    cleanup_status=0
+    if [ "$BACKUP_PUBLISHED" -eq 0 ] && [ -n "$BACKUP_ID" ]; then
+      current_latest=$(sudo readlink "$BACKUP_ROOT/latest" 2>/dev/null || true)
+      if [ "$current_latest" = "backup-$BACKUP_ID" ]; then
+        BACKUP_PUBLISHED=1
+      fi
+    fi
+    if [ "$BACKUP_PUBLISHED" -eq 0 ]; then
+      if [ "$LATEST_TMP_CREATED" -eq 1 ]; then
+        if sudo rm -f -- "$LATEST_TMP"; then
+          :
+        else
+          cleanup_status=$?
+          echo "一時 latest リンクの削除に失敗しました: $LATEST_TMP" >&2
+        fi
+      fi
+      if [ "$BACKUP_DIR_CREATED" -eq 1 ]; then
+        if sudo rm -rf -- "$BACKUP_DIR"; then
+          :
+        else
+          cleanup_status=$?
+          echo "未完成のバックアップの削除に失敗しました: $BACKUP_DIR" >&2
+        fi
+      fi
+    fi
+    if [ "$backup_status" -eq 0 ] && [ "$cleanup_status" -ne 0 ]; then
+      backup_status=$cleanup_status
+    fi
     if sudo systemctl start endolphin; then
       :
     else
@@ -275,49 +310,249 @@ sudo journalctl -u endolphin -n 100 --no-pager
   trap restart_service EXIT
   set -e
   sudo systemctl stop endolphin
-  sudo install -d -o "$USER" -g "$(id -gn)" -m 700 /var/backups/endolphin
-  sudo -u endolphin git -C /opt/endolphin describe --tags --exact-match > /var/backups/endolphin/release.txt
-  sudo -u postgres pg_dump -Fc endolphin > /var/backups/endolphin/db.dump
-  sudo tar -C /opt/endolphin -czf - .config/default.yml > /var/backups/endolphin/config.tgz
-  sudo tar -C /var/lib/endolphin -czf - files > /var/backups/endolphin/files.tgz
-  chmod 600 /var/backups/endolphin/*
+  sudo install -d -o "$USER" -g "$(id -gn)" -m 700 "$BACKUP_ROOT"
+  BACKUP_ID=$(date -u +%Y%m%d%H%M%S)
+  BACKUP_DIR="$BACKUP_ROOT/backup-$BACKUP_ID"
+  LATEST_TMP="$BACKUP_ROOT/.latest-$BACKUP_ID"
+  if sudo test -e "$BACKUP_DIR" || sudo test -L "$BACKUP_DIR" || sudo test -L "$LATEST_TMP"; then
+    echo "バックアップ先 $BACKUP_DIR が既に存在します。時刻名を変更して再実行してください" >&2
+    exit 1
+  fi
+  sudo install -d -o "$USER" -g "$(id -gn)" -m 700 "$BACKUP_DIR"
+  BACKUP_DIR_CREATED=1
+  sudo -u endolphin git -C /opt/endolphin describe --tags --exact-match > "$BACKUP_DIR/release.txt"
+  sudo -u postgres pg_dump -Fc endolphin > "$BACKUP_DIR/db.dump"
+  sudo tar -C /opt/endolphin -czf - .config/default.yml > "$BACKUP_DIR/config.tgz"
+  sudo tar -C /var/lib/endolphin -czf - files > "$BACKUP_DIR/files.tgz"
+  chmod 600 "$BACKUP_DIR"/*
+  sudo test -s "$BACKUP_DIR/release.txt"
+  sudo -u postgres pg_restore --list < "$BACKUP_DIR/db.dump" > /dev/null
+  sudo tar -tzf "$BACKUP_DIR/config.tgz" > /dev/null
+  sudo tar -tzf "$BACKUP_DIR/files.tgz" > /dev/null
+  sudo ln -s "backup-$BACKUP_ID" "$LATEST_TMP"
+  LATEST_TMP_CREATED=1
+  sudo mv -Tf "$LATEST_TMP" "$BACKUP_ROOT/latest"
+  LATEST_TMP_CREATED=0
+  BACKUP_PUBLISHED=1
 )
 ```
-
-復元前に DB ダンプと設定・ファイルのアーカイブを検査し、DB を一時名の DB へ復元してから稼働 DB と切り替えます。稼働 DB は確認が終わるまで `endolphin_before_restore_<UTC時刻>` という名前で保持します。復元には一時 DB と旧 DB の分だけ追加のディスク容量が必要です。事前検査で失敗した場合はサービスを停止しません。停止後に失敗した場合は自動再起動しないため、原因を調べてから再開してください。切り替え後に問題があれば、サービスを停止し、旧 DB を `endolphin` に戻して手動で切り戻せます。
+復元は /var/backups/endolphin/latest が指すバックアップセットを固定して行います。DB ダンプと設定・ファイルのアーカイブを検査し、DB を一時名の DB へ復元してから稼働 DB と切り替えます。バックアップ版へ checkout する前に現行 commit を保存し、途中で失敗した場合は元の commit へ戻して依存関係とビルド成果物を再生成します。元のアプリ版を復元できない場合はサービスを停止したままにして手動復旧を促します。設定と `files/` はそれぞれ実データと同じファイルシステム上の一時ディレクトリに展開し、現行ディレクトリを同じファイルシステム内で退避してから差し替えます。アーカイブに含まれない現行ファイルは新しい `files/` からなくなります。稼働 DB は確認が終わるまで `endolphin_before_restore_<UTC時刻>` という名前で保持し、旧設定と旧ファイルも一時ディレクトリ内に保持します。復元には一時 DB と旧 DB、設定、ファイルの分だけ追加のディスク容量が必要です。事前検査で失敗した場合はサービスを停止しません。停止後の切り替えに失敗した場合は、可能な範囲で DB とディレクトリを元に戻します。ロールバックにも失敗した場合は一時データを残し、表示されたエラーを確認して手動で復旧してください。
 
 ```sh
 (
   set -e
-  RELEASE_TAG=$(cat /var/backups/endolphin/release.txt)
-  sudo -u postgres pg_restore --list < /var/backups/endolphin/db.dump > /dev/null
-  sudo tar -tzf /var/backups/endolphin/config.tgz > /dev/null
-  sudo tar -tzf /var/backups/endolphin/files.tgz > /dev/null
+  STAGE_DB_CREATED=0
+  RELEASE_CHECKOUT_ATTEMPTED=0
+  DB_RENAME_ATTEMPTED=0
+  OLD_DB_RENAMED=0
+  STAGE_DB_RENAMED=0
+  CONFIG_OLD_MOVED=0
+  CONFIG_NEW_MOVED=0
+  FILES_OLD_MOVED=0
+  FILES_NEW_MOVED=0
+  RESTORE_ROOT=
+  FILES_ROOT=
+
+  rollback_restore() {
+    original_status=$?
+    trap - EXIT
+    [ "$original_status" -eq 0 ] && exit 0
+    set +e
+    rollback_failed=0
+    echo "復元に失敗しました (終了ステータス: $original_status)。ロールバックします" >&2
+
+    db_state_ok=1
+    LIVE_DB_EXISTS=
+    OLD_DB_EXISTS=
+    STAGE_DB_EXISTS=
+    if [ "$DB_RENAME_ATTEMPTED" -eq 1 ]; then
+      LIVE_DB_EXISTS=$(sudo -u postgres psql -v ON_ERROR_STOP=1 -Atqc "SELECT 1 FROM pg_database WHERE datname = 'endolphin'") || db_state_ok=0
+      OLD_DB_EXISTS=$(sudo -u postgres psql -v ON_ERROR_STOP=1 -Atqc "SELECT 1 FROM pg_database WHERE datname = '$OLD_DB'") || db_state_ok=0
+      STAGE_DB_EXISTS=$(sudo -u postgres psql -v ON_ERROR_STOP=1 -Atqc "SELECT 1 FROM pg_database WHERE datname = '$STAGE_DB'") || db_state_ok=0
+    fi
+    restore_may_have_swapped=0
+    if [ "$RELEASE_CHECKOUT_ATTEMPTED" -eq 1 ] || [ "$DB_RENAME_ATTEMPTED" -eq 1 ] || [ "$CONFIG_OLD_MOVED" -eq 1 ] || [ "$FILES_OLD_MOVED" -eq 1 ]; then
+      restore_may_have_swapped=1
+    fi
+    if [ -n "$RESTORE_ROOT" ] && sudo test -e "$RESTORE_ROOT/config.previous"; then
+      restore_may_have_swapped=1
+    fi
+    if [ -n "$FILES_ROOT" ] && sudo test -e "$FILES_ROOT/files.previous"; then
+      restore_may_have_swapped=1
+    fi
+    if [ "$restore_may_have_swapped" -eq 1 ] && ! sudo systemctl stop endolphin; then
+      echo "ロールバック: Endolphin の停止に失敗しました。DB、設定、ファイル、一時データを保持しています" >&2
+      exit "$original_status"
+    fi
+
+    if [ "$RELEASE_CHECKOUT_ATTEMPTED" -eq 1 ]; then
+      if ! sudo -u endolphin git -C /opt/endolphin checkout --detach "$ORIGINAL_COMMIT"; then
+        echo "ロールバック: 元の Git commit $ORIGINAL_COMMIT に戻せませんでした。サービスを停止したまま手動で復旧してください" >&2
+        rollback_failed=1
+      elif ! sudo -u endolphin /usr/local/bin/pnpm --dir /opt/endolphin install --frozen-lockfile || ! sudo -u endolphin /usr/local/bin/pnpm --dir /opt/endolphin build; then
+        echo "ロールバック: 元の commit の依存関係またはビルド成果物を復元できませんでした。サービスを停止したまま手動で復旧してください" >&2
+        rollback_failed=1
+      fi
+    fi
+
+    if [ "$DB_RENAME_ATTEMPTED" -eq 1 ]; then
+      if [ "$db_state_ok" -ne 1 ]; then
+        echo "ロールバック: DB 名の状態を確認できませんでした。DB と staging を保持します" >&2
+        rollback_failed=1
+      else
+        if [ -n "$OLD_DB_EXISTS" ] && [ -n "$LIVE_DB_EXISTS" ] && [ -z "$STAGE_DB_EXISTS" ]; then
+          sudo -u postgres psql -v ON_ERROR_STOP=1 -v stage_db="$STAGE_DB" -f - <<'SQL'
+ALTER DATABASE endolphin RENAME TO :"stage_db";
+SQL
+          if [ "$?" -eq 0 ]; then
+            LIVE_DB_EXISTS=
+            STAGE_DB_EXISTS=1
+          else
+            echo "ロールバック: 復元 DB を一時名へ戻せませんでした" >&2
+            rollback_failed=1
+          fi
+        fi
+        if [ -n "$OLD_DB_EXISTS" ] && [ -z "$LIVE_DB_EXISTS" ]; then
+          sudo -u postgres psql -v ON_ERROR_STOP=1 -v old_db="$OLD_DB" -f - <<'SQL'
+ALTER DATABASE :"old_db" RENAME TO endolphin;
+SQL
+          if [ "$?" -eq 0 ]; then
+            LIVE_DB_EXISTS=1
+            OLD_DB_EXISTS=
+          else
+            echo "ロールバック: 旧 DB を endolphin に戻せませんでした" >&2
+            rollback_failed=1
+          fi
+        fi
+        if [ -n "$OLD_DB_EXISTS" ] || [ -z "$LIVE_DB_EXISTS" ]; then
+          echo "ロールバック: 旧 DB の復元を確認できませんでした" >&2
+          rollback_failed=1
+        else
+          OLD_DB_RENAMED=0
+          STAGE_DB_RENAMED=0
+        fi
+      fi
+    fi
+
+    if [ "$FILES_OLD_MOVED" -eq 1 ]; then
+      if [ "$FILES_NEW_MOVED" -eq 1 ]; then
+        if sudo mv /var/lib/endolphin/files "$FILES_ROOT/files.failed"; then
+          FILES_NEW_MOVED=0
+        else
+          echo "ロールバック: 復元した files/ を退避できませんでした。旧 files/ は $FILES_ROOT/files.previous に保持しています" >&2
+          rollback_failed=1
+        fi
+      elif sudo test -e /var/lib/endolphin/files; then
+        echo "ロールバック: live files/ が残っているため旧 files/ を戻しません。旧版は $FILES_ROOT/files.previous に保持しています" >&2
+        rollback_failed=1
+      fi
+      if [ "$FILES_NEW_MOVED" -eq 0 ] && ! sudo test -e /var/lib/endolphin/files; then
+        sudo mv "$FILES_ROOT/files.previous" /var/lib/endolphin/files || { echo "ロールバック: 旧 files/ を戻せませんでした。旧版は $FILES_ROOT/files.previous に保持しています" >&2; rollback_failed=1; }
+      fi
+    fi
+    if [ "$CONFIG_OLD_MOVED" -eq 1 ]; then
+      if [ "$CONFIG_NEW_MOVED" -eq 1 ]; then
+        if sudo mv /opt/endolphin/.config "$RESTORE_ROOT/config.failed"; then
+          CONFIG_NEW_MOVED=0
+        else
+          echo "ロールバック: 復元した設定を退避できませんでした。旧設定は $RESTORE_ROOT/config.previous に保持しています" >&2
+          rollback_failed=1
+        fi
+      elif sudo test -e /opt/endolphin/.config; then
+        echo "ロールバック: live 設定ディレクトリが残っているため旧設定を戻しません。旧版は $RESTORE_ROOT/config.previous に保持しています" >&2
+        rollback_failed=1
+      fi
+      if [ "$CONFIG_NEW_MOVED" -eq 0 ] && ! sudo test -e /opt/endolphin/.config; then
+        sudo mv "$RESTORE_ROOT/config.previous" /opt/endolphin/.config || { echo "ロールバック: 旧設定を戻せませんでした。旧版は $RESTORE_ROOT/config.previous に保持しています" >&2; rollback_failed=1; }
+      fi
+    fi
+    if [ "$rollback_failed" -eq 0 ]; then
+      if [ "$STAGE_DB_CREATED" -eq 1 ] && { [ "$DB_RENAME_ATTEMPTED" -eq 0 ] || { [ "$db_state_ok" -eq 1 ] && [ -n "$LIVE_DB_EXISTS" ] && [ -z "$OLD_DB_EXISTS" ]; }; }; then
+        sudo -u postgres dropdb --if-exists "$STAGE_DB" || { echo "ロールバック: 一時 DB $STAGE_DB の削除に失敗しました" >&2; rollback_failed=1; }
+      fi
+      if [ "$rollback_failed" -eq 0 ]; then
+        [ -z "$RESTORE_ROOT" ] || sudo rm -rf -- "$RESTORE_ROOT"
+        [ -z "$FILES_ROOT" ] || sudo rm -rf -- "$FILES_ROOT"
+      fi
+    fi
+    if [ "$rollback_failed" -ne 0 ]; then
+      echo "ロールバックに失敗しました。一時データを保持しています。手動で状態を確認してください" >&2
+    fi
+    exit "$original_status"
+  }
+  trap rollback_restore EXIT
+
+  BACKUP_DIR=$(sudo readlink -f /var/backups/endolphin/latest)
+  RELEASE_TAG=$(cat "$BACKUP_DIR/release.txt")
+  sudo -u postgres pg_restore --list < "$BACKUP_DIR/db.dump" > /dev/null
+  sudo tar -tzf "$BACKUP_DIR/config.tgz" > /dev/null
+  sudo tar -tzf "$BACKUP_DIR/files.tgz" > /dev/null
+  ORIGINAL_COMMIT=$(sudo -u endolphin git -C /opt/endolphin rev-parse HEAD)
   sudo systemctl stop endolphin
   if ! sudo -u endolphin git -C /opt/endolphin show-ref --verify --quiet "refs/tags/$RELEASE_TAG"; then
     sudo -u endolphin git -C /opt/endolphin fetch --tags origin "$RELEASE_TAG"
   fi
+  RELEASE_CHECKOUT_ATTEMPTED=1
   sudo -u endolphin git -C /opt/endolphin checkout --detach "$RELEASE_TAG"
   sudo -u endolphin /usr/local/bin/pnpm --dir /opt/endolphin install --frozen-lockfile
   sudo -u endolphin /usr/local/bin/pnpm --dir /opt/endolphin build
+
   RESTORE_ID=$(date -u +%Y%m%d%H%M%S)
   STAGE_DB="endolphin_restore_$RESTORE_ID"
   OLD_DB="endolphin_before_restore_$RESTORE_ID"
   OLD_EXISTS=$(sudo -u postgres psql -v ON_ERROR_STOP=1 -Atqc "SELECT 1 FROM pg_database WHERE datname = '$OLD_DB'")
-  if [ -n "$OLD_EXISTS" ]; then
-    echo "退避先 DB $OLD_DB が既に存在します。時刻名を変更して再実行してください" >&2
+  STAGE_EXISTS=$(sudo -u postgres psql -v ON_ERROR_STOP=1 -Atqc "SELECT 1 FROM pg_database WHERE datname = '$STAGE_DB'")
+  if [ -n "$OLD_EXISTS" ] || [ -n "$STAGE_EXISTS" ]; then
+    echo "退避先または一時 DB が既に存在します。時刻名を変更して再実行してください" >&2
     exit 1
   fi
+
+  RESTORE_ROOT=$(sudo mktemp -d /opt/endolphin/.restore.XXXXXX)
+  FILES_ROOT=$(sudo mktemp -d /var/lib/endolphin/.restore.XXXXXX)
+  sudo cp -a /opt/endolphin/.config "$RESTORE_ROOT/config"
+  sudo tar --no-same-owner --strip-components=1 -C "$RESTORE_ROOT/config" -xzf "$BACKUP_DIR/config.tgz" .config/default.yml
+  sudo mkdir "$FILES_ROOT/files"
+  sudo tar --no-same-owner --strip-components=1 -C "$FILES_ROOT/files" -xzf "$BACKUP_DIR/files.tgz" files
+  sudo chown -R endolphin:endolphin "$RESTORE_ROOT/config" "$FILES_ROOT/files"
+
   sudo -u postgres createdb --owner=endolphin "$STAGE_DB"
-  sudo -u postgres pg_restore --exit-on-error --no-owner --role=endolphin --dbname="$STAGE_DB" < /var/backups/endolphin/db.dump
-  sudo tar --no-same-owner -C /opt/endolphin -xzf /var/backups/endolphin/config.tgz
-  sudo tar --no-same-owner -C /var/lib/endolphin -xzf /var/backups/endolphin/files.tgz
-  sudo chown -R endolphin:endolphin /var/lib/endolphin/files /opt/endolphin/.config
-  sudo -u postgres psql -v ON_ERROR_STOP=1 -v stage_db="$STAGE_DB" -v old_db="$OLD_DB" -f - <<'SQL'
+  STAGE_DB_CREATED=1
+  sudo -u postgres pg_restore --exit-on-error --no-owner --role=endolphin --dbname="$STAGE_DB" < "$BACKUP_DIR/db.dump"
+
+  sudo mv /opt/endolphin/.config "$RESTORE_ROOT/config.previous"
+  CONFIG_OLD_MOVED=1
+  sudo mv "$RESTORE_ROOT/config" /opt/endolphin/.config
+  CONFIG_NEW_MOVED=1
+  sudo mv /var/lib/endolphin/files "$FILES_ROOT/files.previous"
+  FILES_OLD_MOVED=1
+  sudo mv "$FILES_ROOT/files" /var/lib/endolphin/files
+  FILES_NEW_MOVED=1
+
+  DB_RENAME_ATTEMPTED=1
+  sudo -u postgres psql -v ON_ERROR_STOP=1 -v old_db="$OLD_DB" -f - <<'SQL'
 ALTER DATABASE endolphin RENAME TO :"old_db";
+SQL
+  OLD_DB_RENAMED=1
+  OLD_DB_IS_PRESENT=$(sudo -u postgres psql -v ON_ERROR_STOP=1 -Atqc "SELECT 1 FROM pg_database WHERE datname = '$OLD_DB'")
+  LIVE_DB_IS_PRESENT=$(sudo -u postgres psql -v ON_ERROR_STOP=1 -Atqc "SELECT 1 FROM pg_database WHERE datname = 'endolphin'")
+  if [ "$OLD_DB_IS_PRESENT" != 1 ] || [ -n "$LIVE_DB_IS_PRESENT" ]; then
+    echo "旧 DB 名への切り替え状態を確認できません" >&2
+    exit 1
+  fi
+  sudo -u postgres psql -v ON_ERROR_STOP=1 -v stage_db="$STAGE_DB" -f - <<'SQL'
 ALTER DATABASE :"stage_db" RENAME TO endolphin;
 SQL
+  STAGE_DB_RENAMED=1
+  STAGE_DB_IS_PRESENT=$(sudo -u postgres psql -v ON_ERROR_STOP=1 -Atqc "SELECT 1 FROM pg_database WHERE datname = '$STAGE_DB'")
+  LIVE_DB_IS_PRESENT=$(sudo -u postgres psql -v ON_ERROR_STOP=1 -Atqc "SELECT 1 FROM pg_database WHERE datname = 'endolphin'")
+  if [ -n "$STAGE_DB_IS_PRESENT" ] || [ "$LIVE_DB_IS_PRESENT" != 1 ]; then
+    echo "復元 DB の endolphin 名への切り替え状態を確認できません" >&2
+    exit 1
+  fi
+  sudo chown endolphin:endolphin /opt/endolphin/.config/default.yml
   sudo systemctl start endolphin
+  trap - EXIT
+  echo "復元しました。動作確認が完了するまで旧 DB ($OLD_DB)、設定 ($RESTORE_ROOT/config.previous)、ファイル ($FILES_ROOT/files.previous) を削除しないでください" >&2
 )
 ```
 

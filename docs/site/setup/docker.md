@@ -258,13 +258,29 @@ sudo docker compose logs --tail=100 web
 
 ## 7. バックアップと復元
 
-バックアップは DB、`.config`、`files/` と、実行イメージタグを含む `compose.yml` を同じ時点で保存します。DB の一貫性を保つため、バックアップ時はアプリを停止します。バックアップ先は別ホストまたは別ディスクにし、アクセス権を制限してください。途中で失敗しても `web` の再起動を試み、バックアップと再起動の両方に失敗した場合は元のバックアップ失敗を終了ステータスとして返します。
+バックアップは DB、`.config`、`files/` と、実行イメージタグを含む `compose.yml` を同じ時点で保存します。DB の一貫性を保つため、バックアップ時はアプリを停止します。各バックアップは `/var/backups/endolphin/backup-<UTC時刻>-<識別子>/` に保存し、DB ダンプと両アーカイブを検査した後で `latest` シンボリックリンクを原子的に切り替えます。作成や検査に失敗した場合は新しい一時ディレクトリを削除し、以前の `latest` は維持します。バックアップ先は別ホストまたは別ディスクにし、アクセス権を制限してください。途中で失敗しても `web` の再起動を試み、バックアップと再起動の両方に失敗した場合は元のバックアップ失敗を終了ステータスとして返します。
 
 ```sh
 (
+  BACKUP_ROOT=/var/backups/endolphin
+  BACKUP_SET=
+  BACKUP_NAME=
+  LATEST_TMP=
+  BACKUP_PUBLISHED=0
   restart_web() {
     backup_status=$?
     trap - EXIT
+    cleanup_status=0
+    if [ "$BACKUP_PUBLISHED" -eq 0 ] && [ -n "$BACKUP_NAME" ] && [ "$(readlink "$BACKUP_ROOT/latest" 2>/dev/null || true)" = "$BACKUP_NAME" ]; then
+      BACKUP_PUBLISHED=1
+    fi
+    if [ "$BACKUP_PUBLISHED" -eq 0 ]; then
+      if [ -n "$LATEST_TMP" ]; then rm -f -- "$LATEST_TMP" || cleanup_status=$?; fi
+      if [ -n "$BACKUP_SET" ] && [ -d "$BACKUP_SET" ]; then rm -rf -- "$BACKUP_SET" || cleanup_status=$?; fi
+      if [ "$cleanup_status" -ne 0 ]; then
+        echo "未公開バックアップの一時ファイルを削除できませんでした" >&2
+      fi
+    fi
     if sudo docker compose start web; then
       :
     else
@@ -274,58 +290,210 @@ sudo docker compose logs --tail=100 web
         backup_status=$restart_status
       fi
     fi
+    if [ "$backup_status" -eq 0 ] && [ "$cleanup_status" -ne 0 ]; then
+      backup_status=$cleanup_status
+    fi
     exit "$backup_status"
   }
   set -e
   cd /srv/endolphin
   trap restart_web EXIT
   sudo docker compose stop web
-  BACKUP_DIR=/var/backups/endolphin
-  sudo install -d -o "$USER" -g "$(id -gn)" -m 700 "$BACKUP_DIR"
 
-  sudo docker compose exec -T db sh -c 'pg_dump -U "$POSTGRES_USER" -Fc "$POSTGRES_DB"' > "$BACKUP_DIR/db.dump"
-  sudo tar -czf - compose.yml .config/default.yml .config/docker.env > "$BACKUP_DIR/config.tgz"
-  sudo tar -czf - files/ > "$BACKUP_DIR/files.tgz"
-  chmod 600 "$BACKUP_DIR"/*
+  sudo install -d -o "$USER" -g "$(id -gn)" -m 700 "$BACKUP_ROOT"
+  BACKUP_SET=$(mktemp -d "$BACKUP_ROOT/backup-$(date -u +%Y%m%d%H%M%S)-XXXXXXXX")
+  BACKUP_NAME=${BACKUP_SET##*/}
+  LATEST_TMP="$BACKUP_ROOT/.latest-$BACKUP_NAME"
+
+  sudo docker compose exec -T db sh -c 'pg_dump -U "$POSTGRES_USER" -Fc "$POSTGRES_DB"' > "$BACKUP_SET/db.dump"
+  sudo tar -czf - compose.yml .config/default.yml .config/docker.env > "$BACKUP_SET/config.tgz"
+  sudo tar -czf - files/ > "$BACKUP_SET/files.tgz"
+  chmod 600 "$BACKUP_SET"/*
+  sudo docker compose exec -T db pg_restore --list < "$BACKUP_SET/db.dump" > /dev/null
+  tar -tzf "$BACKUP_SET/config.tgz" > /dev/null
+  tar -tzf "$BACKUP_SET/files.tgz" > /dev/null
+
+  ln -s "$BACKUP_NAME" "$LATEST_TMP"
+  mv -Tf "$LATEST_TMP" "$BACKUP_ROOT/latest"
+  BACKUP_PUBLISHED=1
 )
 ```
 
-復元前に DB ダンプと設定・ファイルのアーカイブを検査し、DB を一時名の DB へ復元してから稼働 DB と切り替えます。稼働 DB は確認が終わるまで `endolphin_before_restore_<UTC時刻>` という名前で保持します。復元には一時 DB と旧 DB の分だけ追加のディスク容量が必要です。DB 名は Compose の `POSTGRES_DB` を使います。事前検査で失敗した場合は `web` を停止しません。停止後に失敗した場合は自動再起動しないため、原因を調べてから再開してください。切り替え後に問題があれば、`web` を停止し、旧 DB を `POSTGRES_DB` の名前に戻して手動で切り戻せます。
+復元前に DB ダンプと設定・ファイルのアーカイブを検査し、DB は一時 DB に、設定とファイルは同じファイルシステム上の一時領域に準備してから切り替えます。切り替え前の DB、設定、ファイルは確認が終わるまで `endolphin_before_restore_<UTC時刻>` と `.restore-before-<UTC時刻>` に保持します。復元には一時 DB と旧 DB の分、および一時ファイルの分だけ追加のディスク容量が必要です。DB 名は Compose の `POSTGRES_DB` を使います。事前検査またはステージングで失敗した場合は `web` を停止しません。停止後に失敗した場合は元に戻す処理を試み、復元と切り戻しの両方に失敗した場合は両方のエラーを表示して、元の失敗ステータスを返します。成功後に問題があれば `web` を停止し、保持した旧 DB と `.restore-before-*` 内の設定・ファイルを使って切り戻せます。
 
 ```sh
 (
-  set -e
+  set -Eeuo pipefail
   cd /srv/endolphin
-  sudo docker compose exec -T db pg_restore --list < /var/backups/endolphin/db.dump > /dev/null
-  sudo tar -tzf /var/backups/endolphin/config.tgz > /dev/null
-  sudo tar -tzf /var/backups/endolphin/files.tgz > /dev/null
-  sudo docker compose stop web
-
+  BACKUP_DIR=/var/backups/endolphin/latest
   RESTORE_ID=$(date -u +%Y%m%d%H%M%S)
   STAGE_DB="endolphin_restore_$RESTORE_ID"
   OLD_DB="endolphin_before_restore_$RESTORE_ID"
-  OLD_EXISTS=$(sudo docker compose exec -T db sh -c 'psql -U "$POSTGRES_USER" -d postgres -Atqc "$1"' sh "SELECT 1 FROM pg_database WHERE datname = '$OLD_DB'")
+  OLD_ROOT=".restore-before-$RESTORE_ID"
+  DB_CONTAINER=$(sudo docker compose ps -q db)
+  WEB_CONTAINER=$(sudo docker compose ps -q web)
+  test -n "$DB_CONTAINER"
+  test -n "$WEB_CONTAINER"
+  POSTGRES_DB=$(sudo docker exec "$DB_CONTAINER" sh -c 'printf %s "$POSTGRES_DB"')
+  test ! -e "$OLD_ROOT"
+  STAGE_ROOT=$(mktemp -d ./.restore-stage.XXXXXXXX)
+  DB_STAGE_CREATED=0
+  DB_ORIGINAL_RESTORED=0
+  LIVE_COMPOSE_SAVED=0
+  STAGED_COMPOSE_INSTALLED=0
+  LIVE_CONFIG_SAVED=0
+  STAGED_CONFIG_INSTALLED=0
+  LIVE_FILES_SAVED=0
+  STAGED_FILES_INSTALLED=0
+  RESTORE_OK=0
+  WEB_STOPPED=0
+
+  db_rename() {
+    sudo docker exec -i "$DB_CONTAINER" sh -c 'psql -U "$POSTGRES_USER" -d postgres -v ON_ERROR_STOP=1 -v from_db="$1" -v to_db="$2" -f -' sh "$1" "$2" <<'SQL'
+ALTER DATABASE :"from_db" RENAME TO :"to_db";
+SQL
+  }
+
+  rollback() {
+    restore_status=$?
+    trap - EXIT
+    [ "$RESTORE_OK" -eq 1 ] && return "$restore_status"
+    set +e
+    ROLLBACK_FAILED=0
+    rollback_error() { echo "切り戻しに失敗しました: $*" >&2; ROLLBACK_FAILED=1; }
+    if [ "$WEB_STOPPED" -eq 1 ] && ! sudo docker compose stop web >/dev/null 2>&1; then
+      rollback_error "web を停止できませんでした。稼働中のデータを保護するため DB と設定・ファイルは変更しません"
+      echo "退避データとステージング領域は $STAGE_ROOT および $OLD_ROOT に残しています。web を停止して手動で切り戻してください" >&2
+      return "$restore_status"
+    fi
+
+    restore_path() {
+      live_path=$1
+      saved_path=$2
+      installed=$3
+      saved=$4
+      label=$5
+      if [ "$installed" -eq 1 ]; then
+        if ! sudo rm -rf -- "$live_path" || [ -e "$live_path" ] || [ -L "$live_path" ]; then
+          rollback_error "$label の復元版を安全に取り除けませんでした。旧版は $saved_path に保持しています"
+          return 1
+        fi
+      fi
+      if [ "$saved" -eq 1 ]; then
+        if [ -e "$live_path" ] || [ -L "$live_path" ]; then
+          rollback_error "$label の復元先が残っているため旧版を移動しません。旧版は $saved_path に保持しています"
+          return 1
+        fi
+        if ! sudo mv -- "$saved_path" "$live_path"; then
+          rollback_error "$label の旧版を戻せませんでした。旧版は $saved_path に保持しています"
+          return 1
+        fi
+      fi
+      return 0
+    }
+
+    db_catalog() {
+      sudo docker exec "$DB_CONTAINER" sh -c 'psql -U "$POSTGRES_USER" -d postgres -Atqc "SELECT datname FROM pg_database"'
+    }
+    catalog_has() {
+      printf '%s\n' "$DB_CATALOG" | grep -Fxq -- "$1"
+    }
+    reconcile_original_db() {
+      DB_ORIGINAL_RESTORED=0
+      DB_CATALOG=$(db_catalog) || { rollback_error "DB カタログを読み取れませんでした"; return 1; }
+      if catalog_has "$OLD_DB"; then
+        if catalog_has "$POSTGRES_DB"; then
+          if catalog_has "$STAGE_DB"; then
+            rollback_error "稼働名・一時名・退避名の DB が同時に存在します。DB は変更せず保持します"
+            return 1
+          fi
+          db_rename "$POSTGRES_DB" "$STAGE_DB" || true
+          DB_CATALOG=$(db_catalog) || { rollback_error "DB rename 後のカタログを読み取れませんでした"; return 1; }
+        fi
+        if ! catalog_has "$POSTGRES_DB" && catalog_has "$OLD_DB"; then
+          db_rename "$OLD_DB" "$POSTGRES_DB" || true
+          DB_CATALOG=$(db_catalog) || { rollback_error "旧 DB rename 後のカタログを読み取れませんでした"; return 1; }
+        fi
+      fi
+      if catalog_has "$POSTGRES_DB" && ! catalog_has "$OLD_DB"; then
+        DB_ORIGINAL_RESTORED=1
+      else
+        rollback_error "カタログ上で旧 DB が稼働名に戻ったことを確認できません。DB を保持します"
+        return 1
+      fi
+    }
+    if [ "$DB_STAGE_CREATED" -eq 1 ]; then
+      reconcile_original_db || true
+    else
+      DB_ORIGINAL_RESTORED=1
+    fi
+
+    restore_path files "$OLD_ROOT/files" "$STAGED_FILES_INSTALLED" "$LIVE_FILES_SAVED" "files/" || true
+    restore_path .config "$OLD_ROOT/config" "$STAGED_CONFIG_INSTALLED" "$LIVE_CONFIG_SAVED" ".config/" || true
+    restore_path compose.yml "$OLD_ROOT/compose.yml" "$STAGED_COMPOSE_INSTALLED" "$LIVE_COMPOSE_SAVED" "compose.yml" || true
+    if [ "$ROLLBACK_FAILED" -eq 0 ] && [ "$DB_ORIGINAL_RESTORED" -eq 1 ] && [ "$DB_STAGE_CREATED" -eq 1 ]; then
+      DB_CATALOG=$(db_catalog) || rollback_error "一時 DB の削除前にカタログを読み取れませんでした"
+      if [ "$ROLLBACK_FAILED" -eq 0 ] && catalog_has "$STAGE_DB"; then
+        sudo docker exec "$DB_CONTAINER" sh -c 'dropdb -U "$POSTGRES_USER" "$1"' sh "$STAGE_DB" || rollback_error "一時 DB を削除できませんでした"
+      fi
+    fi
+    if [ "$ROLLBACK_FAILED" -eq 0 ]; then
+      sudo rm -rf "$STAGE_ROOT" || rollback_error "ステージングファイルを削除できませんでした"
+      sudo rmdir "$OLD_ROOT" 2>/dev/null || true
+    else
+      echo "一時ファイルと退避データは $STAGE_ROOT および $OLD_ROOT に残しています" >&2
+    fi
+    return "$restore_status"
+  }
+  trap rollback EXIT
+
+  sudo docker exec -i "$DB_CONTAINER" pg_restore --list < "$BACKUP_DIR/db.dump" > /dev/null
+  sudo tar -tzf "$BACKUP_DIR/config.tgz" > /dev/null
+  sudo tar -tzf "$BACKUP_DIR/files.tgz" > /dev/null
+  sudo mkdir -p "$STAGE_ROOT/.config"
+  sudo tar --no-same-owner -xzf "$BACKUP_DIR/config.tgz" -C "$STAGE_ROOT" compose.yml .config/default.yml .config/docker.env
+  sudo tar --no-same-owner -xzf "$BACKUP_DIR/files.tgz" -C "$STAGE_ROOT" files/
+  test -f "$STAGE_ROOT/compose.yml"
+  test -f "$STAGE_ROOT/.config/default.yml"
+  test -f "$STAGE_ROOT/.config/docker.env"
+  test -d "$STAGE_ROOT/files"
+  sudo chown "$USER":"$(id -gn)" "$STAGE_ROOT/compose.yml"
+  sudo chmod 600 "$STAGE_ROOT/.config/docker.env"
+  sudo chown 991:991 "$STAGE_ROOT/.config/default.yml"
+  sudo chown -R 991:991 "$STAGE_ROOT/files"
+
+  OLD_EXISTS=$(sudo docker exec "$DB_CONTAINER" sh -c 'psql -U "$POSTGRES_USER" -d postgres -Atqc "$1"' sh "SELECT 1 FROM pg_database WHERE datname = '$OLD_DB' OR datname = '$STAGE_DB'")
   if [ -n "$OLD_EXISTS" ]; then
-    echo "退避先 DB $OLD_DB が既に存在します。時刻名を変更して再実行してください" >&2
+    echo "一時 DB または退避先 DB が既に存在します。時刻名を変更して再実行してください" >&2
     exit 1
   fi
+  sudo docker exec "$DB_CONTAINER" sh -c 'createdb -U "$POSTGRES_USER" -O "$POSTGRES_USER" "$1"' sh "$STAGE_DB"
+  DB_STAGE_CREATED=1
+  sudo docker exec -i "$DB_CONTAINER" sh -c 'pg_restore -U "$POSTGRES_USER" --exit-on-error --no-owner --role="$POSTGRES_USER" --dbname="$1"' sh "$STAGE_DB" < "$BACKUP_DIR/db.dump"
 
-  sudo docker compose exec -T db sh -c 'createdb -U "$POSTGRES_USER" -O "$POSTGRES_USER" "$1"' sh "$STAGE_DB"
-  sudo docker compose exec -T db sh -c 'pg_restore -U "$POSTGRES_USER" --exit-on-error --no-owner --role="$POSTGRES_USER" --dbname="$1"' sh "$STAGE_DB" < /var/backups/endolphin/db.dump
-
-  sudo tar --no-same-owner -xzf /var/backups/endolphin/config.tgz
-  sudo tar --no-same-owner -xzf /var/backups/endolphin/files.tgz
-  sudo chown "$USER":"$(id -gn)" compose.yml .config/docker.env
+  sudo docker compose stop web
+  WEB_STOPPED=1
+  sudo mkdir -p "$OLD_ROOT"
+  if [ -e compose.yml ]; then sudo mv compose.yml "$OLD_ROOT/compose.yml"; LIVE_COMPOSE_SAVED=1; fi
+  sudo mv "$STAGE_ROOT/compose.yml" compose.yml; STAGED_COMPOSE_INSTALLED=1
+  if [ -e .config ]; then sudo mv .config "$OLD_ROOT/config"; LIVE_CONFIG_SAVED=1; fi
+  sudo mv "$STAGE_ROOT/.config" .config; STAGED_CONFIG_INSTALLED=1
+  if [ -e files ]; then sudo mv files "$OLD_ROOT/files"; LIVE_FILES_SAVED=1; fi
+  sudo mv "$STAGE_ROOT/files" files; STAGED_FILES_INSTALLED=1
+  sudo chown "$USER":"$(id -gn)" compose.yml
   sudo chmod 600 .config/docker.env
   sudo chown 991:991 .config/default.yml
-  sudo chown -R 991:991 files/
-  sudo docker compose exec -T db sh -c 'psql -U "$POSTGRES_USER" -d postgres -v ON_ERROR_STOP=1 -v live_db="$POSTGRES_DB" -v stage_db="$1" -v old_db="$2" -f -' sh "$STAGE_DB" "$OLD_DB" <<'SQL'
-ALTER DATABASE :"live_db" RENAME TO :"old_db";
-ALTER DATABASE :"stage_db" RENAME TO :"live_db";
-SQL
+  sudo chown -R 991:991 files
+
+  db_rename "$POSTGRES_DB" "$OLD_DB"
+  db_rename "$STAGE_DB" "$POSTGRES_DB"
+
   sudo docker compose pull --policy missing web
   sudo docker compose up -d --no-deps web
   sudo docker compose logs --tail=100 web
+  RESTORE_OK=1
+  sudo rm -rf "$STAGE_ROOT"
+  echo "旧 DB は $OLD_DB、旧設定・ファイルは $OLD_ROOT に保持しました。確認後に手動で削除してください。"
 )
 ```
 
