@@ -158,17 +158,29 @@ curl -fsS http://127.0.0.1:3000/healthz
 
 ## 5. Nginx と HTTPS を設定する
 
-公開ドメインの DNS A / AAAA レコードをこのサーバーへ向け（AAAA を登録する場合は IPv6 でも到達できることを確認し）、ファイアウォールとホスティング側の設定で TCP 80 番と 443 番への接続を許可してください。Certbot が Let’s Encrypt から HTTP-01 認証で証明書を取得し、Nginx を HTTPS 用に設定します。Ubuntu 26.04 LTS の Nginx と apt 版 Certbot を使う例です（[NGINX の WebSocket proxy](https://nginx.org/en/docs/http/websocket.html)、[Ubuntu 26.04 の Certbot Nginx plugin](https://packages.ubuntu.com/resolute/python3-certbot-nginx)、[Certbot の Nginx 利用方法](https://eff-certbot.readthedocs.io/en/stable/using.html#nginx)）。
+公開ドメインの DNS A / AAAA レコードをこのサーバーへ向け（AAAA を登録する場合は IPv6 でも到達できることを確認し）、ファイアウォールとホスティング側の設定で TCP 80 番と 443 番への接続を許可してください。Certbot が Let’s Encrypt から HTTP-01 認証で証明書を取得し、Nginx を HTTPS 用に設定します。Nginx は公式の stable apt リポジトリから、Certbot と Nginx plugin は Ubuntu 26.04 LTS の apt リポジトリから導入します（[NGINX 公式パッケージ](https://nginx.org/en/linux_packages.html)、[WebSocket proxy](https://nginx.org/en/docs/http/websocket.html)、[Ubuntu 26.04 の Certbot Nginx plugin](https://packages.ubuntu.com/resolute/python3-certbot-nginx)、[Certbot の Nginx 利用方法](https://eff-certbot.readthedocs.io/en/stable/using.html#nginx)）。
 
 ```sh
+sudo apt update
+sudo apt install -y gnupg2 lsb-release ubuntu-keyring
+curl -fsSL https://nginx.org/keys/nginx_signing.key | gpg --dearmor | sudo tee /usr/share/keyrings/nginx-archive-keyring.gpg > /dev/null
+gpg --show-keys --with-colons /usr/share/keyrings/nginx-archive-keyring.gpg | awk -F: '$1 == "fpr" { print $10 }' | grep -Fxq 573BFD6B3D8FBC641079A6ABABF5BD827BD9BF62 || { echo "Nginx signing key fingerprint mismatch" >&2; exit 1; }
+echo "deb [signed-by=/usr/share/keyrings/nginx-archive-keyring.gpg] https://nginx.org/packages/ubuntu $(lsb_release -cs) nginx" | sudo tee /etc/apt/sources.list.d/nginx.list > /dev/null
+sudo tee /etc/apt/preferences.d/99nginx > /dev/null <<'NGINX_PIN'
+Package: *
+Pin: origin nginx.org
+Pin: release o=nginx
+Pin-Priority: 900
+NGINX_PIN
 sudo apt update
 sudo apt install -y nginx certbot python3-certbot-nginx
 sudo systemctl enable --now nginx certbot.timer
 ```
 
-Nginx の `http` コンテキストに WebSocket 用の map を追加します。Ubuntu の標準設定は `/etc/nginx/conf.d/*.conf` を `http` 内で読み込みます。
+Nginx 公式パッケージは `/etc/nginx/conf.d/*.conf` を `http` 内で読み込みます。初期設定の `default.conf` がある場合は削除してから、WebSocket 用の map を追加します。
 
 ```sh
+sudo rm -f /etc/nginx/conf.d/default.conf
 sudo tee /etc/nginx/conf.d/endolphin-websocket-map.conf > /dev/null <<'NGINX_MAP'
 map $http_upgrade $connection_upgrade {
     default upgrade;
@@ -180,7 +192,7 @@ NGINX_MAP
 `example.tld` は `.config/default.yml` の `url` と同じホスト名へ置き換えてください。例では、Endolphin の `maxFileSize` 初期値 `262144000` byte に余裕を持たせて `300m` を指定しています。アプリ側で上限を変えた場合は Nginx 側も調整してください。
 
 ```sh
-sudo tee /etc/nginx/sites-available/endolphin > /dev/null <<'NGINX_SITE'
+sudo tee /etc/nginx/conf.d/endolphin.conf > /dev/null <<'NGINX_SITE'
 server {
     listen 80;
     listen [::]:80;
@@ -202,7 +214,6 @@ server {
     }
 }
 NGINX_SITE
-sudo ln -s /etc/nginx/sites-available/endolphin /etc/nginx/sites-enabled/endolphin
 sudo nginx -t
 sudo systemctl reload nginx
 ```
@@ -215,6 +226,16 @@ sudo certbot --nginx --redirect --agree-tos --no-eff-email \
 sudo nginx -t
 sudo systemctl reload nginx
 sudo certbot renew --dry-run
+```
+
+Nginx 公式リポジトリから更新を受け取るには、定期的にパッケージ更新を確認してください。Ubuntu の `unattended-upgrades` が nginx.org の更新を自動適用するとは限らないため、更新前に候補版を確認し、設定テストに成功したら reload します。
+
+```sh
+sudo apt update
+apt-cache policy nginx
+sudo apt install --only-upgrade nginx
+sudo nginx -t
+sudo systemctl reload nginx
 ```
 
 Certbot は Nginx の設定を更新し、更新用の systemd timer も設定します。公開 URL から接続できたら、初回セットアップ画面で `setupPassword` を使って管理者アカウントを作成し、管理画面の「サーバー設定」で Repository URL に `https://github.com/tiramiss-community/endolphin` を設定します。完了後は「データ用ディレクトリ」に記載した方法で `setupPassword` を削除または変更し、`sudo docker compose restart web` で反映します。
