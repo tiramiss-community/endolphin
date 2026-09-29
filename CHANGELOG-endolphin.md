@@ -8,6 +8,7 @@ endolphin 固有の変更を記録する。本家 Misskey 由来の変更は ups
 ## Unreleased
 
 ### General
+- Feat: 利用者・サーバー運用者向けの Endolphin ドキュメントサイトを追加
 - Feat: endolphin fork の基盤を整備（fork メタデータ / upstream 追従フロー / changelog 分離 / fork policy）
 - Enhance: ブランディング方針を確定（アプリ識別名のみ Endolphin 化 / 連合自己申告・内部識別子・プラットフォーム prose は温存）し、ビジュアル資産の差し替え口台帳 `docs/endolphin/branding.md` を整備（資産実体・テーマ色 `#86b300` は当面温存）
 - Remove: Games 削除（Phase 1）で孤児化していたゲームエンジンのサブパッケージ `misskey-reversi` / `misskey-bubble-game` を撤去（workspace / Dockerfile / CI / vite / 各 package.json 依存 / dev・clean スクリプト / 連合テスト compose の参照も除去）。併せて `GlobalEventService` の死にコードと化していた reversi ストリームのイベント型・publish メソッドを撤去（`ReversiGame` entity / `ReversiGameDetailed` 型 / reversi endpoint スタブは互換のため温存）

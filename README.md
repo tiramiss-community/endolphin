@@ -22,6 +22,7 @@ entity、テーブル、migration、JSON schema も温存するため、既存�
 
 ## はじめるには
 
+- 利用者・サーバー運用者向けドキュメントは [Endolphin ドキュメントサイト](https://tiramiss-community.github.io/endolphin/) を参照してください。
 - Endolphin 固有の方針と運用上の注意は [fork policy](docs/endolphin/fork-policy.md) を確認してください。
 - 開発やコントリビュートの手順は [CONTRIBUTING.md](CONTRIBUTING.md) を参照してください。
 
