@@ -1,12 +1,12 @@
 # 配布 Docker イメージで構築する
 
-このページの対象は **Endolphin `2026.9.1-endolphin.0`** です。amd64 / arm64 の両方を含む配布イメージを使います。
+Docker で Endolphin サーバーを始める方へ、Ubuntu 26.04 LTS での準備から公開までをご案内します。この手順は **Endolphin `2026.9.1-endolphin.0`** に固定し、amd64 / arm64 の配布イメージを使います。最新の正式リリースは[GitHub Releases](https://github.com/tiramiss-community/endolphin/releases/latest)でご確認ください。別版ではイメージと設定サンプルのタグを同じリリースに揃えてください。
 
 ```text
 ghcr.io/tiramiss-community/endolphin:2026.9.1-endolphin.0
 ```
 
-Ubuntu 26.04 LTS 上へ Docker Engine と Docker Compose plugin を入れる手順も含めます。HTTPS リバースプロキシは別途必要です。リバースプロキシやサイジングは[インフラガイド (#102)](https://github.com/tiramiss-community/endolphin/issues/102)、DB/Redis 高度な運用は[DB/Redis ガイド (#95)](https://github.com/tiramiss-community/endolphin/issues/95)を参照してください。
+Docker Engine から HTTPS 公開まで、順を追って設定できます。公開後のチューニングは[インフラガイド (#102)](https://github.com/tiramiss-community/endolphin/issues/102)と[DB/Redis 運用ガイド (#95)](https://github.com/tiramiss-community/endolphin/issues/95)をご覧ください。
 
 ## 1. Docker Engine をインストール
 
@@ -150,39 +150,76 @@ sudo docker compose logs --tail=100 web
 
 配布イメージの起動処理は設定コンパイル、DB migration、サーバー起動を行います。初回は DB の初期化に時間がかかる場合があるので、`sudo docker compose logs -f web` で完了とエラーの有無を確認します。
 
-リバースプロキシから `127.0.0.1:3000` へ HTTPS / WebSocket 対応で転送したあと、ブラウザーで公開 URL を開きます。セットアップ画面で `setupPassword` を使って管理者アカウントを作成し、管理画面の「サーバー設定」で Repository URL に `https://github.com/tiramiss-community/endolphin` を設定します。完了後は「データ用ディレクトリ」に記載した方法で `setupPassword` を削除または変更し、`sudo docker compose restart web` で反映します。
+動作確認は次のコマンドで行えます。
 
 ```sh
 curl -fsS http://127.0.0.1:3000/healthz
 ```
 
-## 5. HTTPS リバースプロキシ
+## 5. Nginx と HTTPS を設定する
 
-例ではホスト上の Caddy を使います。Caddy の公式 Debian / Ubuntu パッケージを導入します（[公式インストール手順](https://caddyserver.com/docs/install)）。DNS の A / AAAA レコードをこのサーバーへ向け、外部から TCP 80 / 443 番へ到達できるようにしてください。Caddy は HTTPS 証明書を自動取得し、WebSocket 接続も中継します。
+公開ドメインの DNS A / AAAA レコードをこのサーバーへ向け（AAAA を登録する場合は IPv6 でも到達できることを確認し）、ファイアウォールとホスティング側の設定で TCP 80 番と 443 番への接続を許可してください。Certbot が Let’s Encrypt から HTTP-01 認証で証明書を取得し、Nginx を HTTPS 用に設定します。Ubuntu 26.04 LTS の Nginx と apt 版 Certbot を使う例です（[NGINX の WebSocket proxy](https://nginx.org/en/docs/http/websocket.html)、[Ubuntu 26.04 の Certbot Nginx plugin](https://packages.ubuntu.com/resolute/python3-certbot-nginx)、[Certbot の Nginx 利用方法](https://eff-certbot.readthedocs.io/en/stable/using.html#nginx)）。
 
 ```sh
-sudo apt install -y debian-keyring debian-archive-keyring apt-transport-https curl gnupg
-curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | sudo gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
-curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | sudo tee /etc/apt/sources.list.d/caddy-stable.list
-sudo chmod o+r /usr/share/keyrings/caddy-stable-archive-keyring.gpg /etc/apt/sources.list.d/caddy-stable.list
 sudo apt update
-sudo apt install -y caddy
+sudo apt install -y nginx certbot python3-certbot-nginx
+sudo systemctl enable --now nginx certbot.timer
 ```
 
-`/etc/caddy/Caddyfile` に、設定ファイルの `url` と同じホスト名を書きます。
-
-```text
-example.tld {
-    reverse_proxy 127.0.0.1:3000
-}
-```
+Nginx の `http` コンテキストに WebSocket 用の map を追加します。Ubuntu の標準設定は `/etc/nginx/conf.d/*.conf` を `http` 内で読み込みます。
 
 ```sh
-sudo systemctl reload caddy
-sudo systemctl status caddy --no-pager
+sudo tee /etc/nginx/conf.d/endolphin-websocket-map.conf > /dev/null <<'NGINX_MAP'
+map $http_upgrade $connection_upgrade {
+    default upgrade;
+    '' close;
+}
+NGINX_MAP
 ```
 
-詳細な proxy 設定とサイジングは #102 を参照してください。
+`example.tld` は `.config/default.yml` の `url` と同じホスト名へ置き換えてください。例では、Endolphin の `maxFileSize` 初期値 `262144000` byte に余裕を持たせて `300m` を指定しています。アプリ側で上限を変えた場合は Nginx 側も調整してください。
+
+```sh
+sudo tee /etc/nginx/sites-available/endolphin > /dev/null <<'NGINX_SITE'
+server {
+    listen 80;
+    listen [::]:80;
+    server_name example.tld;
+    client_max_body_size 300m;
+
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $connection_upgrade;
+        proxy_read_timeout 3600s;
+        proxy_send_timeout 3600s;
+        proxy_buffering off;
+    }
+}
+NGINX_SITE
+sudo ln -s /etc/nginx/sites-available/endolphin /etc/nginx/sites-enabled/endolphin
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+HTTP でサイトが応答することを確認したら、Certbot に証明書取得と HTTPS 設定を任せます。メールアドレスとドメインを実際の値に置き換えてください。
+
+```sh
+sudo certbot --nginx --redirect --agree-tos --no-eff-email \
+  --email admin@example.tld -d example.tld
+sudo nginx -t
+sudo systemctl reload nginx
+sudo certbot renew --dry-run
+```
+
+Certbot は Nginx の設定を更新し、更新用の systemd timer も設定します。公開 URL から接続できたら、初回セットアップ画面で `setupPassword` を使って管理者アカウントを作成し、管理画面の「サーバー設定」で Repository URL に `https://github.com/tiramiss-community/endolphin` を設定します。完了後は「データ用ディレクトリ」に記載した方法で `setupPassword` を削除または変更し、`sudo docker compose restart web` で反映します。
+
+Nginx はホストの `127.0.0.1:3000` へ転送し、WebSocket upgrade を通します。proxy 推奨設定やサイジングは[インフラガイド (#102)](https://github.com/tiramiss-community/endolphin/issues/102)をご覧ください。
 
 ## 6. 更新
 

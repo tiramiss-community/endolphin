@@ -1,7 +1,7 @@
 # サーバー構築・運用ガイド
 
-Endolphin サーバーの構築と日々の運用方法を説明します。新規構築では、利用する実行方式に応じた手順を選んでください。
+Endolphin のサーバーづくりを始める方へ、構築から日々の運用までをご案内します。ご利用環境に合う方法をお選びください。
 
-- [Ubuntu LTS で systemd を使って構築する](/setup/systemd)
+- [Ubuntu 26.04 LTS で systemd を使って構築する](/setup/systemd)
 - [配布 Docker イメージを使って構築する](/setup/docker)
-- [更新、バックアップ、復元などの運用](/setup/operations)
+- [更新、バックアップ、復元などの運用を確認する](/setup/operations)

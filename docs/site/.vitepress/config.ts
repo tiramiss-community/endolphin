@@ -1,7 +1,5 @@
 import { defineConfig } from 'vitepress';
 
-const targetVersion = '2026.9.1-endolphin.0';
-
 export default defineConfig({
 	title: 'Endolphin',
 	description: '小規模コミュニティ向け Misskey fork Endolphin の利用者・運用者向けドキュメント',
@@ -15,6 +13,7 @@ export default defineConfig({
 			{ text: '機能', link: '/guide/features' },
 			{ text: '本家との違い', link: '/guide/differences' },
 			{ text: 'サーバー運用', link: '/setup/' },
+			{ text: '最新リリース', link: 'https://github.com/tiramiss-community/endolphin/releases/latest' },
 		],
 		sidebar: [
 			{
@@ -46,7 +45,6 @@ export default defineConfig({
 			text: 'このページを編集する',
 		},
 		footer: {
-			message: `対象リリース: ${targetVersion}`,
 			copyright: 'Powered by VitePress',
 		},
 	},

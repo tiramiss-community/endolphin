@@ -1,12 +1,12 @@
 # Ubuntu 26.04 LTS で systemd を使う
 
-このページは **Endolphin `2026.9.1-endolphin.0`** を Ubuntu 26.04 LTS にソースからビルドして常駐させる手順です。別のリリースでは、タグ名と必要な Node.js の版を読み替えてください。配布 tarball を使う手順は前提にしていません。
+Endolphin をご自身のサーバーで運営する方向けに、Ubuntu 26.04 LTS での構築手順をご案内します。このページは **Endolphin `2026.9.1-endolphin.0`** をソースからビルドする内容です。手順を再現しやすいようリリースを固定しています。最新の正式リリースは[GitHub Releases](https://github.com/tiramiss-community/endolphin/releases/latest)でご確認ください。別の版を使う場合は、タグとその版が必要とする Node.js の要件をあわせて切り替えてください。配布 tarball を使う手順は前提にしていません。
 
-リバースプロキシの設定や推奨スペックは[インフラガイド (#102)](https://github.com/tiramiss-community/endolphin/issues/102)、PgBouncer・autovacuum・Redis 分離は[DB/Redis 運用ガイド (#95)](https://github.com/tiramiss-community/endolphin/issues/95)を参照してください。
+まずはこのページに沿って基本構成を整え、公開後のチューニングは[インフラガイド (#102)](https://github.com/tiramiss-community/endolphin/issues/102)と[DB/Redis 運用ガイド (#95)](https://github.com/tiramiss-community/endolphin/issues/95)でご確認いただけます。
 
 ## 構成
 
-この手順では PostgreSQL と Redis を同じホストで動かし、Endolphin は専用の `endolphin` ユーザーで systemd 管理します。Endolphin は Unix socket で待ち受け、Caddy がその socket 経由で接続します。
+この手順では PostgreSQL と Redis を同じホストで動かし、Endolphin を専用の `endolphin` ユーザーで systemd 管理します。Nginx との接続には Unix socket を使い、アプリのポートをネットワークへ公開しません。
 
 ## 1. OS と依存サービス
 
@@ -133,48 +133,85 @@ sudo systemctl status endolphin --no-pager
 sudo journalctl -u endolphin -n 100 --no-pager
 ```
 
-`ExecStartPre` は設定をコンパイルして保留中の DB migration を適用します。起動すると systemd が `/run/endolphin` を専用ユーザーとグループ所有で作成し、Caddy が socket を使えるようにします。
+`ExecStartPre` は設定をコンパイルして保留中の DB migration を適用します。起動すると systemd が `/run/endolphin` を専用ユーザーとグループ所有で作成し、後から追加する Nginx が socket を使えるようにします。
 
-## 5. HTTPS リバースプロキシ
+## 5. Nginx と HTTPS を設定する
 
-例では Caddy を使います。Caddy の公式 Debian / Ubuntu パッケージを導入します（[公式インストール手順](https://caddyserver.com/docs/install)）。DNS の A / AAAA レコードをこのサーバーへ向け、外部から TCP 80 / 443 番へ到達できるようにしてください。Caddy は HTTPS 証明書を自動取得し、WebSocket 接続も中継します。
+公開ドメインの DNS A / AAAA レコードをこのサーバーへ向け（AAAA を登録する場合は IPv6 でも到達できることを確認し）、ファイアウォールとホスティング側の設定で TCP 80 番と 443 番への接続を許可してください。Certbot が Let’s Encrypt から HTTP-01 認証で証明書を取得し、Nginx を HTTPS 用に設定します。Ubuntu 26.04 LTS の Nginx と apt 版 Certbot を使う例です（[NGINX の WebSocket proxy](https://nginx.org/en/docs/http/websocket.html)、[Unix socket に対応する proxy_pass](https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_pass)、[Ubuntu 26.04 の Certbot Nginx plugin](https://packages.ubuntu.com/resolute/python3-certbot-nginx)、[Certbot の Nginx 利用方法](https://eff-certbot.readthedocs.io/en/stable/using.html#nginx)）。
 
 ```sh
-sudo apt install -y debian-keyring debian-archive-keyring apt-transport-https curl gnupg
-curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | sudo gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
-curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | sudo tee /etc/apt/sources.list.d/caddy-stable.list
-sudo chmod o+r /usr/share/keyrings/caddy-stable-archive-keyring.gpg /etc/apt/sources.list.d/caddy-stable.list
 sudo apt update
-sudo apt install -y caddy
+sudo apt install -y nginx certbot python3-certbot-nginx
+sudo systemctl enable --now nginx certbot.timer
 ```
 
-`/etc/caddy/Caddyfile` にドメインを設定します。
+Nginx の `http` コンテキストに WebSocket 用の map を追加します。Ubuntu の標準設定は `/etc/nginx/conf.d/*.conf` を `http` 内で読み込みます。
 
-```text
-example.tld {
-    reverse_proxy unix//run/endolphin/endolphin.sock {
-        header_up Host {host}
+```sh
+sudo tee /etc/nginx/conf.d/endolphin-websocket-map.conf > /dev/null <<'NGINX_MAP'
+map $http_upgrade $connection_upgrade {
+    default upgrade;
+    '' close;
+}
+NGINX_MAP
+```
+
+`example.tld` は `.config/default.yml` の `url` と同じホスト名へ置き換え、サイト設定を作成します。デフォルトのアップロード上限 `maxFileSize: 262144000` に余裕を持たせて `300m` としています。アプリ側の値を変更する場合は Nginx 側も合わせてください。
+
+```sh
+sudo tee /etc/nginx/sites-available/endolphin > /dev/null <<'NGINX_SITE'
+server {
+    listen 80;
+    listen [::]:80;
+    server_name example.tld;
+    client_max_body_size 300m;
+
+    location / {
+        proxy_pass http://unix:/run/endolphin/endolphin.sock:/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $connection_upgrade;
+        proxy_read_timeout 3600s;
+        proxy_send_timeout 3600s;
+        proxy_buffering off;
     }
 }
+NGINX_SITE
+sudo ln -s /etc/nginx/sites-available/endolphin /etc/nginx/sites-enabled/endolphin
+sudo nginx -t
+sudo systemctl reload nginx
 ```
 
-`example.tld` を `.config/default.yml` の `url` と同じホスト名に置き換えます。
+Nginx の実行ユーザー `www-data` が Unix socket を開けるよう、`endolphin` グループへ追加して Nginx を再起動します。`/run/endolphin` は unit の `RuntimeDirectoryMode=0750`、socket は `chmodSocket: '660'` で保護されます。
 
 ```sh
-sudo usermod -aG endolphin caddy
-sudo systemctl restart caddy
-sudo systemctl status caddy --no-pager
+sudo usermod -aG endolphin www-data
+sudo systemctl restart nginx
 ```
 
-`caddy` ユーザーに `endolphin` グループを追加すると、Caddy は `/run/endolphin` を通って mode `660` の socket に接続できます。`RuntimeDirectoryMode=0750` のため、グループ参加がないプロセスにはディレクトリ内を公開しません。Caddy の Unix socket upstream 構文は `unix//run/...` です。Host header を公開ドメインのまま渡すため `header_up Host {host}` も指定しています。WebSocket は Caddy の `reverse_proxy` が中継します。詳細な proxy 設定やサイジングは #102 を参照してください。
+HTTP でサイトが応答することを確認したら、Certbot に証明書取得と HTTPS 設定を任せます。メールアドレスとドメインを実際の値に置き換えてください。
 
-起動ログにエラーがないことを確認し、ブラウザーで公開 URL を開きます。初回セットアップ画面で `setupPassword` を使って管理者アカウントを作成し、管理画面の「サーバー設定」で Repository URL に `https://github.com/tiramiss-community/endolphin` を設定します。作成後は `.config/default.yml` の `setupPassword` を削除または変更し、`sudo systemctl restart endolphin` で反映してください。socket 経由の起動確認は次のとおりです。
+```sh
+sudo certbot --nginx --redirect --agree-tos --no-eff-email \
+  --email admin@example.tld -d example.tld
+sudo nginx -t
+sudo systemctl reload nginx
+sudo certbot renew --dry-run
+```
+
+Certbot は Nginx の設定を更新し、更新用の systemd timer も設定します。公開 URL から接続できたら、初回セットアップ画面で `setupPassword` を使って管理者アカウントを作成し、管理画面の「サーバー設定」で Repository URL に `https://github.com/tiramiss-community/endolphin` を設定します。作成後は `.config/default.yml` の `setupPassword` を削除または変更し、`sudo systemctl restart endolphin` で反映してください。
+
+Unix socket 経由の health check は次のとおりです。
 
 ```sh
 sudo -u endolphin curl --unix-socket /run/endolphin/endolphin.sock http://localhost/healthz
 ```
 
-Caddy の設定または補助グループを変更した後は、Caddy を reload ではなく restart して新しい group membership を反映してください。
+細かな proxy header やサイジングは[インフラガイド (#102)](https://github.com/tiramiss-community/endolphin/issues/102)をご覧ください。
 
 ## 6. 更新
 
@@ -232,4 +269,4 @@ sudo systemctl status postgresql redis-server --no-pager
 sudo -u endolphin curl --unix-socket /run/endolphin/endolphin.sock http://localhost/healthz
 ```
 
-`/healthz` が応答しない場合は `journalctl` で DB 接続、設定コンパイル、migration のエラーを確認します。Caddy が接続できない場合は、socket が存在すること、所有者が `endolphin:endolphin` であること、mode が `660` であること、`caddy` が `endolphin` グループに属することを確認してください。
+`/healthz` が応答しない場合は `journalctl` で DB 接続、設定コンパイル、migration のエラーを確認します。Nginx が接続できない場合は、socket が存在すること、所有者が `endolphin:endolphin` であること、mode が `660` であること、`www-data` が `endolphin` グループに属することを確認してください。
