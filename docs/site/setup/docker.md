@@ -246,12 +246,21 @@ Nginx はホストの `127.0.0.1:3000` へ転送し、WebSocket upgrade を通�
 
 先にバックアップを取得します。タグを更新し、イメージを pull して再作成します。
 
+`compose.yml` の `web` の image タグを新しい正式リリースへ変更します。バックアップ・復元の実行中は `compose.yml` を編集しないでください。変更後、共通ロックを取得して更新します。
+
 ```sh
-# compose.yml の image タグを新しい正式リリースへ変更
-sudo docker compose pull web
-sudo docker compose up -d --no-deps web
-sudo docker compose ps
-sudo docker compose logs --tail=100 web
+(
+  set -e
+  cd /srv/endolphin
+  BACKUP_ROOT=/var/backups/endolphin
+  sudo install -d -o "$USER" -g "$(id -gn)" -m 700 "$BACKUP_ROOT"
+  exec 9>"$BACKUP_ROOT/.maintenance.lock"
+  flock -n 9 || { echo "別のバックアップまたは復元が実行中です" >&2; exit 1; }
+  sudo docker compose pull web
+  sudo docker compose up -d --no-deps web
+  sudo docker compose ps
+  sudo docker compose logs --tail=100 web
+)
 ```
 
 本体起動時に DB migration が実行されます。ログ、公開 URL、ログイン、アップロード済みファイル、`/healthz` を確認します。DB やファイル形式を変更するリリースでは、リリースノートの移行案内も確認してください。問題が起きた場合、バックアップした compose.yml に記録されたイメージタグと、同じ時点の DB・設定・ファイルを復元します。
@@ -262,7 +271,11 @@ sudo docker compose logs --tail=100 web
 
 ```sh
 (
+  set -e
   BACKUP_ROOT=/var/backups/endolphin
+  sudo install -d -o "$USER" -g "$(id -gn)" -m 700 "$BACKUP_ROOT"
+  exec 9>"$BACKUP_ROOT/.maintenance.lock"
+  flock -n 9 || { echo "別のバックアップまたは復元が実行中です" >&2; exit 1; }
   BACKUP_SET=
   BACKUP_NAME=
   LATEST_TMP=
@@ -300,7 +313,6 @@ sudo docker compose logs --tail=100 web
   trap restart_web EXIT
   sudo docker compose stop web
 
-  sudo install -d -o "$USER" -g "$(id -gn)" -m 700 "$BACKUP_ROOT"
   BACKUP_SET=$(mktemp -d "$BACKUP_ROOT/backup-$(date -u +%Y%m%d%H%M%S)-XXXXXXXX")
   BACKUP_NAME=${BACKUP_SET##*/}
   LATEST_TMP="$BACKUP_ROOT/.latest-$BACKUP_NAME"
@@ -321,19 +333,25 @@ sudo docker compose logs --tail=100 web
 
 復元前に DB ダンプと設定・ファイルのアーカイブを検査し、DB は一時 DB に、設定とファイルは同じファイルシステム上の一時領域に準備してから切り替えます。切り替え前の DB、設定、ファイルは確認が終わるまで `endolphin_before_restore_<UTC時刻>` と `.restore-before-<UTC時刻>` に保持します。復元には一時 DB と旧 DB の分、および一時ファイルの分だけ追加のディスク容量が必要です。DB 名は Compose の `POSTGRES_DB` を使います。事前検査またはステージングで失敗した場合は `web` を停止しません。停止後に失敗した場合は元に戻し、DB・設定・ファイルの切り戻しが完了したときだけ `web` を再作成して起動します。切り戻しまたは再起動に失敗した場合は一時データを保持してエラーを表示し、元の失敗ステータスを返します。復元開始時に `latest` の実体パスを一度解決し、そのバックアップセットを最後まで使います。成功後に問題があれば `web` を停止し、保持した旧 DB と `.restore-before-*` 内の設定・ファイルを使って切り戻せます。
 
+復元した `compose.yml` の PostgreSQL メジャー版が稼働中の DB コンテナと異なる場合、この手順では DB コンテナを切り替えないため、そのまま実行せず、対応する PostgreSQL 版の隔離環境でダンプを復元して検証してください。
+
 ```sh
 (
   set -Eeuo pipefail
   cd /srv/endolphin
-  BACKUP_DIR=$(readlink -e -- /var/backups/endolphin/latest)
+  BACKUP_ROOT=/var/backups/endolphin
+  sudo install -d -o "$USER" -g "$(id -gn)" -m 700 "$BACKUP_ROOT"
+  exec 9>"$BACKUP_ROOT/.maintenance.lock"
+  flock -n 9 || { echo "別のバックアップまたは復元が実行中です" >&2; exit 1; }
+  BACKUP_DIR=$(readlink -e -- "$BACKUP_ROOT/latest")
   RESTORE_ID=$(date -u +%Y%m%d%H%M%S)
   STAGE_DB="endolphin_restore_$RESTORE_ID"
   OLD_DB="endolphin_before_restore_$RESTORE_ID"
   OLD_ROOT=".restore-before-$RESTORE_ID"
   DB_CONTAINER=$(sudo docker compose ps -q db)
-  WEB_CONTAINER=$(sudo docker compose ps -q web)
   test -n "$DB_CONTAINER"
-  test -n "$WEB_CONTAINER"
+  COMPOSE_PROJECT=$(sudo docker inspect --format '{{ index .Config.Labels "com.docker.compose.project" }}' "$DB_CONTAINER")
+  test -n "$COMPOSE_PROJECT"
   POSTGRES_DB=$(sudo docker exec "$DB_CONTAINER" sh -c 'printf %s "$POSTGRES_DB"')
   test ! -e "$OLD_ROOT"
   STAGE_ROOT=$(mktemp -d ./.restore-stage.XXXXXXXX)
@@ -361,10 +379,19 @@ SQL
     set +e
     ROLLBACK_FAILED=0
     rollback_error() { echo "切り戻しに失敗しました: $*" >&2; ROLLBACK_FAILED=1; }
-    if [ "$WEB_STOPPED" -eq 1 ] && ! sudo docker compose stop web >/dev/null 2>&1; then
-      rollback_error "web を停止できませんでした。稼働中のデータを保護するため DB と設定・ファイルは変更しません"
-      echo "退避データとステージング領域は $STAGE_ROOT および $OLD_ROOT に残しています。web を停止して手動で切り戻してください" >&2
-      return "$restore_status"
+    if [ "$WEB_STOPPED" -eq 1 ]; then
+      running_web=$(sudo docker ps -q --filter "label=com.docker.compose.project=$COMPOSE_PROJECT" --filter 'label=com.docker.compose.service=web') || {
+        rollback_error "web コンテナを列挙できませんでした"
+        return "$restore_status"
+      }
+      while IFS= read -r web_id; do
+        [ -n "$web_id" ] || continue
+        if ! sudo docker stop "$web_id" >/dev/null 2>&1; then
+          rollback_error "web を停止できませんでした。稼働中のデータを保護するため DB と設定・ファイルは変更しません"
+          echo "退避データとステージング領域は $STAGE_ROOT および $OLD_ROOT に残しています。web を停止して手動で切り戻してください" >&2
+          return "$restore_status"
+        fi
+      done <<< "$running_web"
     fi
 
     restore_path() {
@@ -450,7 +477,7 @@ SQL
       fi
     fi
     if [ "$ROLLBACK_FAILED" -eq 0 ] && [ "$WEB_STOPPED" -eq 1 ]; then
-      if sudo docker compose up -d --no-deps web; then
+      if sudo docker compose -p "$COMPOSE_PROJECT" up -d --no-deps web; then
         :
       else
         restart_status=$?
@@ -477,6 +504,7 @@ SQL
   test -f "$STAGE_ROOT/.config/default.yml"
   test -f "$STAGE_ROOT/.config/docker.env"
   test -d "$STAGE_ROOT/files"
+  sudo docker compose -f "$STAGE_ROOT/compose.yml" --project-directory "$STAGE_ROOT" -p "$COMPOSE_PROJECT" config -q
   sudo chown "$USER":"$(id -gn)" "$STAGE_ROOT/compose.yml"
   sudo chmod 600 "$STAGE_ROOT/.config/docker.env"
   sudo chown 991:991 "$STAGE_ROOT/.config/default.yml"
@@ -491,7 +519,7 @@ SQL
   DB_STAGE_CREATED=1
   sudo docker exec -i "$DB_CONTAINER" sh -c 'pg_restore -U "$POSTGRES_USER" --exit-on-error --no-owner --role="$POSTGRES_USER" --dbname="$1"' sh "$STAGE_DB" < "$BACKUP_DIR/db.dump"
 
-  sudo docker compose stop web
+  sudo docker compose -p "$COMPOSE_PROJECT" stop web
   WEB_STOPPED=1
   sudo mkdir -p "$OLD_ROOT"
   if [ -e compose.yml ]; then sudo mv compose.yml "$OLD_ROOT/compose.yml"; LIVE_COMPOSE_SAVED=1; fi
@@ -508,9 +536,9 @@ SQL
   db_rename "$POSTGRES_DB" "$OLD_DB"
   db_rename "$STAGE_DB" "$POSTGRES_DB"
 
-  sudo docker compose pull --policy missing web
-  sudo docker compose up -d --no-deps web
-  sudo docker compose logs --tail=100 web
+  sudo docker compose -p "$COMPOSE_PROJECT" pull --policy missing web
+  sudo docker compose -p "$COMPOSE_PROJECT" up -d --no-deps web
+  sudo docker compose -p "$COMPOSE_PROJECT" logs --tail=100 web
   sudo rm -rf "$STAGE_ROOT"
   RESTORE_OK=1
   echo "旧 DB は $OLD_DB、旧設定・ファイルは $OLD_ROOT に保持しました。確認後に手動で削除してください。"

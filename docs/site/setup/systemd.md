@@ -239,15 +239,22 @@ sudo -u endolphin curl --unix-socket /run/endolphin/endolphin.sock http://localh
 更新前に「バックアップと復元」の手順で DB、設定、`files/` と現在のリリースタグを退避します。新しい正式リリースのタグに置き換えてビルドし、サービスを再開します。ユニットの `ExecStartPre` が `pnpm migrate` を実行してから本体を起動します。
 
 ```sh
-sudo systemctl stop endolphin
-cd /opt/endolphin
-sudo -u endolphin git fetch --tags origin
-sudo -u endolphin git checkout --detach <新しいリリースタグ>
-sudo -u endolphin /usr/local/bin/pnpm install --frozen-lockfile
-sudo -u endolphin /usr/local/bin/pnpm build
-sudo systemctl start endolphin
-sudo systemctl status endolphin --no-pager
-sudo journalctl -u endolphin -n 100 --no-pager
+(
+  set -e
+  BACKUP_ROOT=/var/backups/endolphin
+  sudo install -d -o "$USER" -g "$(id -gn)" -m 700 "$BACKUP_ROOT"
+  exec 9>"$BACKUP_ROOT/.maintenance.lock"
+  flock -n 9 || { echo "別のバックアップまたは復元が実行中です" >&2; exit 1; }
+  sudo systemctl stop endolphin
+  cd /opt/endolphin
+  sudo -u endolphin git fetch --tags origin
+  sudo -u endolphin git checkout --detach <新しいリリースタグ>
+  sudo -u endolphin /usr/local/bin/pnpm install --frozen-lockfile
+  sudo -u endolphin /usr/local/bin/pnpm build
+  sudo systemctl start endolphin
+  sudo systemctl status endolphin --no-pager
+  sudo journalctl -u endolphin -n 100 --no-pager
+)
 ```
 
 起動時の migration が完了し、ログにエラーがなく、ブラウザーと `/healthz` で動作することを確認します。失敗した場合はサービスを停止し、バックアップに記録したリリースタグと DB、設定、ファイルを同じ時点の組み合わせで復元します。
@@ -258,7 +265,11 @@ sudo journalctl -u endolphin -n 100 --no-pager
 
 ```sh
 (
+  set -e
   BACKUP_ROOT=/var/backups/endolphin
+  sudo install -d -o "$USER" -g "$(id -gn)" -m 700 "$BACKUP_ROOT"
+  exec 9>"$BACKUP_ROOT/.maintenance.lock"
+  flock -n 9 || { echo "別のバックアップまたは復元が実行中です" >&2; exit 1; }
   BACKUP_DIR=
   LATEST_TMP=
   BACKUP_ID=
@@ -308,9 +319,7 @@ sudo journalctl -u endolphin -n 100 --no-pager
     exit "$backup_status"
   }
   trap restart_service EXIT
-  set -e
   sudo systemctl stop endolphin
-  sudo install -d -o "$USER" -g "$(id -gn)" -m 700 "$BACKUP_ROOT"
   BACKUP_ID=$(date -u +%Y%m%d%H%M%S)
   BACKUP_DIR="$BACKUP_ROOT/backup-$BACKUP_ID"
   LATEST_TMP="$BACKUP_ROOT/.latest-$BACKUP_ID"
@@ -341,6 +350,10 @@ sudo journalctl -u endolphin -n 100 --no-pager
 ```sh
 (
   set -e
+  BACKUP_ROOT=/var/backups/endolphin
+  sudo install -d -o "$USER" -g "$(id -gn)" -m 700 "$BACKUP_ROOT"
+  exec 9>"$BACKUP_ROOT/.maintenance.lock"
+  flock -n 9 || { echo "別のバックアップまたは復元が実行中です" >&2; exit 1; }
   STAGE_DB_CREATED=0
   RELEASE_CHECKOUT_ATTEMPTED=0
   DB_RENAME_ATTEMPTED=0
