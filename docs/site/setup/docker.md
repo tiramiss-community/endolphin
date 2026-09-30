@@ -244,9 +244,14 @@ Nginx はホストの `127.0.0.1:3000` へ転送し、WebSocket upgrade を通�
 
 ## 6. 更新
 
-先にバックアップを取得します。タグを更新し、イメージを pull して再作成します。
+先にバックアップを取得します。`compose.yml` の現行版を `compose.before.yml` に保存し、そのコピー `compose.next.yml` の `web` の image タグを新しい正式リリースへ変更します。元の `compose.yml` は編集しません。共通ロック取得後、保存した現行版と実際の `compose.yml` が一致する場合だけ差し替えます。一致しない場合は、更新案を作り直してください。
 
-`compose.yml` の `web` の image タグを新しい正式リリースへ変更します。バックアップ・復元の実行中は `compose.yml` を編集しないでください。変更後、共通ロックを取得して更新します。
+```sh
+cd /srv/endolphin
+cp -p compose.yml compose.before.yml
+cp -p compose.before.yml compose.next.yml
+# compose.next.yml の web の image タグを新しい正式リリースへ変更
+```
 
 ```sh
 (
@@ -256,10 +261,17 @@ Nginx はホストの `127.0.0.1:3000` へ転送し、WebSocket upgrade を通�
   sudo install -d -o "$USER" -g "$(id -gn)" -m 700 "$BACKUP_ROOT"
   exec 9>"$BACKUP_ROOT/.maintenance.lock"
   flock -n 9 || { echo "別のバックアップまたは復元が実行中です" >&2; exit 1; }
+  if ! cmp -s compose.before.yml compose.yml; then
+    echo "compose.yml が準備中に変更されました。更新案を作り直してください" >&2
+    exit 1
+  fi
+  sudo docker compose -f compose.next.yml config -q
+  mv -T compose.next.yml compose.yml
   sudo docker compose pull web
   sudo docker compose up -d --no-deps web
   sudo docker compose ps
   sudo docker compose logs --tail=100 web
+  rm compose.before.yml
 )
 ```
 
