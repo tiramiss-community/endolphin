@@ -12,9 +12,12 @@ VM の SSH と Nginx だけをホストの loopback へ転送する。Docker の
 
 ## shell の抽出
 
+この再実行手順は [systemd の修正 PR #136](https://github.com/tiramiss-community/endolphin/pull/136) と [Docker の修正 PR #137](https://github.com/tiramiss-community/endolphin/pull/137) を両方適用した checkout を前提とする。開始点のガイドは `BACKUP_SET` を参照しないため、そのままでは世代の明示指定を検証できない。
+
 repo root で実行する。作業ディレクトリはリポジトリ外の専用ディレクトリにする。
 
 ```sh
+set -e
 VALIDATION_DIR=$(mktemp -d /tmp/endolphin-backup-validation.XXXXXXXX)
 chmod 700 "$VALIDATION_DIR"
 python3 - "$VALIDATION_DIR" <<'PY'
@@ -30,6 +33,8 @@ for mode in ('systemd', 'docker'):
     for operation, block in zip(('backup', 'restore'), blocks):
         assert 'flock -n 9' in block
         assert ('trap restart_' if operation == 'backup' else 'BACKUP_DIR=') in block
+        if operation == 'restore':
+            assert '${BACKUP_SET:-' in block, (mode, 'apply PR #136 and #137 first')
         target = out / (mode + '-' + operation + '.sh')
         target.write_text(block + '\n')
         subprocess.run(['bash', '-n', str(target)], check=True)
@@ -54,11 +59,22 @@ sha256sum "$VALIDATION_DIR"/*.sh
 
 対象コマンドまたは状態フラグ行の一致件数が1件であることを確認して生成する。例えば `OLD_DB_RENAMED=1` の直後へ失敗を入れる場合は、抽出した systemd 復元 shell に次を適用する。
 
-```python
+```sh
+python3 - "$VALIDATION_DIR" <<'PY'
+from pathlib import Path
+import subprocess, sys
+out = Path(sys.argv[1])
+source = (out / 'systemd-restore.sh').read_text()
 anchor = '  OLD_DB_RENAMED=1'
 assert source.count(anchor) == 1
 injected = source.replace(anchor, anchor + '\n  bash -c "exit 41"')
+target = out / 'systemd-restore-injected.sh'
+target.write_text(injected)
+subprocess.run(['bash', '-n', str(target)], check=True)
+PY
 ```
+
+元の shell と注入済み shell の差分を記録し、生成した `systemd-restore-injected.sh` を隔離 VM へ転送する。正常な B の状態から、VM 内で `BACKUP_SET=/var/backups/endolphin/backup-<AのUTC時刻> bash systemd-restore-injected.sh` を実行する。元の `systemd-restore.sh` は実行対象にしない。
 
 | 操作 | 注入箇所・方法 | 確認 |
 | --- | --- | --- |
