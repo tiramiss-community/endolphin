@@ -6,7 +6,7 @@ Endolphin をご自身のサーバーで運営する方向けに、Ubuntu 26.04 
 
 ## 構成
 
-この手順では PostgreSQL と Redis を同じホストで動かし、Endolphin を専用の `endolphin` ユーザーで systemd 管理します。Nginx との接続には Unix socket を使い、アプリのポートをネットワークへ公開しません。
+この手順では PostgreSQL と Redis を同じホストで動かし、Endolphin を専用の `endolphin` ユーザーで systemd 管理します。Nginx は同じホストの TCP 3000 番へ接続します。Endolphin は全インターフェースで待ち受けるため、起動前にファイアウォールで外部からの 3000 番を遮断します。
 
 ## 1. OS と依存サービス
 
@@ -14,7 +14,7 @@ Ubuntu 26.04 LTS の amd64 / arm64 を想定しています。Node.js はプロ�
 
 ```sh
 sudo apt update
-sudo apt install -y ca-certificates curl xz-utils git build-essential ffmpeg libatomic1 postgresql redis-server
+sudo apt install -y ca-certificates curl xz-utils git build-essential ffmpeg libatomic1 postgresql redis-server ufw
 ```
 
 Node.js 公式配布物を検証して `/usr/local` に展開します。
@@ -78,8 +78,7 @@ sudo chmod 600 /opt/endolphin/.config/default.yml
 
 ```yaml
 url: https://example.tld/
-socket: /run/endolphin/endolphin.sock
-chmodSocket: '660'
+port: 3000
 setupPassword: <SETUP_PASSWORD>
 db:
   host: 127.0.0.1
@@ -94,7 +93,7 @@ redis:
 
 初回セットアップ完了後は `setupPassword` を削除または変更します。
 
-`url` はインスタンスの公開 URL です。起動後に変更しないでください。`socket` を設定すると TCP port 設定は使われず、Endolphin は `/run/endolphin/endolphin.sock` のみで待ち受けます。
+`url` はインスタンスの公開 URL です。起動後に変更しないでください。このリリースは `port: 3000` で全インターフェースに待ち受けるため、次のファイアウォール設定を完了するまでサービスを起動しないでください。
 
 初回の設定コンパイルと DB migration は、次の systemd ユニット起動時に行われます。
 
@@ -114,8 +113,6 @@ User=endolphin
 Group=endolphin
 WorkingDirectory=/opt/endolphin
 Environment=NODE_ENV=production
-RuntimeDirectory=endolphin
-RuntimeDirectoryMode=0750
 ExecStartPre=/usr/local/bin/pnpm migrate
 ExecStart=/usr/local/bin/node packages/backend/built/entry.js
 Restart=on-failure
@@ -127,17 +124,29 @@ WantedBy=multi-user.target
 ```
 
 ```sh
+sudo ufw allow OpenSSH
+sudo ufw allow 80/tcp
+sudo ufw allow 443/tcp
+sudo ufw insert 1 deny 3000/tcp
+sudo ufw enable
+sudo ufw status numbered
+sudo ufw status verbose
+```
+
+SSH が標準の 22 番以外なら、`ufw enable` の前に実際の SSH ポートも許可してください。既存のファイアウォールを使う場合は、同等のルールを設定します。ホスティング側のファイアウォールでも 3000 番を公開しないでください。`ufw status numbered` で IPv4 と IPv6 の両方について 3000/tcp の `DENY` が先行する許可ルールより上にあることを確認してから、サービスを起動します。
+
+```sh
 sudo systemctl daemon-reload
 sudo systemctl enable --now endolphin
 sudo systemctl status endolphin --no-pager
 sudo journalctl -u endolphin -n 100 --no-pager
 ```
 
-`ExecStartPre` は設定をコンパイルして保留中の DB migration を適用します。起動すると systemd が `/run/endolphin` を専用ユーザーとグループ所有で作成し、後から追加する Nginx が socket を使えるようにします。
+`ExecStartPre` は設定をコンパイルして保留中の DB migration を適用します。
 
 ## 5. Nginx と HTTPS を設定する
 
-公開ドメインの DNS A / AAAA レコードをこのサーバーへ向け（AAAA を登録する場合は IPv6 でも到達できることを確認し）、ファイアウォールとホスティング側の設定で TCP 80 番と 443 番への接続を許可してください。Certbot が Let’s Encrypt から HTTP-01 認証で証明書を取得し、Nginx を HTTPS 用に設定します。Nginx は公式の stable apt リポジトリから、Certbot と Nginx plugin は Ubuntu 26.04 LTS の apt リポジトリから導入します（[NGINX 公式パッケージ](https://nginx.org/en/linux_packages.html)、[WebSocket proxy](https://nginx.org/en/docs/http/websocket.html)、[Unix socket に対応する proxy_pass](https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_pass)、[Ubuntu 26.04 の Certbot Nginx plugin](https://packages.ubuntu.com/resolute/python3-certbot-nginx)、[Certbot の Nginx 利用方法](https://eff-certbot.readthedocs.io/en/stable/using.html#nginx)）。
+公開ドメインの DNS A / AAAA レコードをこのサーバーへ向け（AAAA を登録する場合は IPv6 でも到達できることを確認し）、ホスティング側の設定でも TCP 80 番と 443 番への接続を許可してください。Certbot が Let’s Encrypt から HTTP-01 認証で証明書を取得し、Nginx を HTTPS 用に設定します。Nginx は公式の stable apt リポジトリから、Certbot と Nginx plugin は Ubuntu 26.04 LTS の apt リポジトリから導入します（[NGINX 公式パッケージ](https://nginx.org/en/linux_packages.html)、[WebSocket proxy](https://nginx.org/en/docs/http/websocket.html)、[Ubuntu 26.04 の Certbot Nginx plugin](https://packages.ubuntu.com/resolute/python3-certbot-nginx)、[Certbot の Nginx 利用方法](https://eff-certbot.readthedocs.io/en/stable/using.html#nginx)）。
 
 ```sh
 sudo apt update
@@ -179,7 +188,7 @@ server {
     client_max_body_size 300m;
 
     location / {
-        proxy_pass http://unix:/run/endolphin/endolphin.sock:/;
+        proxy_pass http://127.0.0.1:3000;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
@@ -195,13 +204,6 @@ server {
 NGINX_SITE
 sudo nginx -t
 sudo systemctl reload nginx
-```
-
-Nginx 公式パッケージの実行ユーザー `nginx` が Unix socket を開けるよう、`endolphin` グループへ追加して Nginx を再起動します。`/run/endolphin` は unit の `RuntimeDirectoryMode=0750`、socket は `chmodSocket: '660'` で保護されます。
-
-```sh
-sudo usermod -aG endolphin nginx
-sudo systemctl restart nginx
 ```
 
 HTTP でサイトが応答することを確認したら、Certbot に証明書取得と HTTPS 設定を任せます。メールアドレスとドメインを実際の値に置き換えてください。
@@ -226,10 +228,10 @@ sudo systemctl reload nginx
 
 Certbot は Nginx の設定を更新し、更新用の systemd timer も設定します。公開 URL から接続できたら、初回セットアップ画面で `setupPassword` を使って管理者アカウントを作成し、管理画面の「サーバー設定」で Repository URL に `https://github.com/tiramiss-community/endolphin` を設定します。作成後は `.config/default.yml` の `setupPassword` を削除または変更し、`sudo systemctl restart endolphin` で反映してください。
 
-Unix socket 経由の health check は次のとおりです。
+ローカルでの health check は次のとおりです。
 
 ```sh
-sudo -u endolphin curl --unix-socket /run/endolphin/endolphin.sock http://localhost/healthz
+curl -fsS http://127.0.0.1:3000/healthz
 ```
 
 細かな proxy header やサイジングは[インフラガイド (#102)](https://github.com/tiramiss-community/endolphin/issues/102)をご覧ください。
@@ -596,7 +598,7 @@ SQL
 sudo systemctl status endolphin --no-pager
 sudo journalctl -u endolphin -f
 sudo systemctl status postgresql redis-server --no-pager
-sudo -u endolphin curl --unix-socket /run/endolphin/endolphin.sock http://localhost/healthz
+curl -fsS http://127.0.0.1:3000/healthz
 ```
 
-`/healthz` が応答しない場合は `journalctl` で DB 接続、設定コンパイル、migration のエラーを確認します。Nginx が接続できない場合は、socket が存在すること、所有者が `endolphin:endolphin` であること、mode が `660` であること、`nginx` が `endolphin` グループに属することを確認してください。
+`/healthz` が応答しない場合は `journalctl` で DB 接続、設定コンパイル、migration のエラーを確認します。Nginx が接続できない場合は、Endolphin が TCP 3000 番で待ち受けていることと、Nginx の転送先が `127.0.0.1:3000` であることを確認してください。
