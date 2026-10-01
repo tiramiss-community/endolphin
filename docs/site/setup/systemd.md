@@ -347,7 +347,7 @@ curl -fsS http://127.0.0.1:3000/healthz
   BACKUP_PUBLISHED=1
 )
 ```
-復元は /var/backups/endolphin/latest が指すバックアップセットを固定して行います。DB ダンプと設定・ファイルのアーカイブを検査し、DB を一時名の DB へ復元してから稼働 DB と切り替えます。バックアップ版へ checkout する前に現行 commit を保存し、途中で失敗した場合は元の commit へ戻して依存関係とビルド成果物を再生成します。元のアプリ版を復元できない場合はサービスを停止したままにして手動復旧を促します。設定と `files/` はそれぞれ実データと同じファイルシステム上の一時ディレクトリに展開し、現行ディレクトリを同じファイルシステム内で退避してから差し替えます。アーカイブに含まれない現行ファイルは新しい `files/` からなくなります。稼働 DB は確認が終わるまで `endolphin_before_restore_<UTC時刻>` という名前で保持し、旧設定と旧ファイルも一時ディレクトリ内に保持します。復元には一時 DB と旧 DB、設定、ファイルの分だけ追加のディスク容量が必要です。事前検査で失敗した場合はサービスを停止しません。停止後の切り替えに失敗した場合は、可能な範囲で DB、設定、ファイル、コードを元に戻します。ロールバックがすべて完了した場合だけサービスを再開し、切り戻しまたは再起動に失敗した場合は一時データを残して、表示されたエラーを確認し手動で復旧してください。
+復元は `BACKUP_SET` に明示したディレクトリを使い、未指定なら `/var/backups/endolphin/latest` が指すバックアップセットを固定して行います。DB ダンプと設定・ファイルのアーカイブを検査し、DB を一時名の DB へ復元してから稼働 DB と切り替えます。バックアップ版へ checkout する前に現行 commit を保存し、途中で失敗した場合は元の commit へ戻して依存関係とビルド成果物を再生成します。元のアプリ版を復元できない場合はサービスを停止したままにして手動復旧を促します。設定と `files/` はそれぞれ実データと同じファイルシステム上の一時ディレクトリに展開し、現行ディレクトリを同じファイルシステム内で退避してから差し替えます。アーカイブに含まれない現行ファイルは新しい `files/` からなくなります。稼働 DB は確認が終わるまで `endolphin_before_restore_<UTC時刻>` という名前で保持し、旧設定と旧ファイルも一時ディレクトリ内に保持します。復元には一時 DB と旧 DB、設定、ファイルの分だけ追加のディスク容量が必要です。事前検査で失敗した場合はサービスを停止しません。停止後の切り替えに失敗した場合は、可能な範囲で DB、設定、ファイル、コードを元に戻します。ロールバックがすべて完了した場合だけサービスを再開し、切り戻しまたは再起動に失敗した場合は一時データを残して、表示されたエラーを確認し手動で復旧してください。
 
 ```sh
 (
@@ -513,12 +513,14 @@ SQL
   }
   trap rollback_restore EXIT
 
-  BACKUP_DIR=$(sudo readlink -f /var/backups/endolphin/latest)
+  BACKUP_DIR=$(sudo readlink -e -- "${BACKUP_SET:-/var/backups/endolphin/latest}")
+  sudo test -d "$BACKUP_DIR"
   RELEASE_TAG=$(cat "$BACKUP_DIR/release.txt")
   sudo -u postgres pg_restore --list < "$BACKUP_DIR/db.dump" > /dev/null
   sudo tar -tzf "$BACKUP_DIR/config.tgz" > /dev/null
   sudo tar -tzf "$BACKUP_DIR/files.tgz" > /dev/null
   ORIGINAL_COMMIT=$(sudo -u endolphin git -C /opt/endolphin rev-parse HEAD)
+  printf '復元前の commit: %s\n' "$ORIGINAL_COMMIT" >&2
   sudo systemctl stop endolphin
   SERVICE_STOPPED=1
   if ! sudo -u endolphin git -C /opt/endolphin show-ref --verify --quiet "refs/tags/$RELEASE_TAG"; then
@@ -541,6 +543,8 @@ SQL
 
   RESTORE_ROOT=$(sudo mktemp -d /opt/endolphin/.restore.XXXXXX)
   FILES_ROOT=$(sudo mktemp -d /var/lib/endolphin/.restore.XXXXXX)
+  printf '復元用 DB: %s; 退避 DB: %s\n' "$STAGE_DB" "$OLD_DB" >&2
+  printf '退避設定: %s/config.previous; 退避ファイル: %s/files.previous\n' "$RESTORE_ROOT" "$FILES_ROOT" >&2
   sudo cp -a /opt/endolphin/.config "$RESTORE_ROOT/config"
   sudo tar --no-same-owner --strip-components=1 -C "$RESTORE_ROOT/config" -xzf "$BACKUP_DIR/config.tgz" .config/default.yml
   sudo mkdir "$FILES_ROOT/files"
@@ -590,7 +594,25 @@ SQL
 
 記録されたタグがサーバーにない場合は GitHub から取得するため、復元時にネットワーク接続が必要です。復元した DB と設定にはバックアップ時のアプリ版を合わせてください。別の版で起動する場合は、DB migration やデータ形式の互換性を事前に確認してください。
 
-ロール `endolphin` がまだない新しい PostgreSQL へ復元する場合は、先に「DB と実行ユーザー」の手順で作成してください。復元後はログ、トップページ、ログイン、過去のアップロード画像を確認します。復元訓練を定期的に行い、バックアップが読めることを確かめてください。
+### 復元する世代の選び方
+
+`sudo find /var/backups/endolphin -mindepth 1 -maxdepth 1 -type d -name 'backup-*' -print | sort` でセットを一覧にします。障害や誤操作より前に取得した、取得処理が正常終了した一式を選びます。UTC のディレクトリ名だけで決めず、`release.txt` の版、DB dump の内容、設定・画像のアーカイブが同じディレクトリにそろっていることを確認してください。別世代のファイルを混ぜないでください。
+
+復元 shell をファイルへ保存した場合は、`BACKUP_SET=/var/backups/endolphin/backup-<UTC時刻> bash restore.sh` として明示できます。直接貼り付ける場合は、直前に `export BACKUP_SET=/var/backups/endolphin/backup-<UTC時刻>` を実行します。指定先が存在しなければ停止します。明示指定は `latest` を変更しません。既定の最新セットに戻す場合は `unset BACKUP_SET` を実行してください。
+
+### 新規環境と復元後の確認
+
+新規環境では、このガイドの OS・DB ロール・空の DB・実行ユーザー・ソース・systemd・Nginx の構成を先に用意します。`/opt/endolphin/.config` と `/var/lib/endolphin/files` も用意し、バックアップ一式を復元対象のパスへ転送してください。DB ロールのパスワードは保存済み設定とそろえます。インスタンス URL とアプリ版はバックアップ時のものを維持します。
+
+復元前に、DB と一時 DB・旧 DB、設定・ファイルの新旧コピー、ビルドに必要な空き容量を確認します。復元後はログ、`/healthz`、トップページ、パスワードでのログイン、過去の投稿とアップロード画像、新規投稿・アップロードを確認してください。旧 DB と退避ディレクトリは、これらの確認と復元対象の世代確認が終わるまで削除しません。削除時は今回のログに出た名前・パスを指定し、別の復旧作業のデータを巻き込まないでください。
+
+### 中断・手動復旧
+
+通常の失敗や信号中断では終了処理が補償と再起動を試みます。成功を仮定せず、終了コード、`systemctl status endolphin`、ログと `/healthz` を確認します。`SIGKILL`・電源断では終了処理を保証できません。
+
+手動復旧が必要な場合は、まず `sudo systemctl stop endolphin` で停止を確認します。ログに出た旧 DB 名と `config.previous` / `files.previous`、一時 DB・ディレクトリの存在を確認し、同じ復旧作業の旧状態を選びます。DB カタログで稼働名 `endolphin` が復元版を指している場合は、未使用の名前へ退避してから旧 DB を `endolphin` に戻します。旧版の `.config` と `files` は、現行版を別名で保持したうえで元のパスへ戻します。
+
+コードも失敗時ログの元 commit に戻し、依存導入とビルドをやり直します。DB・設定・ファイル・コードが元の状態にそろった場合だけ起動してください。データの所在を確定できない場合は、サービスを止めたまま保持し、自動削除や推測による差し替えをしないでください。復元訓練を定期的に行い、バックアップが読めることを確かめてください。
 
 ## 8. ログと確認
 
