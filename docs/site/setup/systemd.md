@@ -127,12 +127,13 @@ WantedBy=multi-user.target
 sudo ufw allow OpenSSH
 sudo ufw allow 80/tcp
 sudo ufw allow 443/tcp
-sudo ufw deny 3000/tcp
+sudo ufw insert 1 deny 3000/tcp
 sudo ufw enable
+sudo ufw status numbered
 sudo ufw status verbose
 ```
 
-SSH が標準の 22 番以外なら、`ufw enable` の前に実際の SSH ポートも許可してください。既存のファイアウォールを使う場合は、同等のルールを設定します。ホスティング側のファイアウォールでも 3000 番を公開しないでください。`ufw status` で IPv4 と IPv6 の両方について 3000/tcp が `DENY` であることを確認してから、サービスを起動します。
+SSH が標準の 22 番以外なら、`ufw enable` の前に実際の SSH ポートも許可してください。既存のファイアウォールを使う場合は、同等のルールを設定します。ホスティング側のファイアウォールでも 3000 番を公開しないでください。`ufw status numbered` で IPv4 と IPv6 の両方について 3000/tcp の `DENY` が先行する許可ルールより上にあることを確認してから、サービスを起動します。
 
 ```sh
 sudo systemctl daemon-reload
