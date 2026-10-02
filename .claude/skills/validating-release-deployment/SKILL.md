@@ -7,6 +7,12 @@ description: Use when checking endolphin installation or operations guides on an
 
 公開する配備・運用手順が、指定された OS と endolphin のリリースで実際に動くかを確認する。対象と検証範囲は依頼に合わせる。導入・更新・バックアップ・復元の**操作コマンドは** [systemd ガイド](../../../docs/site/setup/systemd.md)、[Docker ガイド](../../../docs/site/setup/docker.md)、[運用ガイド](../../../docs/site/setup/operations.md) を正本とし、スキルへ複写しない。
 
+## 手順と記録の保守
+
+- 再検証手順は [validation](../../../docs/endolphin/validation/README.md)、実施記録の保存規約は [validation-records](../../../docs/endolphin/validation-records/README.md) を参照する。
+- バックアップ・復元ガイドを変更する際は [再検証手順](../../../docs/endolphin/validation/backup-restore.md) の抽出条件、注入箇所、合格条件も確認・更新し、変更に関係するケースを再検証する。
+- 実施結果は日付と対象を識別する新しい記録へ保存する。過去の結果を上書きせず、対象 commit と手順の固定リンク、未検証の範囲を記載する。
+
 ## 検証の組み立て
 
 1. 指定 OS の公式イメージ、対象の正式リリースタグ、Docker image の digest / 対応 architecture を確認し、取得物の checksum を検証する。更新を試す場合は、比較対象となる直前の正式リリースを決める。`latest` の意味やタグを推測しない。
