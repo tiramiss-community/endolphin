@@ -1,6 +1,6 @@
 # Docker 検証結果
 
-環境は [environment.md](./environment.md)、再実行方法は [reproduce.md](./reproduce.md) を参照。
+当時の手順と公開版の対応は [記録概要](./README.md) を参照。環境は [environment.md](./environment.md)、再実行方法は [現在の再検証手順](../../validation/backup-restore.md) を参照。
 
 ## 正常復元
 

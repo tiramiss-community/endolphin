@@ -1,6 +1,12 @@
 # バックアップ・復元検証の再実行
 
-[systemd ガイド](../../../site/setup/systemd.md) / [Docker ガイド](../../../site/setup/docker.md) が操作コマンドの正本。以下は隔離 VM 専用の検証手順であり、稼働環境では実行しない。汎用 runner は用意しない。
+[systemd ガイド](../../site/setup/systemd.md) / [Docker ガイド](../../site/setup/docker.md) が操作コマンドの正本。以下は隔離 VM 専用の検証手順であり、稼働環境では実行しない。汎用 runner は用意しない。
+
+## 対象と保守
+
+systemd / Docker のバックアップ・復元ガイドを変更する際に、この手順の抽出条件・注入箇所・合格条件を確認する。変更に関係するケースを選び、世代選定・正常復元・補償処理など影響する動作を再検証する。全ケースを毎回実施する必要はないが、省略したケースと理由を記録する。
+
+実施結果は [検証記録](../validation-records/README.md) に追加する。[2026-10-01 の記録](../validation-records/2026-10-01-backup-restore/README.md) は過去の実施例であり、現在の版の合格を保証しない。
 
 ## 環境と記録
 
@@ -12,7 +18,7 @@ VM の SSH と Nginx だけをホストの loopback へ転送する。Docker の
 
 ## shell の抽出
 
-この再実行手順は [systemd の修正 PR #136](https://github.com/tiramiss-community/endolphin/pull/136) と [Docker の修正 PR #137](https://github.com/tiramiss-community/endolphin/pull/137) を両方適用した checkout を前提とする。開始点のガイドは `BACKUP_SET` を参照しないため、そのままでは世代の明示指定を検証できない。
+対象ガイドは `BACKUP_SET` による世代指定と保守操作の排他を備えていること。以下の抽出処理で前提を確認する。ガイドの構造や shell を変更した場合は、抽出条件と失敗注入箇所も更新する。
 
 repo root で実行する。作業ディレクトリはリポジトリ外の専用ディレクトリにする。
 
@@ -34,7 +40,7 @@ for mode in ('systemd', 'docker'):
         assert 'flock -n 9' in block
         assert ('trap restart_' if operation == 'backup' else 'BACKUP_DIR=') in block
         if operation == 'restore':
-            assert '${BACKUP_SET:-' in block, (mode, 'apply PR #136 and #137 first')
+            assert '${BACKUP_SET:-' in block, (mode, 'restore script must support BACKUP_SET')
         target = out / (mode + '-' + operation + '.sh')
         target.write_text(block + '\n')
         subprocess.run(['bash', '-n', str(target)], check=True)
