@@ -343,7 +343,7 @@ cp -p compose.before.yml compose.next.yml
 )
 ```
 
-復元前に DB ダンプと設定・ファイルのアーカイブを検査し、DB は一時 DB に、設定とファイルは同じファイルシステム上の一時領域に準備してから切り替えます。切り替え前の DB、設定、ファイルは確認が終わるまで `endolphin_before_restore_<UTC時刻>` と `.restore-before-<UTC時刻>` に保持します。復元には一時 DB と旧 DB の分、および一時ファイルの分だけ追加のディスク容量が必要です。DB 名は Compose の `POSTGRES_DB` を使います。事前検査またはステージングで失敗した場合は `web` を停止しません。停止後に失敗した場合は元に戻し、DB・設定・ファイルの切り戻しが完了したときだけ `web` を再作成して起動します。切り戻しまたは再起動に失敗した場合は一時データを保持してエラーを表示し、元の失敗ステータスを返します。復元開始時に `latest` の実体パスを一度解決し、そのバックアップセットを最後まで使います。成功後に問題があれば `web` を停止し、保持した旧 DB と `.restore-before-*` 内の設定・ファイルを使って切り戻せます。
+復元前に DB ダンプと設定・ファイルのアーカイブを検査し、DB は一時 DB に、設定とファイルは同じファイルシステム上の一時領域に準備してから切り替えます。切り替え前の DB、設定、ファイルは確認が終わるまで `endolphin_before_restore_<UTC時刻>` と `.restore-before-<UTC時刻>` に保持します。復元には一時 DB と旧 DB の分、および一時ファイルの分だけ追加のディスク容量が必要です。DB 名は Compose の `POSTGRES_DB` を使います。事前検査またはステージングで失敗した場合は `web` を停止しません。停止後に失敗した場合は元に戻し、DB・設定・ファイルの切り戻しが完了したときだけ `web` を再作成して起動します。切り戻しまたは再起動に失敗した場合は一時データを保持してエラーを表示し、元の失敗ステータスを返します。復元開始時に `BACKUP_SET`（未指定なら `latest`）の実体パスを一度解決し、そのバックアップセットを最後まで使います。成功後に問題があれば `web` を停止し、保持した旧 DB と `.restore-before-*` 内の設定・ファイルを使って切り戻せます。
 
 復元した `compose.yml` の PostgreSQL メジャー版が稼働中の DB コンテナと異なる場合、この手順では DB コンテナを切り替えないため、そのまま実行せず、対応する PostgreSQL 版の隔離環境でダンプを復元して検証してください。
 
@@ -355,7 +355,8 @@ cp -p compose.before.yml compose.next.yml
   sudo install -d -o "$USER" -g "$(id -gn)" -m 700 "$BACKUP_ROOT"
   exec 9>"$BACKUP_ROOT/.maintenance.lock"
   flock -n 9 || { echo "別のバックアップまたは復元が実行中です" >&2; exit 1; }
-  BACKUP_DIR=$(readlink -e -- "$BACKUP_ROOT/latest")
+  BACKUP_DIR=$(readlink -e -- "${BACKUP_SET:-$BACKUP_ROOT/latest}")
+  test -d "$BACKUP_DIR"
   RESTORE_ID=$(date -u +%Y%m%d%H%M%S)
   STAGE_DB="endolphin_restore_$RESTORE_ID"
   OLD_DB="endolphin_before_restore_$RESTORE_ID"
@@ -367,6 +368,8 @@ cp -p compose.before.yml compose.next.yml
   POSTGRES_DB=$(sudo docker exec "$DB_CONTAINER" sh -c 'printf %s "$POSTGRES_DB"')
   test ! -e "$OLD_ROOT"
   STAGE_ROOT=$(mktemp -d ./.restore-stage.XXXXXXXX)
+  printf 'Compose project: %s; 復元用 DB: %s; 退避 DB: %s\n' "$COMPOSE_PROJECT" "$STAGE_DB" "$OLD_DB" >&2
+  printf 'ステージング: %s; 退避設定・ファイル: %s\n' "$STAGE_ROOT" "$OLD_ROOT" >&2
   DB_STAGE_CREATED=0
   DB_ORIGINAL_RESTORED=0
   LIVE_COMPOSE_SAVED=0
@@ -557,7 +560,25 @@ SQL
 )
 ```
 
-復元した compose.yml が指定するイメージ版と DB をそろえて起動してください。別のイメージ版で運用する場合は、DB migration やデータ形式の互換性を事前に確認します。DB ユーザーや DB 名をバックアップ後に変更した場合は、復元先の Compose 環境と設定ファイルを先に整合させてください。復元後にトップページ、ログイン、過去のアップロードを確認します。定期的に復元訓練を行い、実際に戻せるバックアップであることを確かめてください。
+### 復元する世代の選び方
+
+`sudo find /var/backups/endolphin -mindepth 1 -maxdepth 1 -type d -name 'backup-*' -print | sort` でセットを一覧にします。障害や誤操作より前に取得した、取得処理が正常終了した一式を選びます。UTC の名前だけで決めず、設定アーカイブ内の `compose.yml` が指定する image 版、DB dump、設定・画像が同じディレクトリにそろっていることを確認してください。別世代のファイルを混ぜないでください。
+
+復元 shell をファイルへ保存した場合は、`BACKUP_SET=/var/backups/endolphin/backup-<UTC時刻>-<識別子> bash restore.sh` として明示できます。直接貼り付ける場合は、直前に `export BACKUP_SET=/var/backups/endolphin/backup-<UTC時刻>-<識別子>` を実行します。指定先が存在しなければ停止します。明示指定は `latest` を変更しません。既定の最新セットに戻す場合は `unset BACKUP_SET` を実行してください。
+
+### 新規環境と復元後の確認
+
+新規環境では Docker Engine、データ用ディレクトリ、設定、Compose 定義を先に用意し、DB と Redis だけを `sudo docker compose up -d db redis` で起動します。DB の初期化と health を確認し、アプリデータを持たない状態でバックアップ一式を転送してください。DB ユーザー・DB 名・パスワード、PostgreSQL メジャー版はバックアップ時の設定とそろえます。インスタンス URL と image 版も維持してください。
+
+復元前に、DB と一時 DB・旧 DB、設定・ファイルの新旧コピー、image 取得に必要な空き容量を確認します。復元後はログ、`/healthz`、トップページ、パスワードでのログイン、過去の投稿とアップロード画像、新規投稿・アップロードを確認してください。旧 DB と `.restore-before-*` は、これらの確認と復元対象の世代確認が終わるまで削除しません。削除時は今回のログに出た名前・パスを指定し、別の復旧作業のデータを巻き込まないでください。
+
+### 中断・手動復旧
+
+通常の失敗や信号中断では終了処理が補償と再起動を試みます。成功を仮定せず、終了コード、`sudo docker compose ps`、ログと `/healthz` を確認します。`SIGKILL`・電源断では終了処理を保証できません。
+
+手動復旧が必要な場合は、まず今回の Compose project の `web` を停止します。ログに出た旧 DB と `.restore-before-*` 内の旧 `compose.yml`・設定・ファイル、およびステージング領域の存在を確認し、同じ復旧作業の旧状態を選びます。DB カタログで稼働名が復元版を指している場合は、未使用の名前へ退避してから旧 DB を稼働名に戻します。Compose 定義・設定・ファイルは、現行版を別名で保持したうえで元のパスへ戻します。
+
+DB・設定・ファイル・image 版が元の状態にそろった場合だけ、同じ project 名で `sudo docker compose -p <project名> up -d --no-deps web` を実行します。データの所在を確定できない場合は停止したまま保持し、自動削除や推測による差し替えをしないでください。定期的に復元訓練を行い、実際に戻せるバックアップであることを確かめてください。
 
 ## 8. ログと確認
 
