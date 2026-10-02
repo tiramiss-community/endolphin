@@ -10,6 +10,7 @@ endolphin 固有の変更を記録する。本家 Misskey 由来の変更は ups
 ### General
 
 - Enhance: Docker の復元手順にバックアップ世代の明示指定、退避情報の表示、新規環境と手動復旧の確認事項を追加
+- Enhance: systemd の復元手順にバックアップ世代の明示指定、退避情報の表示、新規環境と手動復旧の確認事項を追加
 - Fix: Ubuntu 26.04 の systemd 構築ガイドを TCP とファイアウォールの構成に修正し、Unix socket 経由でログインが失敗する問題を回避
 - Feat: 利用者・サーバー運用者向けの Endolphin ドキュメントサイトを追加
 - Enhance: systemd / Docker のバックアップ・復元手順を運用ガイドに追加
