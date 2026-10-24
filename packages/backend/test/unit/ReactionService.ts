@@ -190,7 +190,6 @@ describe('ReactionService', () => {
 					})),
 				} as never,
 				{ createNotification: vi.fn() } as never,
-				{ update: vi.fn() } as never,
 			);
 
 			await service.create(
