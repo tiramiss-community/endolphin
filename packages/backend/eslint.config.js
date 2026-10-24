@@ -5,7 +5,7 @@ import sharedConfig from '../shared/eslint.config.js';
 export default [
 	...sharedConfig,
 	{
-		ignores: ['**/node_modules', 'built', '@types/**/*', 'migration', 'test-federation/.config/**/*', 'test-federation/certificates/**/*', 'test-federation/volumes/**/*'],
+		ignores: ['**/node_modules', 'built', '@types/**/*', 'migration', 'test-federation/volumes/**/*', 'test-federation/.config/**/*', 'test-federation/certificates/**/*'],
 	},
 	{
 		languageOptions: {

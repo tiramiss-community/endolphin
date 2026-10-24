@@ -189,6 +189,7 @@ async function later(later: boolean) {
 
 .pageFooter {
 	position: sticky;
+	z-index: 10;
 	bottom: 0;
 	left: 0;
 	flex-shrink: 0;
