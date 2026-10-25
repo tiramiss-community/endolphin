@@ -4,7 +4,7 @@
  */
 
 import { writeFile } from 'node:fs/promises';
-import type { Reporter } from 'vitest/reporters';
+import type { Reporter } from 'vitest/node';
 
 type FederationVitestResult = {
 	success: boolean;
