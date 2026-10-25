@@ -39,6 +39,8 @@ import { DeleteFileProcessorService } from './processors/DeleteFileProcessorServ
 import { RelationshipProcessorService } from './processors/RelationshipProcessorService.js';
 // endolphin: チャート機能は削除済み。tick/resync/clean Charts processor の import を撤去。
 import { CheckExpiredMutingsProcessorService } from './processors/CheckExpiredMutingsProcessorService.js';
+import { ArchiveAnnouncementProcessorService } from './processors/ArchiveAnnouncementProcessorService.js';
+import type { ArchiveAnnouncementJobData } from './types.js';
 import { BakeBufferedReactionsProcessorService } from './processors/BakeBufferedReactionsProcessorService.js';
 import { CleanProcessorService } from './processors/CleanProcessorService.js';
 import { CleanRemoteNotesProcessorService } from './processors/CleanRemoteNotesProcessorService.js';
@@ -118,6 +120,7 @@ export class QueueProcessorService implements OnApplicationShutdown {
 		private relationshipProcessorService: RelationshipProcessorService,
 		// endolphin: チャート / リテンション分析は削除済み。tick/resync/clean Charts / aggregateRetention processor の注入を撤去。
 		private checkExpiredMutingsProcessorService: CheckExpiredMutingsProcessorService,
+		private archiveAnnouncementProcessorService: ArchiveAnnouncementProcessorService,
 		private bakeBufferedReactionsProcessorService: BakeBufferedReactionsProcessorService,
 		private checkModeratorsActivityProcessorService: CheckModeratorsActivityProcessorService,
 		private cleanProcessorService: CleanProcessorService,
@@ -158,6 +161,7 @@ export class QueueProcessorService implements OnApplicationShutdown {
 				switch (job.name) {
 					// endolphin: チャート / リテンション分析は削除済み。tickCharts / resyncCharts / cleanCharts / aggregateRetention の case を撤去。
 					case 'checkExpiredMutings': return this.checkExpiredMutingsProcessorService.process();
+					case 'archiveAnnouncement': return this.archiveAnnouncementProcessorService.process(job as Bull.Job<ArchiveAnnouncementJobData>);
 					case 'bakeBufferedReactions': return this.bakeBufferedReactionsProcessorService.process();
 					case 'checkModeratorsActivity': return this.checkModeratorsActivityProcessorService.process();
 					case 'clean': return this.cleanProcessorService.process();

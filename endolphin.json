@@ -7,6 +7,6 @@
 		"repository": "https://github.com/misskey-dev/misskey.git",
 		"remote": "upstream",
 		"branch": "develop",
-		"basedOn": "2026.10.0"
+		"basedOn": "2026.10.1"
 	}
 }
