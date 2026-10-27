@@ -54,6 +54,7 @@ endolphin 固有の変更を記録する。本家 Misskey 由来の変更は ups
 - Enhance: 全 JS チャンクを Brotli (quality 11) で事前圧縮した `.js.br` を生成し、既定では元 `.js` を削除（ビルドターゲット safari18.2 / chrome130 / firefox132 はすべて Brotli 対応で、JS チャンクは常にブラウザが `Accept-Encoding: br` 付きで取得するため）。`loader/boot.js`（HTML インライン展開）と `mockServiceWorker.js` は元 `.js` を温存。環境変数 `FRONTEND_KEEP_RAW_JS=true` で元 `.js` をフォールバック用に残すことも可能。成果物は約 181MB → 約 53MB に縮小
 
 ### Server
+- Fix: Docker イメージで起動時に必要な js-yaml のリンクが欠落し、設定ファイルの変換に失敗する問題を修正
 - Enhance: `/vite/` 静的配信（`built/_frontend_vite_/`）に `@fastify/static` の `preCompressed` を有効化し、`Accept-Encoding: br` 対応クライアントへ事前生成した `.js.br` を `Content-Encoding: br` で配信（`Content-Type` は元 `.js` 由来・キャッシュヘッダ維持）。既定では元 `.js` を削除するため Brotli 非対応クライアントが JS チャンクを直接要求すると 404 になるが、対象ブラウザは全て Brotli 対応のため実害はない（フォールバック用に元 `.js` を残すには frontend ビルド時に `FRONTEND_KEEP_RAW_JS=true` を指定）
 - Enhance: アプリ識別名のフォールバックを Misskey → Endolphin に変更（PWA manifest 静的値 / document `<title>`・`og:*`・`application-name` メタ / OpenSearch / error・CLI・BIOS・flush・info-card view の見出し・メタ / 全 HTML 先頭コメントの挨拶 / `instanceName`・`title` フォールバック）。連合 nodeinfo `software.name`・User-Agent・内部識別子・テーマ色 `#86b300` は互換のため温存。runtime はインスタンス設定（`meta.name` 等）が従来どおり優先
 - Remove: お気に入り (favorites) 機能の write API を無効化し read API は空を返すよう変更（`notes/favorites/create`・`notes/favorites/delete`・`i/export-favorites` は `FEATURE_REMOVED` を返却、`i/favorites` は空配列を返却。endpoint 登録と型は互換のため維持）。関連の `NoteFavoriteEntityService` / お気に入りエクスポート処理を削除

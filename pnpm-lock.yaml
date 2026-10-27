@@ -462,6 +462,9 @@ importers:
       is-svg:
         specifier: 6.1.0
         version: 6.1.0
+      js-yaml:
+        specifier: 5.5.0
+        version: 5.5.0
       json5:
         specifier: 2.2.3
         version: 2.2.3
@@ -700,9 +703,6 @@ importers:
       fkill:
         specifier: 10.0.3
         version: 10.0.3
-      js-yaml:
-        specifier: 5.5.0
-        version: 5.5.0
       pid-port:
         specifier: 2.2.0
         version: 2.2.0
