@@ -2,7 +2,7 @@
 	"name": "endolphin",
 	"description": "A lightweight Misskey fork for small communities.",
 	"repository": "https://github.com/tiramiss-community/endolphin.git",
-	"version": "2026.10.0-endolphin.0",
+	"version": "2026.10.1-endolphin.1",
 	"upstream": {
 		"repository": "https://github.com/misskey-dev/misskey.git",
 		"remote": "upstream",
