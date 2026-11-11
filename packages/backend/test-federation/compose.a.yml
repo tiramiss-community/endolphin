@@ -27,7 +27,7 @@ services:
       file: ./compose.tpl.yml
       service: misskey
     environment:
-      - MISSKEY_TEST_FEDERATION_CONFIG=a.test.config.json
+      - MISSKEY_TEST_FEDERATION_CONFIG=default.yml
     depends_on:
       db.a.test:
         condition: service_healthy
@@ -39,8 +39,8 @@ services:
       - internal_network_a
     volumes:
       - type: bind
-        source: ./.config/a.test.config.json
-        target: /misskey/.config/a.test.config.json
+        source: ./.config/a.test.default.yml
+        target: /misskey/.config/default.yml
         read_only: true
 
   db.a.test:

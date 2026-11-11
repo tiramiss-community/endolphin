@@ -6029,6 +6029,10 @@ export interface Locale extends ILocale {
          * 環境によっては有効化できない場合があります。
          */
         "settingsPersistence_description2": string;
+				/**
+				 * URLプレビューの埋め込みプレイヤーを自動再生
+				 */
+				"autoplayEmbededPlayerOfUrlPreview": string;
     };
     "_preferencesProfile": {
         /**

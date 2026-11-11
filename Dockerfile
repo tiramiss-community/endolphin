@@ -167,4 +167,4 @@ ENV NODE_ENV=production
 ENV NPM_CONFIG_UPDATE_NOTIFIER=false
 HEALTHCHECK --interval=5s --retries=20 CMD ["node", "/misskey/healthcheck.mjs"]
 ENTRYPOINT ["/usr/bin/tini", "--"]
-CMD ["/bin/sh", "-c", "cd /misskey/packages/backend && node ./scripts/compile_config.js && npm exec -- typeorm migration:run -d ormconfig.js && node ./built/entry.js"]
+CMD ["node", "scripts/start.mjs", "--migrate"]
