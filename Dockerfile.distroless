@@ -1,8 +1,8 @@
 # syntax = docker/dockerfile:1.23
 # Distroless-based image (experimental). Debian-based Dockerfile is the stable default.
 
-ARG NODE_VERSION=22.22.2-bookworm
-ARG DISTROLESS_NODE_IMAGE=gcr.io/distroless/nodejs22-debian12:latest
+ARG NODE_VERSION=24.22.1-trixie
+ARG DISTROLESS_NODE_IMAGE=gcr.io/distroless/nodejs24-debian13:nonroot
 
 # build assets & compile TypeScript
 
@@ -79,64 +79,6 @@ RUN cd /misskey-deploy/node_modules \
 	done \
 	&& find . -xtype l -delete
 
-RUN <<'EOF'
-cat > /misskey-docker-entrypoint.mjs <<'ENTRYPOINT'
-import { spawn } from 'node:child_process';
-import process from 'node:process';
-
-const backendDir = '/misskey/packages/backend';
-const node = '/nodejs/bin/node';
-const signalExitCode = new Map([
-	['SIGHUP', 129],
-	['SIGINT', 130],
-	['SIGTERM', 143],
-]);
-
-function run(args) {
-	return new Promise((resolve, reject) => {
-		const child = spawn(node, args, {
-			cwd: backendDir,
-			env: process.env,
-			stdio: 'inherit',
-		});
-
-		child.on('error', reject);
-		child.on('exit', (code, signal) => {
-			if (code === 0) {
-				resolve();
-			} else {
-				reject(new Error(`${args.join(' ')} failed with ${signal ?? code}`));
-			}
-		});
-	});
-}
-
-await run(['./scripts/compile_config.js']);
-await run(['/misskey/node_modules/typeorm/cli.js', 'migration:run', '-d', 'ormconfig.js']);
-
-const server = spawn(node, ['./built/entry.js'], {
-	cwd: backendDir,
-	env: process.env,
-	stdio: 'inherit',
-});
-
-for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP']) {
-	process.on(signal, () => {
-		server.kill(signal);
-	});
-}
-
-server.on('error', error => {
-	console.error(error);
-	process.exit(1);
-});
-
-server.on('exit', (code, signal) => {
-	process.exit(code ?? signalExitCode.get(signal) ?? 1);
-});
-ENTRYPOINT
-EOF
-
 # gather runtime files not provided by the distroless base
 
 FROM target-builder AS runtime-deps
@@ -180,6 +122,8 @@ RUN while read -r path; do \
 # libavdevice.so.59 -> libavdevice.so.59.7.100), and a plain `cp -a` would copy the symlink
 # without its target, leaving a dangling link the loader cannot open. -L copies the real file
 # content under the SONAME name (what the loader resolves NEEDED entries to).
+# Resolve only the destination directory: Debian 13 uses /lib -> usr/lib, so copying a real
+# /lib directory into the distroless root would collide with that symlink. Keep the SONAME basename.
 RUN while read -r path; do \
 		lddtree -l "$path"; \
 	done < /tmp/runtime-targets \
@@ -187,8 +131,9 @@ RUN while read -r path; do \
 	| while read -r lib; do \
 		case "$lib" in \
 			/lib/*|/lib64/*|/usr/lib/*) \
-				mkdir -p "/runtime-root$(dirname "$lib")"; \
-				cp -aL "$lib" "/runtime-root$lib"; \
+				lib_dir="$(readlink -f "$(dirname "$lib")")"; \
+				mkdir -p "/runtime-root$lib_dir"; \
+				cp -aL "$lib" "/runtime-root$lib_dir/$(basename "$lib")"; \
 				;; \
 		esac; \
 	done
@@ -219,11 +164,11 @@ COPY --chown=${UID}:${GID} packages/backend/src/server/assets ./packages/backend
 COPY --chown=${UID}:${GID} packages/frontend/assets ./packages/frontend/assets
 COPY --chown=${UID}:${GID} packages/backend/ormconfig.js ./packages/backend/ormconfig.js
 COPY --chown=${UID}:${GID} healthcheck.mjs ./healthcheck.mjs
-COPY --chown=${UID}:${GID} --from=target-builder /misskey-docker-entrypoint.mjs ./docker-entrypoint.mjs
+COPY --chown=${UID}:${GID} scripts/start.mjs ./scripts/start.mjs
 
 ENV HOME=/misskey
 ENV LD_PRELOAD=/usr/local/lib/libjemalloc.so
 ENV NODE_ENV=production
 ENV NPM_CONFIG_UPDATE_NOTIFIER=false
 HEALTHCHECK --interval=5s --retries=20 CMD ["/nodejs/bin/node", "/misskey/healthcheck.mjs"]
-ENTRYPOINT ["/nodejs/bin/node", "/misskey/docker-entrypoint.mjs"]
+ENTRYPOINT ["/nodejs/bin/node", "/misskey/scripts/start.mjs", "--migrate"]

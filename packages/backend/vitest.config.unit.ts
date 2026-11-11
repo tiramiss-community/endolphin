@@ -22,11 +22,13 @@ export default mergeConfig(
 					extends: true,
 					test: {
 						name: 'unit',
-						include: ['test/unit/**/*.ts', 'src/**/*.test.ts'],
+						include: ['test/unit/**/*.ts', 'src/**/*.test.ts', 'test-federation/run.test.ts'],
 						exclude: ['node_modules', 'dist'],
 						// ファイルごとに使い捨ての Postgres データベース (test/setup.unit.parallel-db.ts) を
 						// 接続先として注入するため、共有DBのスキーマ競合を気にせず並列実行できる。
 						setupFiles: ['./test/setup.unit.parallel-db.ts'],
+						// 並列実行時の DB 削除は既定の 10 秒を超えることがある。
+						hookTimeout: 60000,
 						maxWorkers,
 					},
 				},

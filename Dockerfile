@@ -68,7 +68,7 @@ RUN --mount=type=cache,target=/root/.local/share/pnpm/store,sharing=locked \
 
 # Drop build-time-only tooling that pnpm links into the @sentry tree via @sentry/server-utils'
 # optional `vite` peer (present only because the workspace ships a frontend vite). None of these
-# are required by the backend runtime (`node built/entry.js`, compile_config, typeorm migrate),
+# are required by the backend runtime (`node built/entry.js`, typeorm migrate),
 # so removing them and pruning the dangling symlinks shaves ~77 MB off the image.
 RUN cd /misskey-deploy/node_modules \
 	&& for pkg in vite rolldown @rolldown+binding-linux-x64-gnu esbuild @esbuild+linux-x64 \
@@ -153,6 +153,7 @@ COPY --chown=misskey:misskey --from=target-builder /misskey-deploy/node_modules/
 COPY --chown=misskey:misskey --from=native-builder /misskey/built ./built
 COPY --chown=misskey:misskey --from=native-builder /misskey/packages/backend/built ./packages/backend/built
 COPY --chown=misskey:misskey package.json ./package.json
+COPY --chown=misskey:misskey scripts/start.mjs ./scripts/start.mjs
 COPY --chown=misskey:misskey packages/backend/package.json ./packages/backend/package.json
 COPY --chown=misskey:misskey packages/backend/scripts ./packages/backend/scripts
 COPY --chown=misskey:misskey packages/backend/migration ./packages/backend/migration
@@ -167,4 +168,4 @@ ENV NODE_ENV=production
 ENV NPM_CONFIG_UPDATE_NOTIFIER=false
 HEALTHCHECK --interval=5s --retries=20 CMD ["node", "/misskey/healthcheck.mjs"]
 ENTRYPOINT ["/usr/bin/tini", "--"]
-CMD ["/bin/sh", "-c", "cd /misskey/packages/backend && node ./scripts/compile_config.js && npm exec -- typeorm migration:run -d ormconfig.js && node ./built/entry.js"]
+CMD ["node", "scripts/start.mjs", "--migrate"]

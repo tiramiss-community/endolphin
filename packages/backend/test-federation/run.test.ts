@@ -3,6 +3,10 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  */
 
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { load } from 'js-yaml';
 import { describe, expect, test } from 'vitest';
 import {
 	buildComposeLogsArgs,
@@ -12,11 +16,31 @@ import {
 	renderHostTemplate,
 	resolveNodeVersion,
 	shouldUseDockerVolumeCleanup,
+	writeHostConfigs,
 } from './run.js';
 
 // Docker/OpenSSL を起動する integration test とは分けて、runner の分岐や生成物の形だけを高速に固定する。
 // federation 環境は壊れたときの調査コストが高いため、shell 非依存・引数受け渡し・設定生成の退行を先にここで検出する。
 describe('test-federation runner helpers', () => {
+	test('writes per-host YAML configs at the paths mounted by Compose', async () => {
+		const configDir = await mkdtemp(join(tmpdir(), 'endolphin-federation-config-'));
+		try {
+			await writeFile(join(configDir, 'example.conf'), 'server_name ${HOST};');
+			await writeHostConfigs({ configDir });
+			for (const host of ['a.test', 'b.test'] as const) {
+				const compose = load(await readFile(new URL(`./compose.${host[0]}.yml`, import.meta.url), 'utf8')) as {
+					services: Record<string, { volumes: { source: string; target: string }[] }>;
+				};
+				const mount = compose.services[`misskey.${host}`].volumes.find(v => v.target === '/misskey/.config/default.yml');
+				expect(mount).toBeDefined();
+				const generated = await readFile(join(configDir, mount!.source.replace('./.config/', '')), 'utf8');
+				expect(load(generated)).toStrictEqual(createMisskeyConfig(host, process.env.MISSKEY_TEST_FEDERATION_INTERNAL_SUBNET));
+			}
+		} finally {
+			await rm(configDir, { recursive: true, force: true });
+		}
+	});
+
 	test('renders host templates without shell expansion', () => {
 		expect(renderHostTemplate('server_name ${HOST}; proxy_pass http://misskey.${HOST}:3000;', 'a.test'))
 			.toBe('server_name a.test; proxy_pass http://misskey.a.test:3000;');

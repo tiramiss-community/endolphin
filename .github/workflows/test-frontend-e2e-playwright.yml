@@ -57,13 +57,10 @@ jobs:
     - name: Install FFmpeg
       run: |
         sudo apt install -y ffmpeg
-    # NOTE: Playwright 1.61 の TS loader が .node-version (22.15.0) で
-    # `context.conditions?.includes is not a function` を起こしテスト収集に失敗するため、
-    # e2e ジョブのみ Node を固定する（fork 所有ジョブ・他ジョブの .node-version には影響しない）。
     - name: Use Node.js
       uses: actions/setup-node@v6.4.0
       with:
-        node-version: '22.22.2'
+        node-version-file: .node-version
         cache: 'pnpm'
     # root workspace（misskey 本体）の install + build。start:test を動かすために必要。
     - run: pnpm i --frozen-lockfile

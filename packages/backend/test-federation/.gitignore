@@ -4,3 +4,4 @@ volumes
 .config/docker.env
 .config/*.test.conf
 .config/*.test.config.json
+.config/*.test.default.yml
