@@ -8,6 +8,7 @@ import { chmod, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { dump } from 'js-yaml';
 
 type Host = 'a.test' | 'b.test';
 
@@ -315,7 +316,7 @@ async function ensureDockerEnv(paths: FederationPaths): Promise<void> {
 
 // a.test/b.test の nginx と Misskey 設定を同じ入力から生成する。
 // allowedPrivateNetworks は compose の internal subnet と合わせる必要があるため、環境変数で subnet を変えた場合も追従させる。
-async function writeHostConfigs(paths: FederationPaths): Promise<void> {
+export async function writeHostConfigs(paths: Pick<FederationPaths, 'configDir'>): Promise<void> {
 	await mkdir(paths.configDir, { recursive: true });
 
 	const nginxTemplate = await readFile(resolve(paths.configDir, 'example.conf'), 'utf8');
@@ -323,8 +324,8 @@ async function writeHostConfigs(paths: FederationPaths): Promise<void> {
 	await Promise.all(hosts.map(async host => {
 		await writeFile(resolve(paths.configDir, `${host}.conf`), renderHostTemplate(nginxTemplate, host), 'utf8');
 		await writeFile(
-			resolve(paths.configDir, `${host}.config.json`),
-			`${JSON.stringify(createMisskeyConfig(host, internalNetworkSubnet), null, 2)}\n`,
+			resolve(paths.configDir, `${host}.default.yml`),
+			dump(createMisskeyConfig(host, internalNetworkSubnet)),
 			'utf8',
 		);
 	}));

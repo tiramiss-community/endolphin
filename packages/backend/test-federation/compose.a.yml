@@ -26,8 +26,6 @@ services:
     extends:
       file: ./compose.tpl.yml
       service: misskey
-    environment:
-      - MISSKEY_TEST_FEDERATION_CONFIG=default.yml
     depends_on:
       db.a.test:
         condition: service_healthy

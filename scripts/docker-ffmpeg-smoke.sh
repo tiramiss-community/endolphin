@@ -14,7 +14,7 @@
 #
 #   Dockerfile             debian-slim, stable default. ffmpeg/ffprobe = BtbN static LGPL build
 #                          at /usr/local/bin (commit that replaced apt's ffmpeg).
-#   Dockerfile.distroless  gcr.io/distroless/nodejs22, experimental. ffmpeg/ffprobe = apt's ffmpeg
+#   Dockerfile.distroless  gcr.io/distroless/nodejs24, experimental. ffmpeg/ffprobe = apt's ffmpeg
 #                          traced via lddtree (only the needed shared libs) into /usr/bin. No shell,
 #                          no package manager -- the more fragile path (a missed dlopen'd lib or a
 #                          PATH gap breaks decoding at runtime).

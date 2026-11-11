@@ -388,7 +388,7 @@ function validateJobConcurrency(key: string, value: number | undefined) {
 	return value;
 }
 
-function convertRedisOptions(options: RedisOptionsSource, host: string, prefixOverride?: string): RedisOptionsResolved {
+export function convertRedisOptions(options: RedisOptionsSource, host: string, prefixOverride?: string): RedisOptionsResolved {
 	const prefix = prefixOverride ?? options.prefix ?? host;
 	return {
 		...options,

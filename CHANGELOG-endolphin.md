@@ -9,6 +9,9 @@ endolphin 固有の変更を記録する。本家 Misskey 由来の変更は ups
 
 ### General
 
+- Fix: 2026.11.0-beta.1 取り込み後の Docker 起動スクリプト欠落と distroless の起動方式・共有ライブラリ配置を修正
+- Fix: 本家の Node.js 22 サポート終了に合わせて開発コンテナと Playwright CI の Node.js を更新
+- Fix: 2026.11.0-beta.1 取り込み後の backend unit test の実行設定・DB 後片付けの待機時間と連合テストの設定生成を修正
 - Enhance: Docker の復元手順にバックアップ世代の明示指定、退避情報の表示、新規環境と手動復旧の確認事項を追加
 - Enhance: systemd の復元手順にバックアップ世代の明示指定、退避情報の表示、新規環境と手動復旧の確認事項を追加
 - Fix: Ubuntu 26.04 の systemd 構築ガイドを TCP とファイアウォールの構成に修正し、Unix socket 経由でログインが失敗する問題を回避
@@ -31,6 +34,7 @@ endolphin 固有の変更を記録する。本家 Misskey 由来の変更は ups
 - Enhance: Federation test の外側 runner を追加し、`pnpm --filter backend test:fed` で証明書・設定生成、Docker Compose 起動、tester 実行、失敗時ログ出力（サービス絞り込み対応）、compose 終了、DB/Redis ボリューム掃除までローカル/CI共通で自動化
 
 ### Client
+- Fix: 2026.11.0-beta.1 取り込み時に再混入した削除済み訪問者チャートへの参照を除去
 - Fix: 非ログイン時トップページのスクロールバーがドラッグ操作でスクロールできない問題を修正
 - Remove: About ページのイースターエッグ（ロゴクリックで絵文字が物理落下するアニメーション）と物理エンジン `matter-js` を削除
 - Remove: お気に入り (favorites) 機能の UI（一覧ページ / ナビ項目 / ノートメニュー / データエクスポート項目）を削除
