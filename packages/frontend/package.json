@@ -68,7 +68,7 @@
 	},
 	"devDependencies": {
 		"@misskey-dev/emoji-assets": "17.0.3",
-		"@misskey-dev/summaly": "npm:@tiramiss-community/chiramiss@0.1.0",
+		"@misskey-dev/summaly": "npm:@tiramiss-community/chiramiss@0.1.1",
 		"@playwright/test": "1.64.1",
 		"@rollup/plugin-json": "6.1.0",
 		"@rollup/pluginutils": "5.5.1",
