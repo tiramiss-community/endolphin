@@ -64,7 +64,7 @@
 		"@misskey-dev/emoji-assets": "17.0.3",
 		"@misskey-dev/emoji-data": "17.0.3",
 		"@misskey-dev/sharp-read-bmp": "2.0.0",
-		"@misskey-dev/summaly": "npm:@tiramiss-community/chiramiss@0.1.0",
+		"@misskey-dev/summaly": "npm:@tiramiss-community/chiramiss@0.1.1",
 		"@nestjs/common": "12.4.2",
 		"@nestjs/core": "12.4.2",
 		"@oxc-project/runtime": "0.156.0",
