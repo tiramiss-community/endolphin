@@ -38,7 +38,8 @@ export class UrlPreviewService implements OnApplicationShutdown {
 	) {
 		this.logger = this.loggerService.getLogger('url-preview');
 		this.summaryCache = new MemoryKVCache<SummalyResult>(1000 * 60 * 60, 100); // 1h, 100件
-		this.summalyDefaultUserAgent = `SummalyBot/${_SUMMALY_VERSION_} (${this.config.url}; +https://github.com/misskey-dev/summaly/blob/master/README.md)`;
+		// endolphin: @misskey-dev/summaly は npm alias で chiramiss に差し替えており、_SUMMALY_VERSION_ は chiramiss の版になるため UA 名・URL も chiramiss に合わせる。
+		this.summalyDefaultUserAgent = `ChiramissBot/${_SUMMALY_VERSION_} (${this.config.url}; +https://github.com/tiramiss-community/chiramiss#readme)`;
 	}
 
 	@bindThis
