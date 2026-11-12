@@ -1,7 +1,7 @@
 # syntax = docker/dockerfile:1.23
 # Distroless-based image (experimental). Debian-based Dockerfile is the stable default.
 
-ARG NODE_VERSION=24.22.1-trixie
+ARG NODE_VERSION=24.22.3-trixie
 ARG DISTROLESS_NODE_IMAGE=gcr.io/distroless/nodejs24-debian13:nonroot
 
 # build assets & compile TypeScript

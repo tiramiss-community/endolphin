@@ -9,6 +9,7 @@ endolphin 固有の変更を記録する。本家 Misskey 由来の変更は ups
 
 ### General
 
+- Fix: 2026.11.0 の最低動作要件に合わせて distroless のビルド用 Node.js を更新し、fork のバージョン・追従元情報を正式版へ同期
 - Fix: 2026.11.0-beta.1 取り込み後の Docker 起動スクリプト欠落と distroless の起動方式・共有ライブラリ配置を修正
 - Fix: 本家の Node.js 22 サポート終了に合わせて開発コンテナと Playwright CI の Node.js を更新
 - Fix: 2026.11.0-beta.1 取り込み後の backend unit test の実行設定・DB 後片付けの待機時間と連合テストの設定生成を修正
