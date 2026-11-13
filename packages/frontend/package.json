@@ -52,7 +52,7 @@
 		"is-file-animated": "1.0.2",
 		"json5": "2.2.3",
 		"mediabunny": "1.65.0",
-		"mfm-js": "0.28.0",
+		"mfm-js": "npm:@tiramiss-community/mfm.alt.js@0.1.0",
 		"misskey-js": "workspace:*",
 		"punycode.js": "2.3.1",
 		"qr-scanner": "1.4.2",

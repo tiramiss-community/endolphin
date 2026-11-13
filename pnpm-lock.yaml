@@ -475,8 +475,8 @@ importers:
         specifier: 0.62.0
         version: 0.62.0
       mfm-js:
-        specifier: 0.28.0
-        version: 0.28.0
+        specifier: npm:@tiramiss-community/mfm.alt.js@0.1.0
+        version: '@tiramiss-community/mfm.alt.js@0.1.0'
       mime-types:
         specifier: 3.0.2
         version: 3.0.2
@@ -861,8 +861,8 @@ importers:
         specifier: 1.65.0
         version: 1.65.0
       mfm-js:
-        specifier: 0.28.0
-        version: 0.28.0
+        specifier: npm:@tiramiss-community/mfm.alt.js@0.1.0
+        version: '@tiramiss-community/mfm.alt.js@0.1.0'
       misskey-js:
         specifier: workspace:*
         version: link:../misskey-js
@@ -1160,8 +1160,8 @@ importers:
         specifier: 2.2.3
         version: 2.2.3
       mfm-js:
-        specifier: 0.28.0
-        version: 0.28.0
+        specifier: npm:@tiramiss-community/mfm.alt.js@0.1.0
+        version: '@tiramiss-community/mfm.alt.js@0.1.0'
       misskey-js:
         specifier: workspace:*
         version: link:../misskey-js
@@ -3658,6 +3658,9 @@ packages:
   '@tiramiss-community/chiramiss@0.2.1':
     resolution: {integrity: sha512-HnNDJFKSindDCVeadav6F4QJLvx3SbnNemw0rePLoc42s7E1qz0RlKOeoO1xqu0Vxc9adRCuIA9PEzbjO1L7bg==}
     engines: {node: ^22.22.2 || ^24.17.0 || >=26.4.0}
+
+  '@tiramiss-community/mfm.alt.js@0.1.0':
+    resolution: {integrity: sha512-gnkvp2r069lvVfIo39MI9vGiY92QXv+7TyRz/DDZjKJgt9tVs6+VJQjUQsaFUmiAzplZk4UuHEgHpalNiMsamA==}
 
   '@tokenizer/inflate@0.6.0':
     resolution: {integrity: sha512-+0RDxhBkyT9xMnGdJAwmats9yxRLR8ypJrQgrnLqOu4Gv/aHlnxYgdGVy2QTwvBl6IF/w2Hr+ZNirH+iMUbVZA==}
@@ -6376,9 +6379,6 @@ packages:
   merge2@1.4.1:
     resolution: {integrity: sha512-8q7VEgMJW4J8tcfVPy8g09NcQwZdbwFEqhe/WZkoIzjn/3TGDwtOCYtXGxA3O8tPzpczCCDgv+P2P5y00ZJOOg==}
     engines: {node: '>= 8'}
-
-  mfm-js@0.28.0:
-    resolution: {integrity: sha512-Ym54M3C1F5rqsqawi8BYEc/uCcbAlewSLiwLmJgB0Eow6QPJxm8I+pGjtRqJXf+BqoFyDFchr+dtFwesS22NHw==}
 
   micromark-core-commonmark@2.0.3:
     resolution: {integrity: sha512-RDBrHEMSxVFLg6xvnXmb1Ayr2WzLAWjeSATAoxwKYJV94TeNavgoIdA0a9ytzDSVzBy2YKFK+emCPOEibLeCrg==}
@@ -11112,6 +11112,10 @@ snapshots:
       htmlparser2: 12.0.0
       ipaddr.js: 2.5.0
 
+  '@tiramiss-community/mfm.alt.js@0.1.0':
+    dependencies:
+      '@misskey-dev/emoji-data': 17.0.3
+
   '@tokenizer/inflate@0.6.0(supports-color@10.2.2)':
     dependencies:
       debug: 4.4.3(supports-color@10.2.2)
@@ -14414,10 +14418,6 @@ snapshots:
   merge-stream@2.0.0: {}
 
   merge2@1.4.1: {}
-
-  mfm-js@0.28.0:
-    dependencies:
-      '@misskey-dev/emoji-data': 17.0.3
 
   micromark-core-commonmark@2.0.3:
     dependencies:
