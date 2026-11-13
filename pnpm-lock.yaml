@@ -352,8 +352,8 @@ importers:
         specifier: 2.0.0
         version: 2.0.0(sharp@0.35.5(@types/node@26.6.6))
       '@misskey-dev/summaly':
-        specifier: npm:@tiramiss-community/chiramiss@0.1.1
-        version: '@tiramiss-community/chiramiss@0.1.1'
+        specifier: npm:@tiramiss-community/chiramiss@0.2.1
+        version: '@tiramiss-community/chiramiss@0.2.1'
       '@nestjs/common':
         specifier: 12.4.2
         version: 12.4.2(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@10.2.2)
@@ -904,8 +904,8 @@ importers:
         specifier: 17.0.3
         version: 17.0.3
       '@misskey-dev/summaly':
-        specifier: npm:@tiramiss-community/chiramiss@0.1.1
-        version: '@tiramiss-community/chiramiss@0.1.1'
+        specifier: npm:@tiramiss-community/chiramiss@0.2.1
+        version: '@tiramiss-community/chiramiss@0.2.1'
       '@playwright/test':
         specifier: 1.64.1
         version: 1.64.1
@@ -3655,8 +3655,8 @@ packages:
       '@vue/compiler-sfc':
         optional: true
 
-  '@tiramiss-community/chiramiss@0.1.1':
-    resolution: {integrity: sha512-jJC3G415WVU7H9vPO26Ak/aNbExQafRJUGId3iLEJ8IZAYtFrP28s8K9q9iZsj5DdRZbF0lhT/v16N39kpC1fg==}
+  '@tiramiss-community/chiramiss@0.2.1':
+    resolution: {integrity: sha512-HnNDJFKSindDCVeadav6F4QJLvx3SbnNemw0rePLoc42s7E1qz0RlKOeoO1xqu0Vxc9adRCuIA9PEzbjO1L7bg==}
     engines: {node: ^22.22.2 || ^24.17.0 || >=26.4.0}
 
   '@tokenizer/inflate@0.6.0':
@@ -11104,7 +11104,7 @@ snapshots:
       - '@vue/compiler-dom'
       - '@vue/server-renderer'
 
-  '@tiramiss-community/chiramiss@0.1.1':
+  '@tiramiss-community/chiramiss@0.2.1':
     dependencies:
       chardet: 2.2.0
       cheerio: 1.2.0
