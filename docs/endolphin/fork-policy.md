@@ -88,7 +88,9 @@ git merge <x.y.z>                                  # 例: git merge 2026.6.1
 #    削除済み機能に upstream が触れている場合は本 fork の削除方針に従って drop する
 #    → 「機能セット / 削除実行方式」節・feature-inventory.md を参照
 
-# 5. basedOn 更新（endolphin.json の basedOn を、取り込んだ upstream version に手動で書き換える）
+# 5. バージョン更新
+#    endolphin.json の upstream.basedOn に取り込んだ upstream バージョンを記録する
+#    ルートの package.json と endolphin.json の version を同じ Endolphin バージョンにそろえる
 
 # 6. 検証
 pnpm lint
@@ -126,9 +128,9 @@ git rev-list --count "$(node -e "process.stdout.write(require('./endolphin.json'
 
 ## バージョニング
 
-- 本家の `package.json` `version`（CalVer）は **upstream 所有**として手編集しない。upstream マージで自然に上がる。
-- endolphin 自身のバージョンは `endolphin.json` の `version` で管理する。
-- `endolphin.json` の `basedOn` が「現在どの upstream version をベースにしているか」を示す。
+- ルートの `package.json` の `version` に Endolphin の公開バージョンを設定する（例 `2026.11.1-endolphin.0`）。サーバーの `meta` API と NodeInfo、クライアントの更新判定、翻訳リソースのファイル名と Service Worker のキャッシュ名にこの値が使われる。
+- upstream の取り込み後と Endolphin 独自のリリース時に、ルートの `package.json` と `endolphin.json` の `version` を同じ値に更新する。同じ upstream バージョンをベースにリリースを重ねる場合は、末尾の連番を上げる。
+- `endolphin.json` の `upstream.basedOn` に、取り込んだ upstream バージョンを記録する。
 
 ## CHANGELOG 規約
 
